@@ -54,3 +54,4 @@ CREATE INDEX IF NOT EXISTS idx_piece_materials_material ON piece_materials(mater
 CREATE INDEX IF NOT EXISTS idx_piece_images_piece ON piece_images(piece_id);
 
 
+

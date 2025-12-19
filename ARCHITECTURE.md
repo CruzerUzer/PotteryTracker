@@ -156,3 +156,4 @@ PotteryTracker/
 5. **Separate backend/frontend**: Clear separation of concerns, can be deployed independently later.
 
 
+

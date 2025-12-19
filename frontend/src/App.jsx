@@ -5,6 +5,7 @@ import PieceForm from './components/PieceForm';
 import PieceDetail from './components/PieceDetail';
 import PhaseManager from './components/PhaseManager';
 import MaterialManager from './components/MaterialManager';
+import KanbanView from './components/KanbanView';
 
 function Navigation() {
   const location = useLocation();
@@ -15,6 +16,11 @@ function Navigation() {
         <li>
           <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
             Pieces
+          </Link>
+        </li>
+        <li>
+          <Link to="/kanban" className={location.pathname === '/kanban' ? 'active' : ''}>
+            Kanban
           </Link>
         </li>
         <li>
@@ -45,6 +51,7 @@ function App() {
         <div className="container">
           <Routes>
             <Route path="/" element={<PieceList />} />
+            <Route path="/kanban" element={<KanbanView />} />
             <Route path="/pieces/new" element={<PieceForm />} />
             <Route path="/pieces/:id/edit" element={<PieceForm />} />
             <Route path="/pieces/:id" element={<PieceDetail />} />

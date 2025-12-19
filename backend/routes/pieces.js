@@ -28,7 +28,14 @@ router.get('/', async (req, res) => {
         p.*,
         ph.name as phase_name,
         COUNT(DISTINCT pm.material_id) as material_count,
-        COUNT(DISTINCT pi.id) as image_count
+        COUNT(DISTINCT pi.id) as image_count,
+        (
+          SELECT pi2.id 
+          FROM piece_images pi2 
+          WHERE pi2.piece_id = p.id 
+          ORDER BY pi2.created_at DESC 
+          LIMIT 1
+        ) as latest_image_id
       FROM ceramic_pieces p
       LEFT JOIN phases ph ON p.current_phase_id = ph.id
       LEFT JOIN piece_materials pm ON p.id = pm.piece_id

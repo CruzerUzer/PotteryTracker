@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { piecesAPI, phasesAPI } from '../services/api';
+import { piecesAPI, phasesAPI, imagesAPI } from '../services/api';
 
 function PieceList() {
   const [pieces, setPieces] = useState([]);
@@ -83,35 +83,47 @@ function PieceList() {
             <div key={piece.id} className="piece-card">
               <Link
                 to={`/pieces/${piece.id}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
+                style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flex: '1' }}
               >
-                <h3>{piece.name}</h3>
-                {piece.phase_name && (
-                  <span className="phase-badge">{piece.phase_name}</span>
-                )}
-                {piece.description && (
-                  <p style={{ marginTop: '10px', color: '#666' }}>
-                    {piece.description.length > 100
-                      ? piece.description.substring(0, 100) + '...'
-                      : piece.description}
-                  </p>
-                )}
-                <div className="meta">
-                  <div>Materials: {piece.material_count || 0}</div>
-                  <div>Images: {piece.image_count || 0}</div>
+                <div style={{ padding: '15px', flex: '1', display: 'flex', flexDirection: 'column' }}>
+                  <h3>{piece.name}</h3>
+                  {piece.phase_name && (
+                    <span className="phase-badge">{piece.phase_name}</span>
+                  )}
+                  {piece.description && (
+                    <p style={{ marginTop: '10px', color: '#666' }}>
+                      {piece.description.length > 100
+                        ? piece.description.substring(0, 100) + '...'
+                        : piece.description}
+                    </p>
+                  )}
+                  <div className="meta">
+                    <div>Materials: {piece.material_count || 0}</div>
+                    <div>Images: {piece.image_count || 0}</div>
+                  </div>
                 </div>
+                {piece.latest_image_id && (
+                  <div className="piece-card-image">
+                    <img
+                      src={imagesAPI.getFileUrl(piece.latest_image_id)}
+                      alt={piece.name}
+                    />
+                  </div>
+                )}
               </Link>
-              <div className="btn-group" style={{ marginTop: '15px' }}>
+              <div className="btn-group" style={{ padding: '15px', paddingTop: '0', paddingRight: '130px', marginTop: 'auto' }}>
                 <Link
                   to={`/pieces/${piece.id}/edit`}
                   className="btn btn-secondary"
                   style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   Edit
                 </Link>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     handleDelete(piece.id);
                   }}
                   className="btn btn-danger"

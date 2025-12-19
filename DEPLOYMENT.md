@@ -2,6 +2,8 @@
 
 This guide covers deploying PotteryTracker to a production web server.
 
+**For WSL deployment and internet access, see [DEPLOYMENT_WSL.md](./DEPLOYMENT_WSL.md)**
+
 ## Overview
 
 PotteryTracker consists of:

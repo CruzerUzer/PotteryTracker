@@ -59,9 +59,13 @@ function ImageUpload({ pieceId, phases, onUploaded }) {
             type="file"
             id="image-file"
             accept="image/*"
+            capture="environment"
             onChange={handleFileChange}
             disabled={uploading}
           />
+          <small style={{ display: 'block', marginTop: '5px', color: '#9ca3af', fontSize: '0.875rem' }}>
+            On mobile devices, tap to take a photo with your camera
+          </small>
         </div>
 
         <div className="form-group">

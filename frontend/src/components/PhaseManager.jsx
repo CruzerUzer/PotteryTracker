@@ -8,6 +8,8 @@ function PhaseManager() {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '', display_order: 0 });
   const [showForm, setShowForm] = useState(false);
+  const [draggedPhase, setDraggedPhase] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   useEffect(() => {
     loadPhases();
@@ -18,12 +20,73 @@ function PhaseManager() {
       setLoading(true);
       setError(null);
       const data = await phasesAPI.getAll();
-      setPhases(data);
+      // Sort by display_order
+      const sorted = data.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      setPhases(sorted);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDragStart = (e, phase, index) => {
+    setDraggedPhase({ phase, index });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedPhase && draggedPhase.index !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e, targetIndex) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+
+    if (!draggedPhase || draggedPhase.index === targetIndex) {
+      setDraggedPhase(null);
+      return;
+    }
+
+    const newPhases = [...phases];
+    const [removed] = newPhases.splice(draggedPhase.index, 1);
+    newPhases.splice(targetIndex, 0, removed);
+
+    // Update display_order for all affected phases
+    const updatedPhases = newPhases.map((phase, index) => ({
+      ...phase,
+      display_order: index
+    }));
+
+    try {
+      // Update all phases in parallel
+      await Promise.all(
+        updatedPhases.map((phase, index) =>
+          phasesAPI.update(phase.id, { ...phase, display_order: index })
+        )
+      );
+      
+      setPhases(updatedPhases);
+      setDraggedPhase(null);
+    } catch (err) {
+      setError(err.message);
+      setDraggedPhase(null);
+      // Reload on error
+      loadPhases();
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPhase(null);
+    setDragOverIndex(null);
   };
 
   const handleSubmit = async (e) => {
@@ -34,7 +97,11 @@ function PhaseManager() {
       if (editingId) {
         await phasesAPI.update(editingId, formData);
       } else {
-        await phasesAPI.create(formData);
+        // When creating, set display_order to the end
+        const maxOrder = phases.length > 0 
+          ? Math.max(...phases.map(p => p.display_order || 0))
+          : -1;
+        await phasesAPI.create({ ...formData, display_order: maxOrder + 1 });
       }
       setFormData({ name: '', display_order: 0 });
       setEditingId(null);
@@ -135,13 +202,25 @@ function PhaseManager() {
           <p>No phases yet. Create your first phase to get started!</p>
         ) : (
           <div className="phase-list">
-            {phases.map((phase) => (
-              <div key={phase.id} className="phase-item">
-                <div>
-                  <span className="name">{phase.name}</span>
-                  <small style={{ display: 'block', color: '#666', marginTop: '5px' }}>
-                    Order: {phase.display_order}
-                  </small>
+            {phases.map((phase, index) => (
+              <div
+                key={phase.id}
+                className={`phase-item ${draggedPhase?.index === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, phase, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span className="drag-handle" style={{ cursor: 'grab', fontSize: '1.2rem', color: '#9ca3af' }}>☰</span>
+                  <div>
+                    <span className="name">{phase.name}</span>
+                    <small style={{ display: 'block', color: '#9ca3af', marginTop: '4px', fontSize: '0.75rem' }}>
+                      Position: {index + 1}
+                    </small>
+                  </div>
                 </div>
                 <div className="actions">
                   <button

@@ -80,20 +80,20 @@ function PieceList() {
       ) : (
         <div className="piece-list">
           {pieces.map((piece) => (
-            <div key={piece.id} className="piece-card">
+            <div key={piece.id} className={`piece-card ${!piece.latest_image_id ? 'piece-card-no-image' : ''}`}>
               <Link
                 to={`/pieces/${piece.id}`}
                 style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flex: '1' }}
               >
-                <div style={{ padding: '15px', flex: '1', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '12px 15px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                   <h3>{piece.name}</h3>
                   {piece.phase_name && (
                     <span className="phase-badge">{piece.phase_name}</span>
                   )}
                   {piece.description && (
-                    <p style={{ marginTop: '10px', color: '#666' }}>
-                      {piece.description.length > 100
-                        ? piece.description.substring(0, 100) + '...'
+                    <p style={{ marginTop: '8px', color: '#6b7280', fontSize: '0.875rem', lineHeight: '1.4' }}>
+                      {piece.description.length > 80
+                        ? piece.description.substring(0, 80) + '...'
                         : piece.description}
                     </p>
                   )}
@@ -111,7 +111,7 @@ function PieceList() {
                   </div>
                 )}
               </Link>
-              <div className="btn-group" style={{ padding: '15px', paddingTop: '0', paddingRight: '130px', marginTop: 'auto' }}>
+              <div className="btn-group" style={{ padding: '10px 15px', paddingTop: '0', paddingRight: '100px', marginTop: 'auto' }}>
                 <Link
                   to={`/pieces/${piece.id}/edit`}
                   className="btn btn-secondary"

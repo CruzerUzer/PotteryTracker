@@ -129,7 +129,7 @@ function KanbanView() {
               {getPiecesForPhase(phase.id).map((piece) => (
                 <div
                   key={piece.id}
-                  className={`kanban-card ${draggedPiece?.id === piece.id ? 'dragging' : ''}`}
+                  className={`kanban-card ${draggedPiece?.id === piece.id ? 'dragging' : ''} ${!piece.latest_image_id ? 'kanban-card-no-image' : ''}`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, piece)}
                   onDragEnd={handleDragEnd}
@@ -191,7 +191,7 @@ function KanbanView() {
             {getPiecesForPhase(null).map((piece) => (
               <div
                 key={piece.id}
-                className={`kanban-card ${draggedPiece?.id === piece.id ? 'dragging' : ''}`}
+                className={`kanban-card ${draggedPiece?.id === piece.id ? 'dragging' : ''} ${!piece.latest_image_id ? 'kanban-card-no-image' : ''}`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, piece)}
                 onDragEnd={handleDragEnd}

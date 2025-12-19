@@ -43,7 +43,7 @@ function App() {
     <Router>
       <header>
         <div className="container">
-          <h1>PotteryTracker</h1>
+          <h1>Pottery tracker</h1>
         </div>
       </header>
       <Navigation />

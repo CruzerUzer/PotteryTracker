@@ -9,6 +9,7 @@ function KanbanView() {
   const [error, setError] = useState(null);
   const [draggedPiece, setDraggedPiece] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +44,7 @@ function KanbanView() {
 
   const handleDragStart = (e, piece) => {
     setDraggedPiece(piece);
+    setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', e.target);
   };
@@ -67,6 +69,7 @@ function KanbanView() {
 
     // Don't do anything if dropped in the same phase
     if (draggedPiece.current_phase_id === targetPhaseId) {
+      setIsDragging(false);
       setDraggedPiece(null);
       return;
     }
@@ -83,9 +86,11 @@ function KanbanView() {
         )
       );
       
+      setIsDragging(false);
       setDraggedPiece(null);
     } catch (err) {
       setError(err.message);
+      setIsDragging(false);
       setDraggedPiece(null);
       // Reload data on error to sync with server
       loadData();
@@ -93,6 +98,10 @@ function KanbanView() {
   };
 
   const handleDragEnd = () => {
+    // Small delay to prevent click event from firing after drag
+    setTimeout(() => {
+      setIsDragging(false);
+    }, 100);
     setDraggedPiece(null);
     setDragOverColumn(null);
   };
@@ -138,8 +147,8 @@ function KanbanView() {
                     to={`/pieces/${piece.id}`}
                     style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', height: '100%' }}
                     onClick={(e) => {
-                      // Allow drag to work, but still allow click when not dragging
-                      if (draggedPiece) {
+                      // Prevent navigation if we're currently dragging
+                      if (isDragging) {
                         e.preventDefault();
                       }
                     }}
@@ -205,7 +214,8 @@ function KanbanView() {
                   to={`/pieces/${piece.id}`}
                   style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', height: '100%' }}
                   onClick={(e) => {
-                    if (draggedPiece) {
+                    // Prevent navigation if we're currently dragging
+                    if (isDragging) {
                       e.preventDefault();
                     }
                   }}

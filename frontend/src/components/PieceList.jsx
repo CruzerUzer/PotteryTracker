@@ -30,19 +30,6 @@ function PieceList() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this piece?')) {
-      return;
-    }
-
-    try {
-      await piecesAPI.delete(id);
-      loadData();
-    } catch (err) {
-      alert('Error deleting piece: ' + err.message);
-    }
-  };
-
   if (loading) {
     return <div className="card">Loading...</div>;
   }
@@ -116,27 +103,6 @@ function PieceList() {
                   </div>
                 )}
               </Link>
-              <div className="btn-group" style={{ padding: '10px 15px', paddingTop: '0', paddingRight: '100px', marginTop: 'auto' }}>
-                <Link
-                  to={`/pieces/${piece.id}/edit`}
-                  className="btn btn-secondary"
-                  style={{ fontSize: '0.9rem', padding: '8px 16px' }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDelete(piece.id);
-                  }}
-                  className="btn btn-danger"
-                  style={{ fontSize: '0.9rem', padding: '8px 16px' }}
-                >
-                  Delete
-                </button>
-              </div>
             </div>
           ))}
         </div>

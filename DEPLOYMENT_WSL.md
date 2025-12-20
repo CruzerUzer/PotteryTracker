@@ -99,39 +99,76 @@ npm run build
 
 ## Step 6: Configure Nginx Reverse Proxy
 
+**What is Nginx and why do we need it?**
+
+Nginx is a web server that acts as a reverse proxy. Instead of accessing your backend (port 3001) and frontend (port 5173) separately, Nginx:
+- Serves your frontend files (HTML, CSS, JavaScript from the `dist` folder)
+- Forwards API requests (`/api/*`) to your backend server running on port 3001
+- Provides a single entry point (port 80) for your application
+- Handles routing so your React app's client-side routing works correctly
+
+**Create the Nginx configuration:**
+
+**Step 1:** Run this command to create and open the configuration file in the nano text editor:
+
 ```bash
-# Create Nginx configuration
+# This opens the nano text editor (file will be created if it doesn't exist)
 sudo nano /etc/nginx/sites-available/potterytracker
 ```
 
-Add the following configuration:
+**Step 2:** When nano opens (you'll see a blank file or an empty editor), copy and paste the following configuration into it:
 
 ```nginx
 server {
+    # Listen on port 80 (standard HTTP port)
     listen 80;
-    server_name your-domain.com;  # Replace with your domain or IP
+    # Server name - use your domain, IP address, or '_' to accept any domain
+    server_name your-domain.com;  # Replace with your domain, IP, or '_' for any
 
-    # Frontend static files
+    # Frontend static files (React app)
+    # This handles ALL requests that don't start with /api
     location / {
-        root /home/YOUR_USERNAME/PotteryTracker/frontend/dist;
+        # Path to your built React app (after running 'npm run build')
+        root /srv/PotteryTracker/frontend/dist;
+        
+        # Try to serve the requested file, if not found try as directory,
+        # if still not found, serve index.html (for React Router to handle)
         try_files $uri $uri/ /index.html;
+        
+        # Default file to serve when requesting a directory
         index index.html;
     }
 
-    # Backend API
+    # Backend API requests
+    # All requests starting with /api are forwarded to the Node.js backend
     location /api {
+        # Forward requests to backend server running on localhost:3001
         proxy_pass http://localhost:3001;
+        
+        # Use HTTP/1.1 for better compatibility
         proxy_http_version 1.1;
+        
+        # Headers for WebSocket support (if needed in future)
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
+        
+        # Preserve original host header (important for correct routing)
         proxy_set_header Host $host;
+        
+        # Preserve client IP address (useful for logging and security)
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Preserve original protocol (http/https)
         proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Don't cache WebSocket upgrades
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Serve images directly (optional, can also proxy)
+    # Image serving (optional optimization)
+    # This is a more specific rule for /api/images that could be optimized
+    # In this case, it does the same as /api above
     location /api/images {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
@@ -140,9 +177,52 @@ server {
 }
 ```
 
-**Replace:**
-- `YOUR_USERNAME` with your WSL username (run `whoami` to find it)
-- `your-domain.com` with your domain name or use `_` for any domain
+**Step 3:** Before saving, update these important values in the configuration!
+
+Find these lines in the configuration and update them:
+
+1. **Update the `root` path** (around line 130):
+   - Find: `root /srv/PotteryTracker/frontend/dist;`
+   - Change to match your actual project location, for example:
+     ```nginx
+     root /home/USER/PotteryTracker/frontend/dist;
+     ```
+   - (Replace `USER` with your username if different)
+
+2. **Update the `server_name`** (around line 124):
+   - Find: `server_name your-domain.com;`
+   - Change to one of these:
+     - Your domain: `server_name potterytracker.example.com;`
+     - Your server's IP: `server_name 192.168.1.100;`
+     - Or `_` to accept any domain: `server_name _;` (for testing)
+
+**Step 4:** Save and exit nano:
+- Press `Ctrl + X` to exit
+- Press `Y` to confirm you want to save
+- Press `Enter` to confirm the filename
+
+**Configuration explained (optional reading):**
+
+1. **`listen 80`**: Nginx listens on port 80 (standard HTTP). Users access your app via `http://your-ip/` instead of `http://your-ip:5173/`
+
+2. **`server_name`**: 
+   - Use your domain name if you have one: `server_name potterytracker.example.com;`
+   - Use your server's IP: `server_name 192.168.1.100;`
+   - Use `_` to accept any domain: `server_name _;` (useful for testing)
+
+3. **`location /`**: 
+   - Matches all requests not handled by other `location` blocks
+   - Serves your React app's built files from `frontend/dist`
+   - `try_files` ensures React Router works (any route serves `index.html`)
+
+4. **`location /api`**: 
+   - Matches requests starting with `/api` (e.g., `/api/pieces`, `/api/phases`)
+   - Forwards them to your backend on `localhost:3001`
+   - Preserves headers so the backend knows the original client details
+
+5. **`location /api/images`**: 
+   - More specific rule (takes precedence over `/api` for image requests)
+   - Currently does the same as `/api` but could be optimized later
 
 Enable the site:
 
@@ -461,4 +541,5 @@ Make executable and run:
 chmod +x ~/setup-potterytracker.sh
 ~/setup-potterytracker.sh
 ```
+
 

@@ -57,7 +57,7 @@ function PieceDetail() {
 
     try {
       await piecesAPI.delete(id);
-      navigate('/');
+      navigate('/kanban');
     } catch (err) {
       alert('Error deleting piece: ' + err.message);
     }
@@ -88,7 +88,7 @@ function PieceDetail() {
     return (
       <div className="card">
         <div className="error">{error || 'Piece not found'}</div>
-        <Link to="/" className="btn btn-secondary" style={{ marginTop: '20px' }}>
+        <Link to="/list" className="btn btn-secondary" style={{ marginTop: '20px' }}>
           Back to List
         </Link>
       </div>
@@ -108,7 +108,7 @@ function PieceDetail() {
           <button onClick={handleDelete} className="btn btn-danger">
             Delete
           </button>
-          <Link to="/" className="btn btn-secondary">
+          <Link to="/list" className="btn btn-secondary">
             Back to List
           </Link>
         </div>

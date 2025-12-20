@@ -11,18 +11,18 @@ function Navigation() {
   const location = useLocation();
   
   return (
-    <nav>
-      <ul>
-        <li>
-          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-            Pieces
-          </Link>
-        </li>
-        <li>
-          <Link to="/kanban" className={location.pathname === '/kanban' ? 'active' : ''}>
-            Kanban
-          </Link>
-        </li>
+      <nav>
+        <ul>
+          <li>
+            <Link to="/" className={location.pathname === '/' || location.pathname === '/kanban' ? 'active' : ''}>
+              Kanban
+            </Link>
+          </li>
+          <li>
+            <Link to="/list" className={location.pathname === '/list' ? 'active' : ''}>
+              List
+            </Link>
+          </li>
         <li>
           <Link to="/phases" className={location.pathname === '/phases' ? 'active' : ''}>
             Phases
@@ -50,7 +50,8 @@ function App() {
       <main>
         <div className="container">
           <Routes>
-            <Route path="/" element={<PieceList />} />
+            <Route path="/" element={<KanbanView />} />
+            <Route path="/list" element={<PieceList />} />
             <Route path="/kanban" element={<KanbanView />} />
             <Route path="/pieces/new" element={<PieceForm />} />
             <Route path="/pieces/:id/edit" element={<PieceForm />} />

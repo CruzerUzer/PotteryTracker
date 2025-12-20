@@ -82,7 +82,7 @@ function PieceForm() {
         await piecesAPI.create(data);
       }
 
-      navigate('/');
+      navigate('/kanban');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -172,7 +172,7 @@ function PieceForm() {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/kanban')}
             disabled={saving}
           >
             Cancel

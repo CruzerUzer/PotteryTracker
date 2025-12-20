@@ -95,14 +95,16 @@ function PieceForm() {
   }
 
   return (
-    <div className="card">
-      <h2>{isEdit ? 'Edit Piece' : 'Create New Piece'}</h2>
+    <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '24px' }}>
+      <h2 style={{ marginBottom: '16px', paddingBottom: '12px', fontSize: '1.5rem' }}>
+        {isEdit ? 'Edit Piece' : 'Create New Piece'}
+      </h2>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error" style={{ marginBottom: '16px' }}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="name">Name *</label>
+        <div className="form-group" style={{ marginBottom: '16px' }}>
+          <label htmlFor="name" style={{ marginBottom: '6px' }}>Name *</label>
           <input
             type="text"
             id="name"
@@ -110,26 +112,29 @@ function PieceForm() {
             value={formData.name}
             onChange={handleChange}
             required
+            style={{ padding: '8px 12px' }}
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
+        <div className="form-group" style={{ marginBottom: '16px' }}>
+          <label htmlFor="description" style={{ marginBottom: '6px' }}>Description</label>
           <textarea
             id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
+            style={{ minHeight: '80px', padding: '8px 12px' }}
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="current_phase_id">Current Phase</label>
+        <div className="form-group" style={{ marginBottom: '16px' }}>
+          <label htmlFor="current_phase_id" style={{ marginBottom: '6px' }}>Current Phase</label>
           <select
             id="current_phase_id"
             name="current_phase_id"
             value={formData.current_phase_id}
             onChange={handleChange}
+            style={{ padding: '8px 12px' }}
           >
             <option value="">No phase</option>
             {phases.map((phase) => (
@@ -140,14 +145,14 @@ function PieceForm() {
           </select>
         </div>
 
-        <div className="form-group">
-          <label>Materials</label>
+        <div className="form-group" style={{ marginBottom: '16px' }}>
+          <label style={{ marginBottom: '6px' }}>Materials</label>
           {materials.length === 0 ? (
-            <p style={{ color: '#666', fontStyle: 'italic' }}>
+            <p style={{ color: '#666', fontStyle: 'italic', fontSize: '0.875rem', margin: '4px 0' }}>
               No materials available. Create materials first.
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {materials.map((material) => (
                 <label key={material.id} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                   <input
@@ -156,8 +161,8 @@ function PieceForm() {
                     onChange={() => handleMaterialToggle(material.id)}
                     style={{ marginRight: '10px', width: 'auto' }}
                   />
-                  <span>
-                    {material.name} <small>({material.type})</small>
+                  <span style={{ fontSize: '0.9rem' }}>
+                    {material.name} <small style={{ fontSize: '0.85rem', color: '#6b7280' }}>({material.type})</small>
                   </span>
                 </label>
               ))}
@@ -165,8 +170,8 @@ function PieceForm() {
           )}
         </div>
 
-        <div className="btn-group">
-          <button type="submit" className="btn btn-primary" disabled={saving}>
+        <div className="btn-group" style={{ marginTop: '16px' }}>
+          <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '8px 20px', fontSize: '0.9rem' }}>
             {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
           </button>
           <button
@@ -174,6 +179,7 @@ function PieceForm() {
             className="btn btn-secondary"
             onClick={() => navigate('/kanban')}
             disabled={saving}
+            style={{ padding: '8px 20px', fontSize: '0.9rem' }}
           >
             Cancel
           </button>

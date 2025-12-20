@@ -3,12 +3,16 @@ import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { requireAuth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
 const dbPath = join(__dirname, '..', 'database', 'database.db');
+
+// All material routes require authentication
+router.use(requireAuth);
 
 async function getDb() {
   return open({
@@ -17,11 +21,11 @@ async function getDb() {
   });
 }
 
-// GET /api/materials - Get all materials
+// GET /api/materials - Get all materials for the authenticated user
 router.get('/', async (req, res) => {
   try {
     const db = await getDb();
-    const materials = await db.all('SELECT * FROM materials ORDER BY type, name');
+    const materials = await db.all('SELECT * FROM materials WHERE user_id = ? ORDER BY type, name', [req.userId]);
     await db.close();
     res.json(materials);
   } catch (error) {
@@ -46,8 +50,8 @@ router.post('/', async (req, res) => {
 
     const db = await getDb();
     const result = await db.run(
-      'INSERT INTO materials (name, type) VALUES (?, ?)',
-      [name.trim(), type]
+      'INSERT INTO materials (user_id, name, type) VALUES (?, ?, ?)',
+      [req.userId, name.trim(), type]
     );
     await db.close();
 
@@ -74,15 +78,18 @@ router.put('/:id', async (req, res) => {
     }
 
     const db = await getDb();
-    const result = await db.run(
-      'UPDATE materials SET name = ?, type = ? WHERE id = ?',
-      [name.trim(), type, id]
-    );
-    await db.close();
-
-    if (result.changes === 0) {
+    // Verify material belongs to user
+    const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!material) {
+      await db.close();
       return res.status(404).json({ error: 'Material not found' });
     }
+    
+    const result = await db.run(
+      'UPDATE materials SET name = ?, type = ? WHERE id = ? AND user_id = ?',
+      [name.trim(), type, id, req.userId]
+    );
+    await db.close();
 
     res.json({ id: parseInt(id), name: name.trim(), type });
   } catch (error) {
@@ -97,12 +104,15 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     const db = await getDb();
-    const result = await db.run('DELETE FROM materials WHERE id = ?', [id]);
-    await db.close();
-
-    if (result.changes === 0) {
+    // Verify material belongs to user
+    const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!material) {
+      await db.close();
       return res.status(404).json({ error: 'Material not found' });
     }
+    
+    const result = await db.run('DELETE FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
+    await db.close();
 
     res.json({ message: 'Material deleted successfully' });
   } catch (error) {

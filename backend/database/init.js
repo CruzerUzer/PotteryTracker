@@ -1,4 +1,5 @@
 import sqlite3 from 'sqlite3';
+import bcrypt from 'bcrypt';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -29,33 +30,62 @@ db.exec(schema, (err) => {
   }
   console.log('Database schema initialized successfully.');
 
-  // Insert default phases
-  const defaultPhases = [
-    { name: 'På tork', display_order: 1 },
-    { name: 'Skröjbränd', display_order: 2 },
-    { name: 'Glaserad', display_order: 3 },
-    { name: 'Glasyrbränd', display_order: 4 }
-  ];
-
-  const stmt = db.prepare('INSERT OR IGNORE INTO phases (name, display_order) VALUES (?, ?)');
-  
-  defaultPhases.forEach(phase => {
-    stmt.run(phase.name, phase.display_order);
-  });
-
-  stmt.finalize((err) => {
-    if (err) {
-      console.error('Error inserting default phases:', err.message);
-    } else {
-      console.log('Default phases inserted.');
+  // Create default user "Test" with password "Test"
+  bcrypt.hash('Test', 10, (hashErr, passwordHash) => {
+    if (hashErr) {
+      console.error('Error hashing password:', hashErr.message);
+      db.close();
+      process.exit(1);
     }
-    db.close((err) => {
+  
+    db.run('INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)', 
+      ['Test', passwordHash], function(err) {
       if (err) {
-        console.error('Error closing database:', err.message);
-      } else {
-        console.log('Database initialization complete.');
+        console.error('Error creating default user:', err.message);
+        db.close();
+        process.exit(1);
       }
-      process.exit(0);
+
+      // Get the actual user ID (this.lastID might be 0 if INSERT OR IGNORE didn't insert)
+      db.get('SELECT id FROM users WHERE username = ?', ['Test'], (userErr, user) => {
+        if (userErr || !user) {
+          console.error('Error finding default user:', userErr?.message);
+          db.close();
+          process.exit(1);
+        }
+
+        const defaultUserId = user.id;
+
+        // Insert default phases for the default user
+        const defaultPhases = [
+          { name: 'På tork', display_order: 1 },
+          { name: 'Skröjbränd', display_order: 2 },
+          { name: 'Glaserad', display_order: 3 },
+          { name: 'Glasyrbränd', display_order: 4 }
+        ];
+
+        const stmt = db.prepare('INSERT OR IGNORE INTO phases (user_id, name, display_order) VALUES (?, ?, ?)');
+        
+        defaultPhases.forEach(phase => {
+          stmt.run(defaultUserId, phase.name, phase.display_order);
+        });
+
+        stmt.finalize((finalizeErr) => {
+          if (finalizeErr) {
+            console.error('Error inserting default phases:', finalizeErr.message);
+          } else {
+            console.log('Default user and phases created.');
+          }
+          db.close((closeErr) => {
+            if (closeErr) {
+              console.error('Error closing database:', closeErr.message);
+            } else {
+              console.log('Database initialization complete.');
+            }
+            process.exit(0);
+          });
+        });
+      });
     });
   });
 });

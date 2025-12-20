@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PieceList from './components/PieceList';
 import PieceForm from './components/PieceForm';
 import PieceDetail from './components/PieceDetail';
@@ -7,9 +8,16 @@ import PhaseManager from './components/PhaseManager';
 import MaterialManager from './components/MaterialManager';
 import KanbanView from './components/KanbanView';
 import DonePieces from './components/DonePieces';
+import Login from './components/Login';
+import Register from './components/Register';
 
 function Navigation() {
   const location = useLocation();
+  const { user, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    await logout();
+  };
   
   return (
       <nav>
@@ -39,36 +47,155 @@ function Navigation() {
             Materials
           </Link>
         </li>
+        {user && (
+          <li style={{ marginLeft: 'auto' }}>
+            <span style={{ padding: '16px 24px', color: '#6b7280' }}>{user.username}</span>
+            <button
+              onClick={handleLogout}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6b7280',
+                cursor: 'pointer',
+                padding: '16px 24px',
+                fontSize: 'inherit',
+                fontFamily: 'inherit'
+              }}
+            >
+              Logout
+            </button>
+          </li>
+        )}
       </ul>
     </nav>
   );
 }
 
-function App() {
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="card">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function AppContent() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="card">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <Router>
+    <>
       <header>
         <div className="container">
           <h1>Pottery tracker</h1>
         </div>
       </header>
-      <Navigation />
+      {user && <Navigation />}
       <main>
         <div className="container">
           <Routes>
-            <Route path="/" element={<KanbanView />} />
-            <Route path="/list" element={<PieceList />} />
-            <Route path="/done" element={<DonePieces />} />
-            <Route path="/kanban" element={<KanbanView />} />
-            <Route path="/pieces/new" element={<PieceForm />} />
-            <Route path="/pieces/:id/edit" element={<PieceForm />} />
-            <Route path="/pieces/:id" element={<PieceDetail />} />
-            <Route path="/phases" element={<PhaseManager />} />
-            <Route path="/materials" element={<MaterialManager />} />
+            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+            <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <KanbanView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/list"
+              element={
+                <ProtectedRoute>
+                  <PieceList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/done"
+              element={
+                <ProtectedRoute>
+                  <DonePieces />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kanban"
+              element={
+                <ProtectedRoute>
+                  <KanbanView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pieces/new"
+              element={
+                <ProtectedRoute>
+                  <PieceForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pieces/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <PieceForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pieces/:id"
+              element={
+                <ProtectedRoute>
+                  <PieceDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/phases"
+              element={
+                <ProtectedRoute>
+                  <PhaseManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/materials"
+              element={
+                <ProtectedRoute>
+                  <MaterialManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </main>
-    </Router>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 

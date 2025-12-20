@@ -3,12 +3,16 @@ import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { requireAuth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
 const dbPath = join(__dirname, '..', 'database', 'database.db');
+
+// All piece routes require authentication
+router.use(requireAuth);
 
 async function getDb() {
   return open({
@@ -17,22 +21,22 @@ async function getDb() {
   });
 }
 
-// Helper function to check if a phase is the final phase (has the highest display_order)
-async function isFinalPhase(db, phaseId) {
+// Helper function to check if a phase is the final phase (has the highest display_order) for a user
+async function isFinalPhase(db, phaseId, userId) {
   if (!phaseId) {
     return false;
   }
   
-  // Get the maximum display_order
-  const maxOrderResult = await db.get('SELECT MAX(display_order) as max_order FROM phases');
+  // Get the maximum display_order for this user
+  const maxOrderResult = await db.get('SELECT MAX(display_order) as max_order FROM phases WHERE user_id = ?', [userId]);
   const maxOrder = maxOrderResult?.max_order ?? null;
   
   if (maxOrder === null) {
     return false;
   }
   
-  // Get the display_order of the given phase
-  const phaseResult = await db.get('SELECT display_order FROM phases WHERE id = ?', [phaseId]);
+  // Get the display_order of the given phase (must belong to user)
+  const phaseResult = await db.get('SELECT display_order FROM phases WHERE id = ? AND user_id = ?', [phaseId, userId]);
   
   if (!phaseResult) {
     return false;
@@ -63,14 +67,15 @@ router.get('/', async (req, res) => {
           LIMIT 1
         ) as latest_image_id
       FROM ceramic_pieces p
-      LEFT JOIN phases ph ON p.current_phase_id = ph.id
+      LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
       LEFT JOIN piece_materials pm ON p.id = pm.piece_id
       LEFT JOIN piece_images pi ON p.id = pi.piece_id
+      WHERE p.user_id = ?
     `;
 
-    const params = [];
+    const params = [req.userId];
     if (phase_id) {
-      query += ' WHERE p.current_phase_id = ?';
+      query += ' AND p.current_phase_id = ?';
       params.push(phase_id);
     }
 
@@ -91,34 +96,34 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const db = await getDb();
 
-    // Get piece with phase
+    // Get piece with phase (must belong to user)
     const piece = await db.get(`
       SELECT p.*, ph.name as phase_name
       FROM ceramic_pieces p
-      LEFT JOIN phases ph ON p.current_phase_id = ph.id
-      WHERE p.id = ?
-    `, [id]);
+      LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
+      WHERE p.id = ? AND p.user_id = ?
+    `, [id, req.userId]);
 
     if (!piece) {
       await db.close();
       return res.status(404).json({ error: 'Piece not found' });
     }
 
-    // Get materials
+    // Get materials (only materials that belong to the user)
     const materials = await db.all(`
       SELECT m.* FROM materials m
       INNER JOIN piece_materials pm ON m.id = pm.material_id
-      WHERE pm.piece_id = ?
-    `, [id]);
+      WHERE pm.piece_id = ? AND m.user_id = ?
+    `, [id, req.userId]);
 
-    // Get images
+    // Get images (only phases that belong to the user)
     const images = await db.all(`
       SELECT pi.*, ph.name as phase_name
       FROM piece_images pi
-      LEFT JOIN phases ph ON pi.phase_id = ph.id
+      LEFT JOIN phases ph ON pi.phase_id = ph.id AND ph.user_id = ?
       WHERE pi.piece_id = ?
       ORDER BY pi.created_at DESC
-    `, [id]);
+    `, [req.userId, id]);
 
     await db.close();
 
@@ -144,9 +149,9 @@ router.post('/', async (req, res) => {
 
     const db = await getDb();
 
-    // Validate phase if provided
+    // Validate phase if provided (must belong to user)
     if (current_phase_id) {
-      const phase = await db.get('SELECT id FROM phases WHERE id = ?', [current_phase_id]);
+      const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [current_phase_id, req.userId]);
       if (!phase) {
         await db.close();
         return res.status(400).json({ error: 'Invalid phase_id' });
@@ -154,21 +159,21 @@ router.post('/', async (req, res) => {
     }
 
     // Check if the phase is the final phase
-    const done = current_phase_id ? await isFinalPhase(db, current_phase_id) : false;
+    const done = current_phase_id ? await isFinalPhase(db, current_phase_id, req.userId) : false;
 
     // Insert piece
     const result = await db.run(
-      'INSERT INTO ceramic_pieces (name, description, current_phase_id, done) VALUES (?, ?, ?, ?)',
-      [name.trim(), description || null, current_phase_id || null, done ? 1 : 0]
+      'INSERT INTO ceramic_pieces (user_id, name, description, current_phase_id, done) VALUES (?, ?, ?, ?, ?)',
+      [req.userId, name.trim(), description || null, current_phase_id || null, done ? 1 : 0]
     );
 
     const pieceId = result.lastID;
 
     // Add materials if provided
     if (material_ids && Array.isArray(material_ids) && material_ids.length > 0) {
-      // Validate material IDs exist
+      // Validate material IDs exist and belong to user
       for (const materialId of material_ids) {
-        const material = await db.get('SELECT id FROM materials WHERE id = ?', [materialId]);
+        const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [materialId, req.userId]);
         if (!material) {
           await db.close();
           return res.status(400).json({ error: `Invalid material_id: ${materialId}` });
@@ -205,9 +210,16 @@ router.put('/:id', async (req, res) => {
 
     const db = await getDb();
 
-    // Validate phase if provided
+    // Verify piece belongs to user
+    const existingPiece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!existingPiece) {
+      await db.close();
+      return res.status(404).json({ error: 'Piece not found' });
+    }
+
+    // Validate phase if provided (must belong to user)
     if (current_phase_id) {
-      const phase = await db.get('SELECT id FROM phases WHERE id = ?', [current_phase_id]);
+      const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [current_phase_id, req.userId]);
       if (!phase) {
         await db.close();
         return res.status(400).json({ error: 'Invalid phase_id' });
@@ -215,18 +227,13 @@ router.put('/:id', async (req, res) => {
     }
 
     // Check if the phase is the final phase
-    const done = current_phase_id ? await isFinalPhase(db, current_phase_id) : false;
+    const done = current_phase_id ? await isFinalPhase(db, current_phase_id, req.userId) : false;
 
     // Update piece
     const result = await db.run(
-      'UPDATE ceramic_pieces SET name = ?, description = ?, current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ?',
-      [name.trim(), description || null, current_phase_id || null, done ? 1 : 0, id]
+      'UPDATE ceramic_pieces SET name = ?, description = ?, current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
+      [name.trim(), description || null, current_phase_id || null, done ? 1 : 0, id, req.userId]
     );
-
-    if (result.changes === 0) {
-      await db.close();
-      return res.status(404).json({ error: 'Piece not found' });
-    }
 
     // Update materials if provided
     if (material_ids && Array.isArray(material_ids)) {
@@ -235,9 +242,9 @@ router.put('/:id', async (req, res) => {
       
       // Add new materials
       if (material_ids.length > 0) {
-        // Validate material IDs exist
+        // Validate material IDs exist and belong to user
         for (const materialId of material_ids) {
-          const material = await db.get('SELECT id FROM materials WHERE id = ?', [materialId]);
+          const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [materialId, req.userId]);
           if (!material) {
             await db.close();
             return res.status(400).json({ error: `Invalid material_id: ${materialId}` });
@@ -275,26 +282,29 @@ router.patch('/:id/phase', async (req, res) => {
 
     const db = await getDb();
 
-    // Validate phase
-    const phase = await db.get('SELECT id FROM phases WHERE id = ?', [phase_id]);
+    // Verify piece belongs to user
+    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!piece) {
+      await db.close();
+      return res.status(404).json({ error: 'Piece not found' });
+    }
+
+    // Validate phase (must belong to user)
+    const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [phase_id, req.userId]);
     if (!phase) {
       await db.close();
       return res.status(400).json({ error: 'Invalid phase_id' });
     }
 
     // Check if the phase is the final phase
-    const done = await isFinalPhase(db, phase_id);
+    const done = await isFinalPhase(db, phase_id, req.userId);
 
     const result = await db.run(
-      'UPDATE ceramic_pieces SET current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ?',
-      [phase_id, done ? 1 : 0, id]
+      'UPDATE ceramic_pieces SET current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
+      [phase_id, done ? 1 : 0, id, req.userId]
     );
 
     await db.close();
-
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Piece not found' });
-    }
 
     res.json({ id: parseInt(id), phase_id, done });
   } catch (error) {
@@ -310,11 +320,18 @@ router.delete('/:id', async (req, res) => {
 
     const db = await getDb();
 
+    // Verify piece belongs to user
+    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!piece) {
+      await db.close();
+      return res.status(404).json({ error: 'Piece not found' });
+    }
+
     // Get images to delete files later
     const images = await db.all('SELECT filename FROM piece_images WHERE piece_id = ?', [id]);
 
     // Delete piece (cascade will handle related records)
-    const result = await db.run('DELETE FROM ceramic_pieces WHERE id = ?', [id]);
+    const result = await db.run('DELETE FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     await db.close();
 
     if (result.changes === 0) {

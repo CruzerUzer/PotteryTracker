@@ -1,9 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import session from 'express-session';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
+import authRouter from './routes/auth.js';
 import phasesRouter from './routes/phases.js';
 import materialsRouter from './routes/materials.js';
 import piecesRouter from './routes/pieces.js';
@@ -16,8 +18,25 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Configure CORS with credentials
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true // Allow cookies/sessions
+}));
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'pottery-tracker-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,6 +47,7 @@ if (!existsSync(dbPath)) {
 }
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/phases', phasesRouter);
 app.use('/api/materials', materialsRouter);
 app.use('/api/pieces', piecesRouter);

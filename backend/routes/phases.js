@@ -3,12 +3,16 @@ import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { requireAuth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
 const dbPath = join(__dirname, '..', 'database', 'database.db');
+
+// All phase routes require authentication
+router.use(requireAuth);
 
 // Helper to get database connection
 async function getDb() {
@@ -18,11 +22,11 @@ async function getDb() {
   });
 }
 
-// GET /api/phases - Get all phases
+// GET /api/phases - Get all phases for the authenticated user
 router.get('/', async (req, res) => {
   try {
     const db = await getDb();
-    const phases = await db.all('SELECT * FROM phases ORDER BY display_order, name');
+    const phases = await db.all('SELECT * FROM phases WHERE user_id = ? ORDER BY display_order, name', [req.userId]);
     await db.close();
     res.json(phases);
   } catch (error) {
@@ -42,8 +46,8 @@ router.post('/', async (req, res) => {
 
     const db = await getDb();
     const result = await db.run(
-      'INSERT INTO phases (name, display_order) VALUES (?, ?)',
-      [name.trim(), display_order || 0]
+      'INSERT INTO phases (user_id, name, display_order) VALUES (?, ?, ?)',
+      [req.userId, name.trim(), display_order || 0]
     );
     await db.close();
 
@@ -68,15 +72,18 @@ router.put('/:id', async (req, res) => {
     }
 
     const db = await getDb();
-    const result = await db.run(
-      'UPDATE phases SET name = ?, display_order = ? WHERE id = ?',
-      [name.trim(), display_order || 0, id]
-    );
-    await db.close();
-
-    if (result.changes === 0) {
+    // Verify phase belongs to user before updating
+    const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!phase) {
+      await db.close();
       return res.status(404).json({ error: 'Phase not found' });
     }
+    
+    const result = await db.run(
+      'UPDATE phases SET name = ?, display_order = ? WHERE id = ? AND user_id = ?',
+      [name.trim(), display_order || 0, id, req.userId]
+    );
+    await db.close();
 
     res.json({ id: parseInt(id), name, display_order: display_order || 0 });
   } catch (error) {
@@ -95,14 +102,21 @@ router.delete('/:id', async (req, res) => {
 
     const db = await getDb();
     
-    // Check if any pieces are using this phase
-    const pieces = await db.get('SELECT COUNT(*) as count FROM ceramic_pieces WHERE current_phase_id = ?', [id]);
+    // Verify phase belongs to user
+    const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!phase) {
+      await db.close();
+      return res.status(404).json({ error: 'Phase not found' });
+    }
+    
+    // Check if any pieces are using this phase (only for this user's pieces)
+    const pieces = await db.get('SELECT COUNT(*) as count FROM ceramic_pieces WHERE current_phase_id = ? AND user_id = ?', [id, req.userId]);
     if (pieces.count > 0) {
       await db.close();
       return res.status(400).json({ error: 'Cannot delete phase that is in use by ceramic pieces' });
     }
 
-    const result = await db.run('DELETE FROM phases WHERE id = ?', [id]);
+    const result = await db.run('DELETE FROM phases WHERE id = ? AND user_id = ?', [id, req.userId]);
     await db.close();
 
     if (result.changes === 0) {

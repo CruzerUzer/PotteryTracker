@@ -5,12 +5,16 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { unlinkSync, existsSync } from 'fs';
 import upload from '../middleware/upload.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
 const dbPath = join(__dirname, '..', 'database', 'database.db');
+
+// All image routes require authentication
+router.use(requireAuth);
 
 async function getDb() {
   return open({
@@ -37,16 +41,16 @@ router.post('/:id/images', upload.single('image'), async (req, res) => {
 
     const db = await getDb();
 
-    // Validate piece exists
-    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ?', [id]);
+    // Validate piece exists and belongs to user
+    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!piece) {
       await db.close();
       unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Piece not found' });
     }
 
-    // Validate phase exists
-    const phase = await db.get('SELECT id FROM phases WHERE id = ?', [phase_id]);
+    // Validate phase exists and belongs to user
+    const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [phase_id, req.userId]);
     if (!phase) {
       await db.close();
       unlinkSync(req.file.path);
@@ -84,13 +88,20 @@ router.get('/:id/images', async (req, res) => {
     const { id } = req.params;
     const db = await getDb();
 
+    // Verify piece belongs to user first
+    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!piece) {
+      await db.close();
+      return res.status(404).json({ error: 'Piece not found' });
+    }
+
     const images = await db.all(`
       SELECT pi.*, ph.name as phase_name
       FROM piece_images pi
-      LEFT JOIN phases ph ON pi.phase_id = ph.id
+      LEFT JOIN phases ph ON pi.phase_id = ph.id AND ph.user_id = ?
       WHERE pi.piece_id = ?
       ORDER BY pi.created_at DESC
-    `, [id]);
+    `, [req.userId, id]);
 
     await db.close();
     res.json(images);

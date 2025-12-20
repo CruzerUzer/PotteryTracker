@@ -2,26 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { piecesAPI, phasesAPI, imagesAPI } from '../services/api';
 
-function PieceList() {
+function DonePieces() {
   const [pieces, setPieces] = useState([]);
   const [phases, setPhases] = useState([]);
-  const [selectedPhase, setSelectedPhase] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadData();
-  }, [selectedPhase]);
+  }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
       const [piecesData, phasesData] = await Promise.all([
-        piecesAPI.getAll(selectedPhase || null),
+        piecesAPI.getAll(),
         phasesAPI.getAll(),
       ]);
-      setPieces(piecesData);
+      // Filter to show only done pieces
+      const donePieces = piecesData.filter(piece => piece.done === 1);
+      setPieces(donePieces);
       setPhases(phasesData);
     } catch (err) {
       setError(err.message);
@@ -50,7 +51,7 @@ function PieceList() {
   return (
     <div>
       <div className="actions-row">
-        <h2>Ceramic Pieces</h2>
+        <h2>Done Pieces</h2>
         <Link to="/pieces/new" className="btn btn-primary">
           Add New Piece
         </Link>
@@ -58,24 +59,9 @@ function PieceList() {
 
       {error && <div className="error">{error}</div>}
 
-      <div className="form-group" style={{ marginBottom: '20px' }}>
-        <label>Filter by Phase:</label>
-        <select
-          value={selectedPhase}
-          onChange={(e) => setSelectedPhase(e.target.value)}
-        >
-          <option value="">All Phases</option>
-          {phases.map((phase) => (
-            <option key={phase.id} value={phase.id}>
-              {phase.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {pieces.length === 0 ? (
         <div className="card">
-          <p>No pieces found. Create your first piece to get started!</p>
+          <p>No completed pieces found. Pieces will appear here once they are moved to the final phase.</p>
         </div>
       ) : (
         <div className="piece-list">
@@ -88,9 +74,7 @@ function PieceList() {
                 <div style={{ padding: '12px 15px', flex: '1', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <h3 style={{ margin: 0 }}>{piece.name}</h3>
-                    {piece.done === 1 && (
-                      <span className="done-badge">Done</span>
-                    )}
+                    <span className="done-badge">Done</span>
                   </div>
                   {piece.phase_name && (
                     <span className="phase-badge">{piece.phase_name}</span>
@@ -145,6 +129,5 @@ function PieceList() {
   );
 }
 
-export default PieceList;
-
+export default DonePieces;
 

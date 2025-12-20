@@ -17,6 +17,32 @@ async function getDb() {
   });
 }
 
+// Helper function to check if a phase is the final phase (has the highest display_order)
+async function isFinalPhase(db, phaseId) {
+  if (!phaseId) {
+    return false;
+  }
+  
+  // Get the maximum display_order
+  const maxOrderResult = await db.get('SELECT MAX(display_order) as max_order FROM phases');
+  const maxOrder = maxOrderResult?.max_order ?? null;
+  
+  if (maxOrder === null) {
+    return false;
+  }
+  
+  // Get the display_order of the given phase
+  const phaseResult = await db.get('SELECT display_order FROM phases WHERE id = ?', [phaseId]);
+  
+  if (!phaseResult) {
+    return false;
+  }
+  
+  // Check if this phase has the maximum display_order
+  // Convert both to numbers for comparison (SQLite might return as strings)
+  return Number(phaseResult.display_order) === Number(maxOrder);
+}
+
 // GET /api/pieces - Get all pieces (optional query: ?phase_id=X)
 router.get('/', async (req, res) => {
   try {
@@ -127,10 +153,13 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Check if the phase is the final phase
+    const done = current_phase_id ? await isFinalPhase(db, current_phase_id) : false;
+
     // Insert piece
     const result = await db.run(
-      'INSERT INTO ceramic_pieces (name, description, current_phase_id) VALUES (?, ?, ?)',
-      [name.trim(), description || null, current_phase_id || null]
+      'INSERT INTO ceramic_pieces (name, description, current_phase_id, done) VALUES (?, ?, ?, ?)',
+      [name.trim(), description || null, current_phase_id || null, done ? 1 : 0]
     );
 
     const pieceId = result.lastID;
@@ -157,7 +186,7 @@ router.post('/', async (req, res) => {
 
     await db.close();
 
-    res.status(201).json({ id: pieceId, name, description, current_phase_id });
+    res.status(201).json({ id: pieceId, name, description, current_phase_id, done });
   } catch (error) {
     console.error('Error creating piece:', error);
     res.status(500).json({ error: 'Failed to create piece' });
@@ -185,10 +214,13 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    // Check if the phase is the final phase
+    const done = current_phase_id ? await isFinalPhase(db, current_phase_id) : false;
+
     // Update piece
     const result = await db.run(
-      'UPDATE ceramic_pieces SET name = ?, description = ?, current_phase_id = ?, updated_at = datetime("now") WHERE id = ?',
-      [name.trim(), description || null, current_phase_id || null, id]
+      'UPDATE ceramic_pieces SET name = ?, description = ?, current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ?',
+      [name.trim(), description || null, current_phase_id || null, done ? 1 : 0, id]
     );
 
     if (result.changes === 0) {
@@ -224,7 +256,7 @@ router.put('/:id', async (req, res) => {
 
     await db.close();
 
-    res.json({ id: parseInt(id), name, description, current_phase_id });
+    res.json({ id: parseInt(id), name, description, current_phase_id, done });
   } catch (error) {
     console.error('Error updating piece:', error);
     res.status(500).json({ error: 'Failed to update piece' });
@@ -250,9 +282,12 @@ router.patch('/:id/phase', async (req, res) => {
       return res.status(400).json({ error: 'Invalid phase_id' });
     }
 
+    // Check if the phase is the final phase
+    const done = await isFinalPhase(db, phase_id);
+
     const result = await db.run(
-      'UPDATE ceramic_pieces SET current_phase_id = ?, updated_at = datetime("now") WHERE id = ?',
-      [phase_id, id]
+      'UPDATE ceramic_pieces SET current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ?',
+      [phase_id, done ? 1 : 0, id]
     );
 
     await db.close();
@@ -261,7 +296,7 @@ router.patch('/:id/phase', async (req, res) => {
       return res.status(404).json({ error: 'Piece not found' });
     }
 
-    res.json({ id: parseInt(id), phase_id });
+    res.json({ id: parseInt(id), phase_id, done });
   } catch (error) {
     console.error('Error updating piece phase:', error);
     res.status(500).json({ error: 'Failed to update piece phase' });

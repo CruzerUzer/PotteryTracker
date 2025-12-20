@@ -100,7 +100,12 @@ function PieceDetail() {
   return (
     <div>
       <div className="actions-row">
-        <h2>{piece.name}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0 }}>{piece.name}</h2>
+          {piece.done === 1 && (
+            <span className="done-badge">Done</span>
+          )}
+        </div>
         <div className="btn-group">
           <Link to={`/pieces/${id}/edit`} className="btn btn-secondary">
             Edit

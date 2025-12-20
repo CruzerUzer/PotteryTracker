@@ -49,7 +49,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server accessible on network at http://0.0.0.0:${PORT}`);
   console.log(`API available at http://localhost:${PORT}/api`);
-  console.log(`Network access: http://YOUR_IP:${PORT}`);
 });
 

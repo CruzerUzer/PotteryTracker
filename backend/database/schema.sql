@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS ceramic_pieces (
     name TEXT NOT NULL,
     description TEXT,
     current_phase_id INTEGER,
+    done INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (current_phase_id) REFERENCES phases(id)

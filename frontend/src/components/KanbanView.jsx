@@ -145,7 +145,12 @@ function KanbanView() {
                     }}
                   >
                     <div className="kanban-card-content">
-                      <h4>{piece.name}</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <h4 style={{ margin: 0 }}>{piece.name}</h4>
+                        {piece.done === 1 && (
+                          <span className="done-badge">Done</span>
+                        )}
+                      </div>
                       {piece.description && (
                         <p className="kanban-card-description">
                           {piece.description.length > 60
@@ -206,7 +211,12 @@ function KanbanView() {
                   }}
                 >
                   <div className="kanban-card-content">
-                    <h4>{piece.name}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <h4 style={{ margin: 0 }}>{piece.name}</h4>
+                      {piece.done === 1 && (
+                        <span className="done-badge">Done</span>
+                      )}
+                    </div>
                     {piece.description && (
                       <p className="kanban-card-description">
                         {piece.description.length > 60

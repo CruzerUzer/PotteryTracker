@@ -36,7 +36,7 @@ if not "%LOCAL_IP%"=="YOUR_IP_HERE" (
     echo   Backend:  http://%LOCAL_IP%:3001
     echo.
 ) else (
-    echo Network access: Find your IP address using 'ipconfig' command
+    echo Network access: Find your IP address using ipconfig command
     echo   Then access: http://YOUR_IP:3000
     echo.
 )

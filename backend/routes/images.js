@@ -90,12 +90,6 @@ router.delete('/:id', async (req, res) => {
       )
     `, [id, req.userId]);
 
-    // Delete file
-    const filePath = resolve(uploadsDir, image.filename);
-    if (existsSync(filePath)) {
-      unlinkSync(filePath);
-    }
-
     // Delete file and thumbnail
     const filePath = resolve(uploadsDir, image.filename);
     const thumbnailFilename = image.filename.replace(/\.[^/.]+$/, '.jpg');

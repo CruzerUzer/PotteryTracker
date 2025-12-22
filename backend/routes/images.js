@@ -1,9 +1,9 @@
 import express from 'express';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { join, dirname, resolve } from 'path';
+import { resolve } from 'path';
+import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { unlinkSync, existsSync } from 'fs';
+import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
@@ -11,19 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
-const dbPath = join(__dirname, '..', 'database', 'database.db');
 const uploadsDir = process.env.UPLOADS_DIR || resolve(__dirname, '..', 'uploads');
 const thumbnailDir = resolve(uploadsDir, 'thumbnails');
 
 // All image routes require authentication
 router.use(requireAuth);
-
-async function getDb() {
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-}
 
 // GET /api/images/:id/file - Serve image file (full size or thumbnail)
 router.get('/:id/file', async (req, res) => {
@@ -39,7 +31,6 @@ router.get('/:id/file', async (req, res) => {
       INNER JOIN ceramic_pieces p ON pi.piece_id = p.id
       WHERE pi.id = ? AND p.user_id = ?
     `, [id, req.userId]);
-    await db.close();
 
     if (!image) {
       return res.status(404).json({ error: 'Image not found' });
@@ -88,7 +79,6 @@ router.delete('/:id', async (req, res) => {
     `, [id, req.userId]);
     
     if (!image) {
-      await db.close();
       return res.status(404).json({ error: 'Image not found' });
     }
 
@@ -99,7 +89,6 @@ router.delete('/:id', async (req, res) => {
         SELECT id FROM ceramic_pieces WHERE user_id = ?
       )
     `, [id, req.userId]);
-    await db.close();
 
     // Delete file
     const filePath = resolve(uploadsDir, image.filename);

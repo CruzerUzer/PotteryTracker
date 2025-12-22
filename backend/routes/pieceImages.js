@@ -1,28 +1,14 @@
 import express from 'express';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { unlinkSync, existsSync } from 'fs';
+import { getDb } from '../utils/db.js';
 import upload, { optimizeImage } from '../middleware/upload.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const router = express.Router();
-const dbPath = join(__dirname, '..', 'database', 'database.db');
 
 // All image routes require authentication
 router.use(requireAuth);
-
-async function getDb() {
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-}
 
 // POST /api/pieces/:id/images - Upload image for a piece
 router.post('/:id/images', upload.single('image'), optimizeImage, async (req, res) => {
@@ -45,7 +31,6 @@ router.post('/:id/images', upload.single('image'), optimizeImage, async (req, re
     // Validate piece exists and belongs to user
     const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!piece) {
-      await db.close();
       unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Piece not found' });
     }
@@ -53,7 +38,6 @@ router.post('/:id/images', upload.single('image'), optimizeImage, async (req, re
     // Validate phase exists and belongs to user
     const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [phase_id, req.userId]);
     if (!phase) {
-      await db.close();
       unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Invalid phase_id' });
     }
@@ -64,7 +48,6 @@ router.post('/:id/images', upload.single('image'), optimizeImage, async (req, re
       [id, phase_id, req.file.filename, req.file.originalname]
     );
 
-    await db.close();
 
     logger.info('Image uploaded successfully', {
       imageId: result.lastID,
@@ -109,7 +92,6 @@ router.get('/:id/images', async (req, res) => {
     // Verify piece belongs to user first
     const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!piece) {
-      await db.close();
       return res.status(404).json({ error: 'Piece not found' });
     }
 
@@ -121,7 +103,6 @@ router.get('/:id/images', async (req, res) => {
       ORDER BY pi.created_at DESC
     `, [req.userId, id]);
 
-    await db.close();
     res.json(images);
   } catch (error) {
     logger.error('Error fetching images', {

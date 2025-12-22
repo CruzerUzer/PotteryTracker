@@ -1,23 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { getDb } from '../utils/db.js';
 import logger from '../utils/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const router = express.Router();
-const dbPath = join(__dirname, '..', 'database', 'database.db');
-
-async function getDb() {
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-}
 
 // POST /api/auth/register - Register a new user
 router.post('/register', async (req, res) => {
@@ -37,7 +23,6 @@ router.post('/register', async (req, res) => {
     // Check if username already exists
     const existingUser = await db.get('SELECT id FROM users WHERE username = ?', [username.trim()]);
     if (existingUser) {
-      await db.close();
       return res.status(409).json({ error: 'Username already exists' });
     }
 
@@ -49,8 +34,6 @@ router.post('/register', async (req, res) => {
       'INSERT INTO users (username, password_hash) VALUES (?, ?)',
       [username.trim(), passwordHash]
     );
-
-    await db.close();
 
     // Set session
     req.session.userId = result.lastID;
@@ -90,7 +73,6 @@ router.post('/login', async (req, res) => {
     const user = await db.get('SELECT id, username, password_hash FROM users WHERE username = ?', [username.trim()]);
     
     if (!user) {
-      await db.close();
       logger.warn('Login attempt failed: User not found', { username: username.trim() });
       return res.status(401).json({ error: 'Invalid username or password' });
     }
@@ -99,12 +81,9 @@ router.post('/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     
     if (!passwordMatch) {
-      await db.close();
       logger.warn('Login attempt failed: Invalid password', { username: username.trim() });
       return res.status(401).json({ error: 'Invalid username or password' });
     }
-
-    await db.close();
 
     // Set session
     req.session.userId = user.id;

@@ -1,26 +1,12 @@
 import express from 'express';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const router = express.Router();
-const dbPath = join(__dirname, '..', 'database', 'database.db');
 
 // All export routes require authentication
 router.use(requireAuth);
-
-async function getDb() {
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-}
 
 // Helper function to convert array to CSV
 function arrayToCSV(data) {
@@ -74,7 +60,6 @@ router.get('/pieces', async (req, res) => {
       ORDER BY p.created_at DESC
     `, [req.userId]);
 
-    await db.close();
 
     if (format === 'csv') {
       res.setHeader('Content-Type', 'text/csv');
@@ -150,7 +135,6 @@ router.get('/stats', async (req, res) => {
       ORDER BY count DESC
     `, [req.userId]);
 
-    await db.close();
 
     res.json({
       summary: stats,

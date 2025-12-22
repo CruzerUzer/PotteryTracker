@@ -1,33 +1,18 @@
 import express from 'express';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const router = express.Router();
-const dbPath = join(__dirname, '..', 'database', 'database.db');
 
 // All material routes require authentication
 router.use(requireAuth);
-
-async function getDb() {
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-}
 
 // GET /api/materials - Get all materials for the authenticated user
 router.get('/', async (req, res) => {
   try {
     const db = await getDb();
     const materials = await db.all('SELECT * FROM materials WHERE user_id = ? ORDER BY type, name', [req.userId]);
-    await db.close();
     res.json(materials);
   } catch (error) {
     logger.error('Error fetching materials', {
@@ -58,7 +43,6 @@ router.post('/', async (req, res) => {
       'INSERT INTO materials (user_id, name, type) VALUES (?, ?, ?)',
       [req.userId, name.trim(), type]
     );
-    await db.close();
 
     logger.info('Material created', { materialId: result.lastID, name, type, userId: req.userId });
     res.status(201).json({ id: result.lastID, name: name.trim(), type });
@@ -93,7 +77,6 @@ router.put('/:id', async (req, res) => {
     // Verify material belongs to user
     const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!material) {
-      await db.close();
       return res.status(404).json({ error: 'Material not found' });
     }
     
@@ -101,7 +84,6 @@ router.put('/:id', async (req, res) => {
       'UPDATE materials SET name = ?, type = ? WHERE id = ? AND user_id = ?',
       [name.trim(), type, id, req.userId]
     );
-    await db.close();
 
     logger.info('Material updated', { materialId: id, name, type, userId: req.userId });
     res.json({ id: parseInt(id), name: name.trim(), type });
@@ -125,12 +107,10 @@ router.delete('/:id', async (req, res) => {
     // Verify material belongs to user
     const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!material) {
-      await db.close();
       return res.status(404).json({ error: 'Material not found' });
     }
     
     const result = await db.run('DELETE FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
-    await db.close();
 
     logger.info('Material deleted', { materialId: id, userId: req.userId });
     res.json({ message: 'Material deleted successfully' });

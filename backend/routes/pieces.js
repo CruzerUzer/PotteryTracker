@@ -1,26 +1,12 @@
 import express from 'express';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const router = express.Router();
-const dbPath = join(__dirname, '..', 'database', 'database.db');
 
 // All piece routes require authentication
 router.use(requireAuth);
-
-async function getDb() {
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-}
 
 // Helper function to check if a phase is the final phase (has the highest display_order) for a user
 async function isFinalPhase(db, phaseId, userId) {
@@ -120,7 +106,6 @@ router.get('/', async (req, res) => {
     query += ' GROUP BY p.id ORDER BY p.created_at DESC';
 
     const pieces = await db.all(query, params);
-    await db.close();
     res.json(pieces);
   } catch (error) {
     logger.error('Error fetching pieces', {
@@ -148,7 +133,6 @@ router.get('/:id', async (req, res) => {
     `, [id, req.userId]);
 
     if (!piece) {
-      await db.close();
       return res.status(404).json({ error: 'Piece not found' });
     }
 
@@ -167,8 +151,6 @@ router.get('/:id', async (req, res) => {
       WHERE pi.piece_id = ?
       ORDER BY pi.created_at DESC
     `, [req.userId, id]);
-
-    await db.close();
 
     res.json({
       ...piece,
@@ -201,7 +183,6 @@ router.post('/', async (req, res) => {
     if (current_phase_id) {
       const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [current_phase_id, req.userId]);
       if (!phase) {
-        await db.close();
         return res.status(400).json({ error: 'Invalid phase_id' });
       }
     }
@@ -223,7 +204,6 @@ router.post('/', async (req, res) => {
       for (const materialId of material_ids) {
         const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [materialId, req.userId]);
         if (!material) {
-          await db.close();
           return res.status(400).json({ error: `Invalid material_id: ${materialId}` });
         }
       }
@@ -236,8 +216,6 @@ router.post('/', async (req, res) => {
         ]);
       }
     }
-
-    await db.close();
 
     logger.info('Piece created', {
       pieceId,
@@ -274,7 +252,6 @@ router.put('/:id', async (req, res) => {
     // Verify piece belongs to user
     const existingPiece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!existingPiece) {
-      await db.close();
       return res.status(404).json({ error: 'Piece not found' });
     }
 
@@ -282,7 +259,6 @@ router.put('/:id', async (req, res) => {
     if (current_phase_id) {
       const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [current_phase_id, req.userId]);
       if (!phase) {
-        await db.close();
         return res.status(400).json({ error: 'Invalid phase_id' });
       }
     }
@@ -307,7 +283,6 @@ router.put('/:id', async (req, res) => {
         for (const materialId of material_ids) {
           const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [materialId, req.userId]);
           if (!material) {
-            await db.close();
             return res.status(400).json({ error: `Invalid material_id: ${materialId}` });
           }
         }
@@ -321,8 +296,6 @@ router.put('/:id', async (req, res) => {
         }
       }
     }
-
-    await db.close();
 
     logger.info('Piece updated', {
       pieceId: id,
@@ -359,14 +332,12 @@ router.patch('/:id/phase', async (req, res) => {
     // Verify piece belongs to user
     const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!piece) {
-      await db.close();
       return res.status(404).json({ error: 'Piece not found' });
     }
 
     // Validate phase (must belong to user)
     const phase = await db.get('SELECT id FROM phases WHERE id = ? AND user_id = ?', [phase_id, req.userId]);
     if (!phase) {
-      await db.close();
       return res.status(400).json({ error: 'Invalid phase_id' });
     }
 
@@ -377,8 +348,6 @@ router.patch('/:id/phase', async (req, res) => {
       'UPDATE ceramic_pieces SET current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
       [phase_id, done ? 1 : 0, id, req.userId]
     );
-
-    await db.close();
 
     logger.info('Piece phase updated', {
       pieceId: id,
@@ -410,7 +379,6 @@ router.delete('/:id', async (req, res) => {
     // Verify piece belongs to user
     const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!piece) {
-      await db.close();
       return res.status(404).json({ error: 'Piece not found' });
     }
 
@@ -419,7 +387,6 @@ router.delete('/:id', async (req, res) => {
 
     // Delete piece (cascade will handle related records)
     const result = await db.run('DELETE FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
-    await db.close();
 
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Piece not found' });

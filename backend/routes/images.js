@@ -5,13 +5,15 @@ import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { unlinkSync, existsSync } from 'fs';
 import { requireAuth } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
 const dbPath = join(__dirname, '..', 'database', 'database.db');
-const uploadsDir = resolve(__dirname, '..', 'uploads');
+const uploadsDir = process.env.UPLOADS_DIR || resolve(__dirname, '..', 'uploads');
+const thumbnailDir = resolve(uploadsDir, 'thumbnails');
 
 // All image routes require authentication
 router.use(requireAuth);
@@ -23,10 +25,11 @@ async function getDb() {
   });
 }
 
-// GET /api/images/:id/file - Serve image file
+// GET /api/images/:id/file - Serve image file (full size or thumbnail)
 router.get('/:id/file', async (req, res) => {
   try {
     const { id } = req.params;
+    const { thumbnail } = req.query; // ?thumbnail=true to get thumbnail
     const db = await getDb();
 
     // Verify image belongs to a piece owned by the user
@@ -42,6 +45,17 @@ router.get('/:id/file', async (req, res) => {
       return res.status(404).json({ error: 'Image not found' });
     }
 
+    // Serve thumbnail if requested and available
+    if (thumbnail === 'true') {
+      const thumbnailFilename = image.filename.replace(/\.[^/.]+$/, '.jpg');
+      const thumbnailPath = resolve(thumbnailDir, thumbnailFilename);
+      if (existsSync(thumbnailPath)) {
+        return res.sendFile(thumbnailPath);
+      }
+      // Fall through to serve full image if thumbnail doesn't exist
+    }
+
+    // Serve full-size image
     const filePath = resolve(uploadsDir, image.filename);
     if (!existsSync(filePath)) {
       return res.status(404).json({ error: 'Image file not found' });
@@ -49,7 +63,12 @@ router.get('/:id/file', async (req, res) => {
 
     res.sendFile(filePath);
   } catch (error) {
-    console.error('Error serving image:', error);
+    logger.error('Error serving image', {
+      error: error.message,
+      stack: error.stack,
+      imageId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to serve image' });
   }
 });
@@ -88,9 +107,32 @@ router.delete('/:id', async (req, res) => {
       unlinkSync(filePath);
     }
 
+    // Delete file and thumbnail
+    const filePath = resolve(uploadsDir, image.filename);
+    const thumbnailFilename = image.filename.replace(/\.[^/.]+$/, '.jpg');
+    const thumbnailPath = resolve(thumbnailDir, thumbnailFilename);
+    
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+    if (existsSync(thumbnailPath)) {
+      unlinkSync(thumbnailPath);
+    }
+
+    logger.info('Image deleted', {
+      imageId: id,
+      filename: image.filename,
+      userId: req.userId
+    });
+
     res.json({ message: 'Image deleted successfully' });
   } catch (error) {
-    console.error('Error deleting image:', error);
+    logger.error('Error deleting image', {
+      error: error.message,
+      stack: error.stack,
+      imageId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to delete image' });
   }
 });

@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { requireAuth } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,7 +31,11 @@ router.get('/', async (req, res) => {
     await db.close();
     res.json(phases);
   } catch (error) {
-    console.error('Error fetching phases:', error);
+    logger.error('Error fetching phases', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to fetch phases' });
   }
 });
@@ -51,12 +56,19 @@ router.post('/', async (req, res) => {
     );
     await db.close();
 
+    logger.info('Phase created', { phaseId: result.lastID, name, userId: req.userId });
     res.status(201).json({ id: result.lastID, name, display_order: display_order || 0 });
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
+      logger.warn('Phase creation failed: duplicate name', { name, userId: req.userId });
       return res.status(409).json({ error: 'Phase with this name already exists' });
     }
-    console.error('Error creating phase:', error);
+    logger.error('Error creating phase', {
+      error: error.message,
+      stack: error.stack,
+      name,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to create phase' });
   }
 });
@@ -85,12 +97,19 @@ router.put('/:id', async (req, res) => {
     );
     await db.close();
 
+    logger.info('Phase updated', { phaseId: id, name, userId: req.userId });
     res.json({ id: parseInt(id), name, display_order: display_order || 0 });
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
+      logger.warn('Phase update failed: duplicate name', { phaseId: id, name, userId: req.userId });
       return res.status(409).json({ error: 'Phase with this name already exists' });
     }
-    console.error('Error updating phase:', error);
+    logger.error('Error updating phase', {
+      error: error.message,
+      stack: error.stack,
+      phaseId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to update phase' });
   }
 });
@@ -123,9 +142,15 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Phase not found' });
     }
 
+    logger.info('Phase deleted', { phaseId: id, userId: req.userId });
     res.json({ message: 'Phase deleted successfully' });
   } catch (error) {
-    console.error('Error deleting phase:', error);
+    logger.error('Error deleting phase', {
+      error: error.message,
+      stack: error.stack,
+      phaseId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to delete phase' });
   }
 });

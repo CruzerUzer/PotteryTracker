@@ -4,8 +4,9 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { unlinkSync, existsSync } from 'fs';
-import upload from '../middleware/upload.js';
+import upload, { optimizeImage } from '../middleware/upload.js';
 import { requireAuth } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,7 +25,7 @@ async function getDb() {
 }
 
 // POST /api/pieces/:id/images - Upload image for a piece
-router.post('/:id/images', upload.single('image'), async (req, res) => {
+router.post('/:id/images', upload.single('image'), optimizeImage, async (req, res) => {
   try {
     const { id } = req.params;
     const { phase_id } = req.body;
@@ -65,6 +66,14 @@ router.post('/:id/images', upload.single('image'), async (req, res) => {
 
     await db.close();
 
+    logger.info('Image uploaded successfully', {
+      imageId: result.lastID,
+      pieceId: id,
+      phaseId: phase_id,
+      filename: req.file.filename,
+      userId: req.userId
+    });
+
     res.status(201).json({
       id: result.lastID,
       piece_id: parseInt(id),
@@ -77,7 +86,16 @@ router.post('/:id/images', upload.single('image'), async (req, res) => {
     if (req.file && existsSync(req.file.path)) {
       unlinkSync(req.file.path);
     }
-    console.error('Error uploading image:', error);
+    // Clean up thumbnail if it exists
+    if (req.file?.thumbnailPath && existsSync(req.file.thumbnailPath)) {
+      unlinkSync(req.file.thumbnailPath);
+    }
+    logger.error('Error uploading image', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: req.params?.id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to upload image' });
   }
 });
@@ -106,7 +124,12 @@ router.get('/:id/images', async (req, res) => {
     await db.close();
     res.json(images);
   } catch (error) {
-    console.error('Error fetching images:', error);
+    logger.error('Error fetching images', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to fetch images' });
   }
 });

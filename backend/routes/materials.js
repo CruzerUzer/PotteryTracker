@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { requireAuth } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,7 +30,11 @@ router.get('/', async (req, res) => {
     await db.close();
     res.json(materials);
   } catch (error) {
-    console.error('Error fetching materials:', error);
+    logger.error('Error fetching materials', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to fetch materials' });
   }
 });
@@ -55,9 +60,16 @@ router.post('/', async (req, res) => {
     );
     await db.close();
 
+    logger.info('Material created', { materialId: result.lastID, name, type, userId: req.userId });
     res.status(201).json({ id: result.lastID, name: name.trim(), type });
   } catch (error) {
-    console.error('Error creating material:', error);
+    logger.error('Error creating material', {
+      error: error.message,
+      stack: error.stack,
+      name,
+      type,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to create material' });
   }
 });
@@ -91,9 +103,15 @@ router.put('/:id', async (req, res) => {
     );
     await db.close();
 
+    logger.info('Material updated', { materialId: id, name, type, userId: req.userId });
     res.json({ id: parseInt(id), name: name.trim(), type });
   } catch (error) {
-    console.error('Error updating material:', error);
+    logger.error('Error updating material', {
+      error: error.message,
+      stack: error.stack,
+      materialId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to update material' });
   }
 });
@@ -114,9 +132,15 @@ router.delete('/:id', async (req, res) => {
     const result = await db.run('DELETE FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
     await db.close();
 
+    logger.info('Material deleted', { materialId: id, userId: req.userId });
     res.json({ message: 'Material deleted successfully' });
   } catch (error) {
-    console.error('Error deleting material:', error);
+    logger.error('Error deleting material', {
+      error: error.message,
+      stack: error.stack,
+      materialId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to delete material' });
   }
 });

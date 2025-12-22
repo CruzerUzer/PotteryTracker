@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { requireAuth } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -85,7 +86,12 @@ router.get('/', async (req, res) => {
     await db.close();
     res.json(pieces);
   } catch (error) {
-    console.error('Error fetching pieces:', error);
+    logger.error('Error fetching pieces', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.userId,
+      phaseId: req.query.phase_id
+    });
     res.status(500).json({ error: 'Failed to fetch pieces' });
   }
 });
@@ -133,7 +139,12 @@ router.get('/:id', async (req, res) => {
       images
     });
   } catch (error) {
-    console.error('Error fetching piece:', error);
+    logger.error('Error fetching piece', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to fetch piece' });
   }
 });
@@ -191,9 +202,22 @@ router.post('/', async (req, res) => {
 
     await db.close();
 
+    logger.info('Piece created', {
+      pieceId,
+      name,
+      phaseId: current_phase_id,
+      done,
+      userId: req.userId
+    });
+
     res.status(201).json({ id: pieceId, name, description, current_phase_id, done });
   } catch (error) {
-    console.error('Error creating piece:', error);
+    logger.error('Error creating piece', {
+      error: error.message,
+      stack: error.stack,
+      name,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to create piece' });
   }
 });
@@ -263,9 +287,22 @@ router.put('/:id', async (req, res) => {
 
     await db.close();
 
+    logger.info('Piece updated', {
+      pieceId: id,
+      name,
+      phaseId: current_phase_id,
+      done,
+      userId: req.userId
+    });
+
     res.json({ id: parseInt(id), name, description, current_phase_id, done });
   } catch (error) {
-    console.error('Error updating piece:', error);
+    logger.error('Error updating piece', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to update piece' });
   }
 });
@@ -306,9 +343,22 @@ router.patch('/:id/phase', async (req, res) => {
 
     await db.close();
 
+    logger.info('Piece phase updated', {
+      pieceId: id,
+      phaseId: phase_id,
+      done,
+      userId: req.userId
+    });
+
     res.json({ id: parseInt(id), phase_id, done });
   } catch (error) {
-    console.error('Error updating piece phase:', error);
+    logger.error('Error updating piece phase', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: id,
+      phaseId: phase_id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to update piece phase' });
   }
 });
@@ -341,9 +391,20 @@ router.delete('/:id', async (req, res) => {
     // Delete image files (optional - could be done in background)
     // Note: We'll handle this in the images route for now
 
+    logger.info('Piece deleted', {
+      pieceId: id,
+      userId: req.userId,
+      imagesDeleted: images.length
+    });
+
     res.json({ message: 'Piece deleted successfully' });
   } catch (error) {
-    console.error('Error deleting piece:', error);
+    logger.error('Error deleting piece', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: id,
+      userId: req.userId
+    });
     res.status(500).json({ error: 'Failed to delete piece' });
   }
 });

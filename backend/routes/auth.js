@@ -4,6 +4,7 @@ import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -55,13 +56,19 @@ router.post('/register', async (req, res) => {
     req.session.userId = result.lastID;
     req.session.username = username.trim();
 
+    logger.info('User registered successfully', { userId: result.lastID, username: username.trim() });
+    
     res.status(201).json({
       id: result.lastID,
       username: username.trim(),
       message: 'User created successfully'
     });
   } catch (error) {
-    console.error('Error registering user:', error);
+    logger.error('Error registering user', {
+      error: error.message,
+      stack: error.stack,
+      username: username
+    });
     res.status(500).json({ error: 'Failed to register user' });
   }
 });
@@ -71,7 +78,7 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    console.log(`Login attempt for username: "${username}"`);
+    logger.debug('Login attempt', { username: username });
 
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
@@ -84,7 +91,7 @@ router.post('/login', async (req, res) => {
     
     if (!user) {
       await db.close();
-      console.log(`Login attempt failed: User "${username.trim()}" not found`);
+      logger.warn('Login attempt failed: User not found', { username: username.trim() });
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
@@ -93,7 +100,7 @@ router.post('/login', async (req, res) => {
     
     if (!passwordMatch) {
       await db.close();
-      console.log(`Login attempt failed: Invalid password for user "${username.trim()}"`);
+      logger.warn('Login attempt failed: Invalid password', { username: username.trim() });
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
@@ -103,8 +110,7 @@ router.post('/login', async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
     
-    console.log(`✅ Login successful for user "${user.username}" (ID: ${user.id})`);
-    console.log('Session ID:', req.sessionID);
+    logger.info('Login successful', { userId: user.id, username: user.username, sessionId: req.sessionID });
 
     res.json({
       id: user.id,
@@ -112,18 +118,28 @@ router.post('/login', async (req, res) => {
       message: 'Login successful'
     });
   } catch (error) {
-    console.error('Error logging in:', error);
+    logger.error('Error logging in', {
+      error: error.message,
+      stack: error.stack,
+      username: req.body?.username
+    });
     res.status(500).json({ error: 'Failed to login' });
   }
 });
 
 // POST /api/auth/logout - Logout user
 router.post('/logout', (req, res) => {
+  const userId = req.session?.userId;
   req.session.destroy((err) => {
     if (err) {
-      console.error('Error destroying session:', err);
+      logger.error('Error destroying session', {
+        error: err.message,
+        stack: err.stack,
+        userId: userId
+      });
       return res.status(500).json({ error: 'Failed to logout' });
     }
+    logger.info('User logged out', { userId: userId });
     res.json({ message: 'Logout successful' });
   });
 });

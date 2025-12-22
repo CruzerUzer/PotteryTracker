@@ -48,10 +48,10 @@ async function isFinalPhase(db, phaseId, userId) {
   return Number(phaseResult.display_order) === Number(maxOrder);
 }
 
-// GET /api/pieces - Get all pieces (optional query: ?phase_id=X)
+// GET /api/pieces - Get all pieces (optional query params: phase_id, search, material_id, date_from, date_to, done)
 router.get('/', async (req, res) => {
   try {
-    const { phase_id } = req.query;
+    const { phase_id, search, material_id, date_from, date_to, done } = req.query;
     const db = await getDb();
 
     let query = `
@@ -75,9 +75,46 @@ router.get('/', async (req, res) => {
     `;
 
     const params = [req.userId];
+    
+    // Filter by phase
     if (phase_id) {
       query += ' AND p.current_phase_id = ?';
       params.push(phase_id);
+    }
+    
+    // Filter by material
+    if (material_id) {
+      query += ` AND p.id IN (
+        SELECT piece_id FROM piece_materials 
+        WHERE material_id = ? AND piece_id IN (
+          SELECT id FROM ceramic_pieces WHERE user_id = ?
+        )
+      )`;
+      params.push(material_id, req.userId);
+    }
+    
+    // Search by name or description
+    if (search && search.trim()) {
+      query += ' AND (p.name LIKE ? OR p.description LIKE ?)';
+      const searchPattern = `%${search.trim()}%`;
+      params.push(searchPattern, searchPattern);
+    }
+    
+    // Filter by done status
+    if (done !== undefined) {
+      const doneValue = done === 'true' || done === '1' ? 1 : 0;
+      query += ' AND p.done = ?';
+      params.push(doneValue);
+    }
+    
+    // Filter by date range
+    if (date_from) {
+      query += ' AND DATE(p.created_at) >= DATE(?)';
+      params.push(date_from);
+    }
+    if (date_to) {
+      query += ' AND DATE(p.created_at) <= DATE(?)';
+      params.push(date_to);
     }
 
     query += ' GROUP BY p.id ORDER BY p.created_at DESC';

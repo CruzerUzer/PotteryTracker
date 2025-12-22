@@ -13,6 +13,7 @@ import materialsRouter from './routes/materials.js';
 import piecesRouter from './routes/pieces.js';
 import pieceImagesRouter from './routes/pieceImages.js';
 import imagesRouter from './routes/images.js';
+import exportRouter from './routes/export.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,6 +63,7 @@ app.use('/api/materials', materialsRouter);
 app.use('/api/pieces', piecesRouter);
 app.use('/api/pieces', pieceImagesRouter); // Handles /api/pieces/:id/images routes
 app.use('/api/images', imagesRouter); // Handles /api/images/:id/file and /api/images/:id DELETE
+app.use('/api/export', exportRouter);
 
 // Health check
 app.get('/health', (req, res) => {

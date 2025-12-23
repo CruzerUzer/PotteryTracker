@@ -35,14 +35,35 @@ router.post('/register', async (req, res) => {
       [username.trim(), passwordHash]
     );
 
+    const userId = result.lastID;
+
+    // Create default phases for the new user
+    const defaultPhases = [
+      { name: 'På tork', display_order: 1 },
+      { name: 'Skröjbränd', display_order: 2 },
+      { name: 'Glaserad', display_order: 3 },
+      { name: 'Glasyrbränd', display_order: 4 }
+    ];
+
+    for (const phase of defaultPhases) {
+      await db.run(
+        'INSERT INTO phases (user_id, name, display_order) VALUES (?, ?, ?)',
+        [userId, phase.name, phase.display_order]
+      );
+    }
+
     // Set session
-    req.session.userId = result.lastID;
+    req.session.userId = userId;
     req.session.username = username.trim();
 
-    logger.info('User registered successfully', { userId: result.lastID, username: username.trim() });
+    logger.info('User registered successfully with default phases', { 
+      userId: userId, 
+      username: username.trim(),
+      phasesCreated: defaultPhases.length 
+    });
     
     res.status(201).json({
-      id: result.lastID,
+      id: userId,
       username: username.trim(),
       message: 'User created successfully'
     });

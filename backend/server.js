@@ -40,9 +40,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: NODE_ENV === 'production', // Set to true in production with HTTPS
+    secure: false, // Set to false for HTTP in development/WSL, true in production with HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Allow cross-site requests for remote access
   }
 }));
 
@@ -68,6 +69,11 @@ app.use('/api/export', exportRouter);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// 404 handler (after all routes, before error handler)
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // Error handling middleware

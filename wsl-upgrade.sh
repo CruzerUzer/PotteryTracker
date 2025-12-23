@@ -63,8 +63,17 @@ fi
 echo -e "${YELLOW}Step 3: Pulling latest code from Git...${NC}"
 if [ -d ".git" ]; then
     git fetch origin
+    # Check for local changes
+    if ! git diff-index --quiet HEAD --; then
+        echo -e "${YELLOW}Local changes detected. Stashing changes...${NC}"
+        git stash save "WSL upgrade stash $(date +%Y%m%d-%H%M%S)" || {
+            echo -e "${RED}Warning: Could not stash changes. You may need to commit or discard them manually.${NC}"
+            echo -e "${YELLOW}Continuing with existing code...${NC}"
+        }
+    fi
     git pull origin main || git pull origin master || {
         echo -e "${RED}Warning: Git pull failed. Continuing with existing code...${NC}"
+        echo -e "${YELLOW}You may need to resolve conflicts manually and run: git pull origin main${NC}"
     }
     echo -e "${GREEN}Code updated${NC}"
 else
@@ -101,8 +110,82 @@ echo -e "${GREEN}Frontend dependencies updated${NC}"
 echo ""
 
 echo -e "${YELLOW}Step 7: Building frontend for production...${NC}"
-npm run build
-echo -e "${GREEN}Frontend built${NC}"
+# Ensure node_modules/.bin is in PATH and vite is executable
+export PATH="$PWD/node_modules/.bin:$PATH"
+chmod +x node_modules/.bin/vite 2>/dev/null || true
+npm run build || {
+    echo -e "${RED}Build failed. Trying with npx...${NC}"
+    npx vite build || {
+        echo -e "${RED}Error: Frontend build failed.${NC}"
+        echo -e "${YELLOW}Try manually: cd frontend && npm run build${NC}"
+        exit 1
+    }
+}
+
+# Verify build output exists
+if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
+    echo -e "${RED}Error: Frontend build output not found in dist/ directory${NC}"
+    exit 1
+fi
+
+# Verify version.js was generated correctly
+if [ -f "src/version.js" ]; then
+    VERSION_IN_FILE=$(grep -oP "FRONTEND_VERSION = '\K[^']+" src/version.js || echo "")
+    PACKAGE_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+    if [ "$VERSION_IN_FILE" != "$PACKAGE_VERSION" ]; then
+        echo -e "${YELLOW}Warning: version.js doesn't match package.json. Regenerating...${NC}"
+        node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');"
+        echo -e "${GREEN}version.js regenerated${NC}"
+    fi
+else
+    echo -e "${YELLOW}Warning: version.js not found. Generating...${NC}"
+    node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');"
+    echo -e "${GREEN}version.js generated${NC}"
+fi
+
+echo -e "${GREEN}Frontend built successfully${NC}"
+echo -e "${GREEN}Build output: $(ls -lh dist/ | head -5)${NC}"
+echo ""
+
+# Step 7.5: Restart Nginx to serve new frontend build
+echo -e "${YELLOW}Step 7.5: Restarting Nginx to serve new frontend build...${NC}"
+if command -v nginx &> /dev/null; then
+    if sudo nginx -t 2>/dev/null; then
+        # Use restart instead of reload to ensure new files are served
+        sudo service nginx restart 2>/dev/null || sudo systemctl restart nginx 2>/dev/null || {
+            echo -e "${YELLOW}Warning: Could not restart Nginx. Trying reload...${NC}"
+            sudo service nginx reload 2>/dev/null || sudo systemctl reload nginx 2>/dev/null || {
+                echo -e "${RED}Error: Could not restart or reload Nginx.${NC}"
+                echo -e "${YELLOW}Please restart manually: sudo service nginx restart${NC}"
+            }
+        }
+        echo -e "${GREEN}Nginx restarted${NC}"
+        
+        # Wait a moment for Nginx to fully restart
+        sleep 2
+        
+        # Verify Nginx is serving the new build
+        if [ -f "dist/index.html" ]; then
+            echo -e "${GREEN}Verifying Nginx can access build files...${NC}"
+            NGINX_ROOT=$(sudo nginx -T 2>/dev/null | grep -oP "root\s+\K[^;]+" | head -1 | tr -d ';' || echo "")
+            if [ -n "$NGINX_ROOT" ] && [ -d "$NGINX_ROOT" ]; then
+                if [ -f "$NGINX_ROOT/index.html" ]; then
+                    echo -e "${GREEN}Nginx root directory verified: $NGINX_ROOT${NC}"
+                else
+                    echo -e "${YELLOW}Warning: Nginx root ($NGINX_ROOT) doesn't contain index.html${NC}"
+                    echo -e "${YELLOW}Expected: $NGINX_ROOT/index.html${NC}"
+                    echo -e "${YELLOW}Actual build location: $(pwd)/dist/index.html${NC}"
+                fi
+            fi
+        fi
+    else
+        echo -e "${YELLOW}Warning: Nginx configuration test failed. Skipping restart.${NC}"
+        echo -e "${YELLOW}Check configuration: sudo nginx -t${NC}"
+    fi
+else
+    echo -e "${YELLOW}Nginx not found. Skipping Nginx restart.${NC}"
+    echo -e "${YELLOW}If using Nginx, restart manually: sudo service nginx restart${NC}"
+fi
 echo ""
 
 # Step 7: Ensure directories exist
@@ -114,8 +197,8 @@ chmod 755 uploads 2>/dev/null || true
 echo -e "${GREEN}Directories ready${NC}"
 echo ""
 
-# Step 8: Restore backup if needed (database and uploads)
-echo -e "${YELLOW}Step 9: Restoring data from backup...${NC}"
+# Step 9: Restore backup if needed (database and uploads)
+echo -e "${YELLOW}Step 10: Restoring data from backup...${NC}"
 if [ -d "$BACKUP_DIR/database" ]; then
     # Database files are already in place, just ensure they exist
     echo -e "${GREEN}Database files preserved${NC}"
@@ -135,9 +218,9 @@ if [ -f "$BACKUP_DIR/.env" ]; then
 fi
 echo ""
 
-# Step 9: Restart services (if using PM2)
+# Step 10: Restart services (if using PM2)
 if [ "$USE_PM2" = true ] && command -v pm2 &> /dev/null; then
-    echo -e "${YELLOW}Step 10: Restarting PM2 services...${NC}"
+    echo -e "${YELLOW}Step 11: Restarting PM2 services...${NC}"
     cd "$PROJECT_DIR/backend"
     if pm2 list | grep -q "pottery"; then
         pm2 restart all || {
@@ -155,7 +238,7 @@ if [ "$USE_PM2" = true ] && command -v pm2 &> /dev/null; then
     pm2 status
     echo ""
 else
-    echo -e "${YELLOW}Step 10: Skipping PM2 restart${NC}"
+    echo -e "${YELLOW}Step 11: Skipping PM2 restart${NC}"
     echo -e "${YELLOW}To start manually, run:${NC}"
     echo -e "${YELLOW}  cd $PROJECT_DIR/backend && npm start${NC}"
     echo -e "${YELLOW}Or with PM2:${NC}"
@@ -163,8 +246,8 @@ else
     echo ""
 fi
 
-# Step 10: Verify installation
-echo -e "${YELLOW}Step 11: Verifying installation...${NC}"
+# Step 11: Verify installation
+echo -e "${YELLOW}Step 12: Verifying installation...${NC}"
 cd "$PROJECT_DIR/backend"
 
 # Check Node.js version

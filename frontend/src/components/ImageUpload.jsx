@@ -8,15 +8,14 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
   const [uploadProgress, setUploadProgress] = useState({});
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [hasUserSelectedPhase, setHasUserSelectedPhase] = useState(false);
 
-  // Update phaseId when defaultPhaseId changes (but only if user hasn't manually selected a phase)
+  // Update phaseId when defaultPhaseId changes, but only if user hasn't manually selected a phase
   useEffect(() => {
-    if (defaultPhaseId) {
-      // Only set if phaseId is empty or matches the previous defaultPhaseId
-      // This allows the default to update when the piece's phase changes
+    if (defaultPhaseId && !hasUserSelectedPhase) {
       setPhaseId(defaultPhaseId);
     }
-  }, [defaultPhaseId]);
+  }, [defaultPhaseId, hasUserSelectedPhase]);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -123,7 +122,10 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
           <select
             id="image-phase"
             value={phaseId}
-            onChange={(e) => setPhaseId(e.target.value)}
+            onChange={(e) => {
+              setPhaseId(e.target.value);
+              setHasUserSelectedPhase(true);
+            }}
             disabled={uploading}
             required
           >

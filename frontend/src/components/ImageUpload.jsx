@@ -9,12 +9,14 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Update phaseId when defaultPhaseId changes
+  // Update phaseId when defaultPhaseId changes (but only if user hasn't manually selected a phase)
   useEffect(() => {
-    if (defaultPhaseId && !phaseId) {
+    if (defaultPhaseId) {
+      // Only set if phaseId is empty or matches the previous defaultPhaseId
+      // This allows the default to update when the piece's phase changes
       setPhaseId(defaultPhaseId);
     }
-  }, [defaultPhaseId, phaseId]);
+  }, [defaultPhaseId]);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files || []);

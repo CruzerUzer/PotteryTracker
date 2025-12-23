@@ -162,5 +162,10 @@ export const exportAPI = {
   getStats: () => apiCall('/export/stats'),
 };
 
+// Version API
+export const versionAPI = {
+  getVersion: () => apiCall('/version'),
+};
+
 
 

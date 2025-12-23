@@ -11,6 +11,7 @@ import DonePieces from './components/DonePieces';
 import Login from './components/Login';
 import Register from './components/Register';
 import ExportData from './components/ExportData';
+import Footer from './components/Footer';
 
 function Navigation() {
   const location = useLocation();
@@ -103,14 +104,14 @@ function AppContent() {
   }
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <header>
         <div className="container">
           <h1>Pottery tracker</h1>
         </div>
       </header>
       {user && <Navigation />}
-      <main>
+      <main style={{ flex: 1 }}>
         <div className="container">
           <Routes>
             <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
@@ -199,7 +200,8 @@ function AppContent() {
           </Routes>
         </div>
       </main>
-    </>
+      <Footer />
+    </div>
   );
 }
 

@@ -14,6 +14,7 @@ import piecesRouter from './routes/pieces.js';
 import pieceImagesRouter from './routes/pieceImages.js';
 import imagesRouter from './routes/images.js';
 import exportRouter from './routes/export.js';
+import versionRouter from './routes/version.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,6 +66,7 @@ app.use('/api/pieces', piecesRouter);
 app.use('/api/pieces', pieceImagesRouter); // Handles /api/pieces/:id/images routes
 app.use('/api/images', imagesRouter); // Handles /api/images/:id/file and /api/images/:id DELETE
 app.use('/api/export', exportRouter);
+app.use('/api/version', versionRouter);
 
 // Health check
 app.get('/health', (req, res) => {

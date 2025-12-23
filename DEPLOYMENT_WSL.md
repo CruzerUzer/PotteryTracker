@@ -503,6 +503,33 @@ sudo service nginx restart
 6. **Use a database like PostgreSQL** instead of SQLite for production
 7. **Use cloud storage** (S3, etc.) for images instead of local filesystem
 
+## Uninstalling PotteryTracker
+
+If you need to completely remove PotteryTracker from WSL:
+
+```bash
+# Run the uninstall script
+cd ~/PotteryTracker
+bash wsl-uninstall.sh
+```
+
+Or manually:
+
+```bash
+# Stop and remove PM2 processes
+pm2 stop pottery-api
+pm2 delete pottery-api
+pm2 save --force
+
+# Remove Nginx site (optional)
+sudo rm /etc/nginx/sites-enabled/potterytracker
+sudo rm /etc/nginx/sites-available/potterytracker
+sudo service nginx reload
+
+# Remove project directory
+rm -rf ~/PotteryTracker
+```
+
 ## Quick Start Script
 
 Create a complete setup script:
@@ -540,6 +567,78 @@ Make executable and run:
 ```bash
 chmod +x ~/setup-potterytracker.sh
 ~/setup-potterytracker.sh
+```
+
+## Fresh Installation Steps
+
+If you're starting from scratch, follow these steps in order:
+
+### 1. Clone the Repository
+
+```bash
+cd ~
+git clone https://github.com/CruzerUzer/PotteryTracker.git
+cd PotteryTracker
+```
+
+### 2. Set Up Backend
+
+```bash
+cd backend
+npm install
+npm run init-db
+mkdir -p uploads
+chmod 755 uploads
+```
+
+### 3. Set Up Frontend
+
+```bash
+cd ../frontend
+npm install
+npm run build
+```
+
+### 4. Configure Nginx
+
+```bash
+sudo nano /etc/nginx/sites-available/potterytracker
+```
+
+Paste the Nginx configuration (see Step 6 in main deployment guide), then:
+
+```bash
+# Enable the site
+sudo ln -s /etc/nginx/sites-available/potterytracker /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default  # Optional: remove default site
+
+# Test and restart Nginx
+sudo nginx -t
+sudo service nginx restart
+```
+
+### 5. Start Backend with PM2
+
+```bash
+cd ~/PotteryTracker/backend
+pm2 start server.js --name pottery-api
+pm2 save
+pm2 startup  # Follow the instructions to enable startup on boot
+```
+
+### 6. Verify Installation
+
+```bash
+# Check backend is running
+curl http://localhost:3001/health
+curl http://localhost:3001/api/version
+
+# Check frontend is accessible
+curl http://localhost/
+
+# Check PM2 status
+pm2 list
+pm2 logs pottery-api
 ```
 
 

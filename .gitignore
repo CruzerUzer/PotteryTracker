@@ -7,6 +7,9 @@ frontend/node_modules/
 backend/database/database.db
 backend/database/*.db
 
+# Seed data (allow seed directory but not the actual database)
+# backend/database/seed/ is tracked
+
 # Uploads
 backend/uploads/
 backend/uploads/*
@@ -36,6 +39,8 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+backend/logs/
+logs/
 
 
 

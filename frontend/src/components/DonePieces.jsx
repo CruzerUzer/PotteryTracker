@@ -81,7 +81,7 @@ function DonePieces() {
                 {piece.latest_image_id && (
                   <div className="piece-card-image">
                     <img
-                      src={imagesAPI.getFileUrl(piece.latest_image_id)}
+                      src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
                       alt={piece.name}
                     />
                   </div>

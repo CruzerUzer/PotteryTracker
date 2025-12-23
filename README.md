@@ -28,6 +28,28 @@ PotteryTracker/
 - Node.js (v16 or higher recommended)
 - npm (comes with Node.js)
 
+## Environment Configuration
+
+The application uses environment variables for configuration. Create a `.env` file in the `backend/` directory based on `backend/.env.example`:
+
+```bash
+# Copy the example file
+cp backend/.env.example backend/.env
+```
+
+Key environment variables:
+- `PORT` - Server port (default: 3001)
+- `NODE_ENV` - Environment mode (development/production)
+- `SESSION_SECRET` - Secret key for session encryption (REQUIRED in production)
+- `DB_PATH` - Path to SQLite database file
+- `UPLOADS_DIR` - Directory for uploaded images
+- `MAX_FILE_SIZE` - Maximum upload size in bytes (default: 10MB)
+- `IMAGE_MAX_WIDTH/HEIGHT` - Maximum image dimensions (default: 2048px)
+- `THUMBNAIL_WIDTH/HEIGHT` - Thumbnail dimensions (default: 400px)
+- `IMAGE_QUALITY` - JPEG quality (1-100, default: 85)
+- `CORS_ORIGIN` - Allowed origins (comma-separated or 'true' for all)
+- `LOG_LEVEL` - Logging level (debug/info/warn/error)
+
 ## Setup Instructions
 
 ### Step 1: Install Backend Dependencies
@@ -188,7 +210,10 @@ Images are stored in `backend/uploads/` directory. Each uploaded image gets a un
 ### Backend
 - Uses ES modules (`type: "module"` in package.json)
 - Database operations use `sqlite` package with async/await
-- File uploads handled by `multer` middleware
+- File uploads handled by `multer` middleware with automatic image optimization
+- Images are automatically resized and compressed using `sharp`
+- Thumbnails are generated for faster loading in list views
+- Structured logging with `winston` (logs stored in `backend/logs/`)
 - CORS enabled for development
 
 ### Frontend
@@ -231,8 +256,15 @@ For production deployment:
 
 ### Image upload fails
 - Check that `backend/uploads/` directory exists (created automatically)
-- Verify file size is under 10MB
+- Verify file size is under the limit (default: 10MB, configurable via `MAX_FILE_SIZE`)
 - Ensure file is a valid image format (jpg, png, gif, webp)
+- Check logs in `backend/logs/` for detailed error information
+
+### Logging
+- Logs are stored in `backend/logs/`
+- `combined.log` - All logs
+- `error.log` - Error logs only
+- Log level can be configured via `LOG_LEVEL` environment variable
 
 ## Future Enhancements
 

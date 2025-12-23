@@ -175,7 +175,7 @@ function KanbanView() {
                     {piece.latest_image_id && (
                       <div className="kanban-card-image">
                         <img
-                          src={imagesAPI.getFileUrl(piece.latest_image_id)}
+                          src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
                           alt={piece.name}
                         />
                       </div>

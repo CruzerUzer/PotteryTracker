@@ -101,9 +101,17 @@ export const materialsAPI = {
 
 // Pieces API
 export const piecesAPI = {
-  getAll: (phaseId = null) => {
-    const query = phaseId ? `?phase_id=${phaseId}` : '';
-    return apiCall(`/pieces${query}`);
+  getAll: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.phase_id) params.append('phase_id', filters.phase_id);
+    if (filters.material_id) params.append('material_id', filters.material_id);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.date_from) params.append('date_from', filters.date_from);
+    if (filters.date_to) params.append('date_to', filters.date_to);
+    if (filters.done !== undefined) params.append('done', filters.done);
+    
+    const query = params.toString();
+    return apiCall(`/pieces${query ? '?' + query : ''}`);
   },
   getById: (id) => apiCall(`/pieces/${id}`),
   create: (data) => apiCall('/pieces', { method: 'POST', body: JSON.stringify(data) }),
@@ -136,8 +144,22 @@ export const imagesAPI = {
     return response.json();
   },
   getByPiece: (pieceId) => apiCall(`/pieces/${pieceId}/images`),
-  getFileUrl: (imageId) => `${API_BASE}/images/${imageId}/file`,
+  getFileUrl: (imageId, thumbnail = false) => {
+    const url = `${API_BASE}/images/${imageId}/file`;
+    return thumbnail ? `${url}?thumbnail=true` : url;
+  },
   delete: (id) => apiCall(`/images/${id}`, { method: 'DELETE' }),
+};
+
+// Export API
+export const exportAPI = {
+  exportPieces: (format = 'json') => {
+    // This will be handled by the component for file download
+    return fetch(`${API_BASE}/export/pieces?format=${format}`, {
+      credentials: 'include',
+    });
+  },
+  getStats: () => apiCall('/export/stats'),
 };
 
 

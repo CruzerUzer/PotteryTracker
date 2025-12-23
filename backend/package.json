@@ -8,6 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "init-db": "node database/init.js",
+    "export-seed": "node database/export-seed-data.js",
+    "seed-db": "node database/seed-data.js",
     "migrate-done": "node database/migrate_add_done.js",
     "migrate-multi-user": "node database/migrate_multi_user.js",
     "check-user": "node scripts/check-user.js",

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { piecesAPI, phasesAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
+import ImageLightbox from './ImageLightbox';
 
 function PieceDetail() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ function PieceDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -178,29 +180,54 @@ function PieceDetail() {
         <ImageUpload pieceId={id} phases={phases} onUploaded={handleImageUploaded} />
 
         {piece.images && piece.images.length > 0 ? (
-          <div className="image-grid">
-            {piece.images.map((image) => (
-              <div key={image.id} className="image-item">
-                <img
-                  src={imagesAPI.getFileUrl(image.id)}
-                  alt={image.original_filename || 'Piece image'}
-                />
-                <div className="overlay">
-                  <div>{image.phase_name || 'Unknown phase'}</div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    {new Date(image.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleImageDelete(image.id)}
-                  title="Delete image"
+          <>
+            <div className="image-grid">
+              {piece.images.map((image, index) => (
+                <div
+                  key={image.id}
+                  className="image-item"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setLightboxIndex(index)}
                 >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+                  <img
+                    src={imagesAPI.getFileUrl(image.id, true)}
+                    alt={image.original_filename || 'Piece image'}
+                  />
+                  <div className="overlay">
+                    <div>{image.phase_name || 'Unknown phase'}</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                      {new Date(image.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleImageDelete(image.id);
+                    }}
+                    title="Delete image"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            {lightboxIndex !== null && (
+              <ImageLightbox
+                images={piece.images}
+                currentIndex={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onDelete={(imageId) => {
+                  handleImageDelete(imageId);
+                  if (piece.images.length === 1) {
+                    setLightboxIndex(null);
+                  } else if (lightboxIndex === piece.images.length - 1) {
+                    setLightboxIndex(lightboxIndex - 1);
+                  }
+                }}
+              />
+            )}
+          </>
         ) : (
           <p style={{ color: '#666', fontStyle: 'italic', marginTop: '20px' }}>
             No images yet. Upload your first image above.

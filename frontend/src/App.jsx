@@ -10,6 +10,7 @@ import KanbanView from './components/KanbanView';
 import DonePieces from './components/DonePieces';
 import Login from './components/Login';
 import Register from './components/Register';
+import ExportData from './components/ExportData';
 
 function Navigation() {
   const location = useLocation();
@@ -45,6 +46,11 @@ function Navigation() {
         <li>
           <Link to="/materials" className={location.pathname === '/materials' ? 'active' : ''}>
             Materials
+          </Link>
+        </li>
+        <li>
+          <Link to="/export" className={location.pathname === '/export' ? 'active' : ''}>
+            Export
           </Link>
         </li>
         {user && (
@@ -178,6 +184,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <MaterialManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/export"
+              element={
+                <ProtectedRoute>
+                  <ExportData />
                 </ProtectedRoute>
               }
             />

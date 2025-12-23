@@ -218,7 +218,7 @@ if [ -f "$BACKUP_DIR/.env" ]; then
 fi
 echo ""
 
-# Step 10: Restart services (if using PM2)
+# Step 10: Restart backend services (if using PM2)
 if [ "$USE_PM2" = true ] && command -v pm2 &> /dev/null; then
     echo -e "${YELLOW}Step 11: Restarting PM2 services...${NC}"
     cd "$PROJECT_DIR/backend"

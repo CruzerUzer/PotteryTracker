@@ -116,30 +116,63 @@ else
     echo "  ⚠ Nginx not found, skipping restart"
 fi
 
-# Step 6: Check backend version endpoint
+# Step 6: Restart backend to ensure latest code is running
 echo ""
-echo "Step 6: Checking backend version endpoint..."
+echo "Step 6: Restarting backend server..."
 cd ../backend
+
+# Check if PM2 is being used
 if command -v pm2 &> /dev/null; then
     PM2_STATUS=$(pm2 list 2>/dev/null | grep -i pottery || echo "")
     if [ -n "$PM2_STATUS" ]; then
-        echo "  PM2 is running pottery-api"
-        sleep 1
-        BACKEND_VERSION_RESPONSE=$(curl -s http://localhost:3001/api/version 2>/dev/null || echo "")
-        if [ -n "$BACKEND_VERSION_RESPONSE" ]; then
-            echo "  Backend version endpoint response: $BACKEND_VERSION_RESPONSE"
-            BACKEND_VERSION=$(echo "$BACKEND_VERSION_RESPONSE" | grep -oP '"version":\s*"\K[^"]+' || echo "unknown")
-            echo "  ✓ Backend version endpoint working: $BACKEND_VERSION"
-        else
-            echo "  ✗ Backend version endpoint not responding"
-            echo "  Try: pm2 restart pottery-api"
-        fi
+        echo "  Restarting PM2 pottery-api service..."
+        pm2 restart pottery-api 2>/dev/null || pm2 start server.js --name pottery-api
+        pm2 save
+        echo "  ✓ PM2 service restarted"
+        sleep 3  # Give it time to start
     else
-        echo "  ⚠ PM2 not running pottery-api"
-        echo "  Start with: pm2 start server.js --name pottery-api"
+        echo "  Starting PM2 pottery-api service..."
+        pm2 start server.js --name pottery-api
+        pm2 save
+        echo "  ✓ PM2 service started"
+        sleep 3
     fi
 else
     echo "  ⚠ PM2 not found"
+    echo "  Backend may be running manually. Please restart it:"
+    echo "    cd ~/PotteryTracker/backend && npm start"
+fi
+
+# Step 7: Check backend version endpoint
+echo ""
+echo "Step 7: Checking backend version endpoint..."
+sleep 2
+BACKEND_VERSION_RESPONSE=$(curl -s http://localhost:3001/api/version 2>/dev/null || echo "")
+if [ -n "$BACKEND_VERSION_RESPONSE" ]; then
+    if echo "$BACKEND_VERSION_RESPONSE" | grep -q "error"; then
+        echo "  ✗ Backend returned error: $BACKEND_VERSION_RESPONSE"
+        echo "  Checking backend logs..."
+        if command -v pm2 &> /dev/null; then
+            echo "  PM2 logs (last 20 lines):"
+            pm2 logs pottery-api --lines 20 --nostream 2>/dev/null | tail -20 || echo "  Could not read PM2 logs"
+        fi
+        echo "  The /api/version route may not be registered correctly"
+        echo "  Verify server.js has the route defined"
+    else
+        echo "  Backend version endpoint response: $BACKEND_VERSION_RESPONSE"
+        BACKEND_VERSION=$(echo "$BACKEND_VERSION_RESPONSE" | grep -oP '"version":\s*"\K[^"]+' || echo "unknown")
+        echo "  ✓ Backend version endpoint working: $BACKEND_VERSION"
+    fi
+else
+    echo "  ✗ Backend version endpoint not responding"
+    echo "  Check if backend is running: curl http://localhost:3001/health"
+    HEALTH_CHECK=$(curl -s http://localhost:3001/health 2>/dev/null || echo "")
+    if [ -n "$HEALTH_CHECK" ]; then
+        echo "  Backend is running (health check OK), but /api/version route not found"
+        echo "  This suggests the route isn't registered. Check server.js"
+    else
+        echo "  Backend doesn't appear to be running"
+    fi
 fi
 
 echo ""

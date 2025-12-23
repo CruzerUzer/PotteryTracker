@@ -44,7 +44,8 @@ app.use(session({
     secure: false, // Set to false for HTTP in development/WSL, true in production with HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax' // Allow cross-site requests for remote access
+    sameSite: false // Set to false to allow cookies in cross-site AJAX requests (for HTTP)
+    // Note: For HTTPS, use sameSite: 'none' with secure: true
   }
 }));
 

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
@@ -9,6 +9,13 @@ const __dirname = dirname(__filename)
 
 // Read package.json to get version
 const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
+
+// Update version.js file with current version
+const versionContent = `// Version information - auto-generated from package.json
+// This file is updated automatically during build
+export const FRONTEND_VERSION = '${packageJson.version}';
+`
+writeFileSync(resolve(__dirname, 'src/version.js'), versionContent, 'utf-8')
 
 export default defineConfig({
   plugins: [react()],

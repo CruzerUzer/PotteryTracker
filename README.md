@@ -28,6 +28,15 @@ PotteryTracker/
 - Node.js (v16 or higher recommended)
 - npm (comes with Node.js)
 
+**Important for WSL/Linux deployments:** If you copied `node_modules` from Windows, you must rebuild native modules:
+```bash
+cd backend
+npm rebuild sqlite3
+# Or do a clean reinstall:
+rm -rf node_modules package-lock.json
+npm install
+```
+
 ## Environment Configuration
 
 The application uses environment variables for configuration. Create a `.env` file in the `backend/` directory based on `backend/.env.example`:

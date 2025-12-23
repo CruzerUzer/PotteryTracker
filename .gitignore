@@ -33,6 +33,7 @@ frontend/build/
 # OS
 .DS_Store
 Thumbs.db
+~$L_UPGRADE_README.md
 
 # Logs
 *.log

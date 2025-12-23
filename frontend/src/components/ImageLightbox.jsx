@@ -105,3 +105,4 @@ function ImageLightbox({ images, currentIndex, onClose, onDelete }) {
 
 export default ImageLightbox;
 
+

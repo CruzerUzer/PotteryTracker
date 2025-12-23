@@ -34,7 +34,10 @@ function PieceForm() {
         phasesAPI.getAll(),
         materialsAPI.getAll(),
       ]);
-      setPhases(phasesData);
+      
+      // Sort phases by display_order
+      const sortedPhases = phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      setPhases(sortedPhases);
       setMaterials(materialsData);
 
       if (isEdit) {
@@ -45,6 +48,13 @@ function PieceForm() {
           current_phase_id: piece.current_phase_id || '',
           material_ids: piece.materials?.map((m) => m.id) || [],
         });
+      } else {
+        // For new pieces, set default phase to the first phase (by display_order)
+        const firstPhase = sortedPhases.length > 0 ? sortedPhases[0] : null;
+        setFormData(prev => ({
+          ...prev,
+          current_phase_id: firstPhase ? firstPhase.id.toString() : '',
+        }));
       }
     } catch (err) {
       setError(err.message);

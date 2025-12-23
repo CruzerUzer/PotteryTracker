@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { piecesAPI, phasesAPI, materialsAPI } from '../services/api';
+import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
+import ImageUpload from './ImageUpload';
 
 function PieceForm() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ function PieceForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [createdPieceId, setCreatedPieceId] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -76,18 +78,28 @@ function PieceForm() {
         current_phase_id: formData.current_phase_id || null,
       };
 
+      let pieceId;
       if (isEdit) {
         await piecesAPI.update(id, data);
+        pieceId = id;
+        // For edit mode, navigate to detail page
+        navigate(`/pieces/${pieceId}`);
       } else {
-        await piecesAPI.create(data);
+        const newPiece = await piecesAPI.create(data);
+        pieceId = newPiece.id;
+        setCreatedPieceId(pieceId);
+        // For new pieces, stay on the form so user can upload images
+        // Don't navigate yet - let them upload images first if they want
       }
-
-      navigate('/kanban');
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleImageUploaded = () => {
+    // Images uploaded successfully, could show a success message or refresh
   };
 
   if (loading) {
@@ -170,10 +182,44 @@ function PieceForm() {
           )}
         </div>
 
+        {/* Image Upload Section */}
+        <div className="form-group" style={{ marginBottom: '16px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
+          <label style={{ marginBottom: '12px', fontSize: '1rem', fontWeight: 600 }}>Images</label>
+          {isEdit || createdPieceId ? (
+            <>
+              <ImageUpload 
+                pieceId={isEdit ? id : createdPieceId} 
+                phases={phases} 
+                onUploaded={handleImageUploaded}
+                defaultPhaseId={formData.current_phase_id || null}
+              />
+              <small style={{ display: 'block', marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '0.875rem' }}>
+                {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
+              </small>
+            </>
+          ) : (
+            <div style={{ padding: '16px', background: 'var(--color-surface-hover)', borderRadius: '8px', border: '1px dashed var(--color-border)' }}>
+              <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                Create the piece first, then you can add images here.
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="btn-group" style={{ marginTop: '16px' }}>
           <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '8px 20px', fontSize: '0.9rem' }}>
             {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
           </button>
+          {createdPieceId && !isEdit && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate(`/pieces/${createdPieceId}`)}
+              style={{ padding: '8px 20px', fontSize: '0.9rem' }}
+            >
+              View Piece
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-secondary"
@@ -181,7 +227,7 @@ function PieceForm() {
             disabled={saving}
             style={{ padding: '8px 20px', fontSize: '0.9rem' }}
           >
-            Cancel
+            {createdPieceId ? 'Back to Kanban' : 'Cancel'}
           </button>
         </div>
       </form>

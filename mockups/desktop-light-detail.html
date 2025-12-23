@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PotteryTracker - Desktop Light - Piece Detail</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FAF9F6;
+            color: #1A1A1A;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            padding: 20px 0;
+            box-shadow: 1px 0 3px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #6B7280;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: #FAF9F6;
+            color: #1A1A1A;
+        }
+
+        .sidebar-item.active {
+            background: #FAF9F6;
+            color: #8B4513;
+            font-weight: 600;
+            border-left: 3px solid #8B4513;
+        }
+
+        .sidebar-icon {
+            font-size: 20px;
+            width: 24px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #FFFFFF;
+            padding: 16px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6B7280;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1A1A1A;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #8B4513;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #FFFFFF;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+        }
+
+        .btn-danger {
+            background: #DC2626;
+            color: white;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .hero-section {
+            background: #FFFFFF;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 96px;
+            color: #90CAF9;
+        }
+
+        .info-panel {
+            background: #FFFFFF;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: #E3F2FD;
+            color: #1A1A1A;
+        }
+
+        .info-section {
+            margin-bottom: 24px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6B7280;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .material-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .material-tag {
+            background: #F3F4F6;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .description-card {
+            background: #FFFFFF;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .description-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1A1A1A;
+        }
+
+        .description-text {
+            color: #6B7280;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .gallery-card {
+            background: #FFFFFF;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .gallery-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1A1A1A;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            background: #F3F4F6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #9CA3AF;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gallery-item.add {
+            border: 2px dashed #D1D5DB;
+            color: #6B7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="#" class="sidebar-item active">
+            <span class="sidebar-icon">🏠</span>
+            <span>Kanban</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">📋</span>
+            <span>List</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">✅</span>
+            <span>Done</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">⚙️</span>
+            <span>Phases</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">📊</span>
+            <span>Materials</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">🎨</span>
+            <span>Export</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">⚙️</span>
+            <span>Settings</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">🚪</span>
+            <span>Logout</span>
+        </a>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn">←</button>
+                <div class="header-title">Blue Vase</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">Edit</button>
+                <button class="btn btn-danger">Delete</button>
+                <button class="btn btn-primary">Share</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="detail-layout">
+                <div class="hero-section">
+                    <div class="hero-image">🖼️</div>
+                </div>
+
+                <div class="info-panel">
+                    <span class="phase-badge">🔵 På tork</span>
+                    
+                    <div class="info-section">
+                        <div class="info-label">📦 Materials</div>
+                        <div class="material-tags">
+                            <span class="material-tag">Stoneware Clay</span>
+                            <span class="material-tag">Blue Glaze</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-label">📅 Created</div>
+                        <div style="color: #1A1A1A; font-size: 14px; margin-top: 4px;">January 15, 2024</div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-label">🖼️ Images</div>
+                        <div style="color: #1A1A1A; font-size: 14px; margin-top: 4px;">3 images</div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-label">Change Phase</div>
+                        <select class="select-input">
+                            <option>På tork</option>
+                            <option>Skröjbränd</option>
+                            <option>Glaserad</option>
+                            <option>Glasyrbränd</option>
+                        </select>
+                    </div>
+
+                    <div class="info-section">
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 8px;">Add Image</button>
+                        <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;">Add Note</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="description-card">
+                <h3>Description</h3>
+                <div class="description-text">
+                    A beautiful hand-thrown vase with blue glaze accents. This piece represents my first successful attempt at combining multiple glazing techniques. The form follows the natural flow of the clay, creating an organic and elegant shape that complements the vibrant blue glaze.
+                </div>
+            </div>
+
+            <div class="gallery-card">
+                <h3>Image Gallery</h3>
+                <div class="gallery-grid">
+                    <div class="gallery-item">🖼️</div>
+                    <div class="gallery-item">🖼️</div>
+                    <div class="gallery-item">🖼️</div>
+                    <div class="gallery-item">🖼️</div>
+                    <div class="gallery-item add">➕</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

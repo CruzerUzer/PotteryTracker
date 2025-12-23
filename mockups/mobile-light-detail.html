@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PotteryTracker - Mobile Light - Piece Detail</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FAF9F6;
+            color: #1A1A1A;
+            width: 375px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: #FFFFFF;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6B7280;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1A1A1A;
+            flex: 1;
+            text-align: center;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6B7280;
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            color: #90CAF9;
+        }
+
+        .info-panel {
+            background: #FFFFFF;
+            padding: 20px;
+            margin: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            background: #E3F2FD;
+            color: #1A1A1A;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6B7280;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .material-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .material-tag {
+            background: #F3F4F6;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .description-card {
+            background: #FFFFFF;
+            padding: 20px;
+            margin: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .description-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1A1A1A;
+        }
+
+        .description-text {
+            color: #6B7280;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .gallery-card {
+            background: #FFFFFF;
+            padding: 20px;
+            margin: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .gallery-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1A1A1A;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            background: #F3F4F6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #9CA3AF;
+        }
+
+        .gallery-item.add {
+            border: 2px dashed #D1D5DB;
+            color: #6B7280;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #8B4513;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #FFFFFF;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+        }
+
+        .btn-danger {
+            background: #DC2626;
+            color: white;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 375px;
+            background: #FFFFFF;
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: #6B7280;
+            font-size: 12px;
+        }
+
+        .nav-item.active {
+            color: #8B4513;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn">←</button>
+        <div class="header-title">Blue Vase</div>
+        <button class="menu-btn">⋮</button>
+    </div>
+
+    <div class="hero-image">🖼️</div>
+
+    <div class="info-panel">
+        <span class="phase-badge">🔵 På tork</span>
+        
+        <div class="info-section">
+            <div class="info-label">📦 Materials</div>
+            <div class="material-tags">
+                <span class="material-tag">Stoneware Clay</span>
+                <span class="material-tag">Blue Glaze</span>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-label">📅 Created</div>
+            <div style="color: #1A1A1A; font-size: 14px;">January 15, 2024</div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-label">🖼️ Images</div>
+            <div style="color: #1A1A1A; font-size: 14px;">3 images</div>
+        </div>
+    </div>
+
+    <div class="description-card">
+        <h3>Description</h3>
+        <div class="description-text">
+            A beautiful hand-thrown vase with blue glaze accents. This piece represents my first successful attempt at combining multiple glazing techniques. The form follows the natural flow of the clay, creating an organic and elegant shape.
+        </div>
+    </div>
+
+    <div class="gallery-card">
+        <h3>Image Gallery</h3>
+        <div class="gallery-grid">
+            <div class="gallery-item">🖼️</div>
+            <div class="gallery-item">🖼️</div>
+            <div class="gallery-item">🖼️</div>
+            <div class="gallery-item add">➕</div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn btn-secondary">Edit</button>
+        <button class="btn btn-danger">Delete</button>
+        <button class="btn btn-primary">Share</button>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="#" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span>Kanban</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>List</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">➕</span>
+            <span>Add</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">🔍</span>
+            <span>Search</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </div>
+</body>
+</html>
+

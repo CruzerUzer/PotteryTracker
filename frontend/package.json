@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "prebuild": "node -e \"const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '${pkg.version}';\\n\",'utf8');\"",
+    "prebuild": "node generate-version.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

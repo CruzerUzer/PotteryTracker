@@ -27,14 +27,20 @@ if [ -f "src/version.js" ]; then
     echo "  Current version.js: $CURRENT_VERSION"
     if [ "$CURRENT_VERSION" != "$FRONTEND_PKG_VERSION" ]; then
         echo "  Mismatch detected! Regenerating version.js..."
-        node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');"
+        node generate-version.js 2>/dev/null || {
+            echo "  Using fallback method..."
+            node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const v=pkg.version;fs.writeFileSync('src/version.js','// Auto-generated from package.json\\nexport const FRONTEND_VERSION = \\''+v+'\\';\\n','utf8');"
+        }
         echo "  ✓ version.js regenerated"
     else
         echo "  ✓ version.js is correct"
     fi
 else
     echo "  version.js not found! Generating..."
-    node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');"
+    node generate-version.js 2>/dev/null || {
+        echo "  Using fallback method..."
+        node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const v=pkg.version;fs.writeFileSync('src/version.js','// Auto-generated from package.json\\nexport const FRONTEND_VERSION = \\''+v+'\\';\\n','utf8');"
+    }
     echo "  ✓ version.js generated"
 fi
 

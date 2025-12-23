@@ -134,12 +134,18 @@ if [ -f "src/version.js" ]; then
     PACKAGE_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
     if [ "$VERSION_IN_FILE" != "$PACKAGE_VERSION" ]; then
         echo -e "${YELLOW}Warning: version.js doesn't match package.json. Regenerating...${NC}"
-        node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');"
+        node generate-version.js 2>/dev/null || {
+            echo -e "${YELLOW}generate-version.js not found, using fallback...${NC}"
+            node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const v=pkg.version;fs.writeFileSync('src/version.js','// Auto-generated from package.json\\nexport const FRONTEND_VERSION = \\''+v+'\\';\\n','utf8');"
+        }
         echo -e "${GREEN}version.js regenerated${NC}"
     fi
 else
     echo -e "${YELLOW}Warning: version.js not found. Generating...${NC}"
-    node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');"
+    node generate-version.js 2>/dev/null || {
+        echo -e "${YELLOW}generate-version.js not found, using fallback...${NC}"
+        node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const v=pkg.version;fs.writeFileSync('src/version.js','// Auto-generated from package.json\\nexport const FRONTEND_VERSION = \\''+v+'\\';\\n','utf8');"
+    }
     echo -e "${GREEN}version.js generated${NC}"
 fi
 

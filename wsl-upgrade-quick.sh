@@ -31,7 +31,7 @@ export PATH="$PWD/node_modules/.bin:$PATH"
 chmod +x node_modules/.bin/vite 2>/dev/null || true
 
 # Ensure version.js is generated before build
-node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.writeFileSync('src/version.js',\`// Auto-generated from package.json\\nexport const FRONTEND_VERSION = '\${pkg.version}';\\n\`, 'utf8');" 2>/dev/null || true
+node generate-version.js 2>/dev/null || true
 
 npm run build || npx vite build
 

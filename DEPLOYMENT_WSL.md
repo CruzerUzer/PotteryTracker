@@ -256,6 +256,18 @@ pm2 startup
 # Follow the instructions it prints
 ```
 
+**Note:** If `pm2 startup` gives an error like `env: 'Files/Common': No such file or directory`, this is because your PATH contains Windows paths with spaces. Use **Option 1** - quote the PATH assignment in the command it generates:
+
+```bash
+# Instead of:
+sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u USERNAME --hp /home/USERNAME
+
+# Use (with quotes around PATH assignment):
+sudo env "PATH=$PATH:/usr/bin" /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u USERNAME --hp /home/USERNAME
+```
+
+Replace `USERNAME` with your actual WSL username.
+
 ## Step 8: Configure Windows Firewall
 
 In PowerShell as Administrator:

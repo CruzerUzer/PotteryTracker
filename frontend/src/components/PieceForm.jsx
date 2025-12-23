@@ -182,30 +182,6 @@ function PieceForm() {
           )}
         </div>
 
-        {/* Image Upload Section */}
-        <div className="form-group" style={{ marginBottom: '16px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
-          <label style={{ marginBottom: '12px', fontSize: '1rem', fontWeight: 600 }}>Images</label>
-          {isEdit || createdPieceId ? (
-            <>
-              <ImageUpload 
-                pieceId={isEdit ? id : createdPieceId} 
-                phases={phases} 
-                onUploaded={handleImageUploaded}
-                defaultPhaseId={formData.current_phase_id || null}
-              />
-              <small style={{ display: 'block', marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '0.875rem' }}>
-                {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
-              </small>
-            </>
-          ) : (
-            <div style={{ padding: '16px', background: 'var(--color-surface-hover)', borderRadius: '8px', border: '1px dashed var(--color-border)' }}>
-              <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-                Create the piece first, then you can add images here.
-              </p>
-            </div>
-          )}
-        </div>
-
         <div className="btn-group" style={{ marginTop: '16px' }}>
           <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '8px 20px', fontSize: '0.9rem' }}>
             {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
@@ -231,6 +207,22 @@ function PieceForm() {
           </button>
         </div>
       </form>
+
+      {/* Image Upload Section - Outside the form to prevent conflicts */}
+      {(isEdit || createdPieceId) && (
+        <div className="card" style={{ maxWidth: '600px', margin: '24px auto 0', padding: '24px' }}>
+          <h3 style={{ marginBottom: '16px', fontSize: '1.25rem' }}>Images</h3>
+          <ImageUpload 
+            pieceId={isEdit ? id : createdPieceId} 
+            phases={phases} 
+            onUploaded={handleImageUploaded}
+            defaultPhaseId={formData.current_phase_id || null}
+          />
+          <small style={{ display: 'block', marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '0.875rem' }}>
+            {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
+          </small>
+        </div>
+      )}
     </div>
   );
 }

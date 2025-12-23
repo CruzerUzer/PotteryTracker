@@ -63,7 +63,9 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
       if (successCount > 0) {
         setSuccess(`${successCount} image(s) uploaded successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}!`);
         setFiles([]);
-        setPhaseId('');
+        // Reset phaseId to defaultPhaseId if available, otherwise empty
+        setPhaseId(defaultPhaseId || '');
+        setHasUserSelectedPhase(false); // Reset flag so default can be applied again
         e.target.reset();
         if (onUploaded) {
           onUploaded();

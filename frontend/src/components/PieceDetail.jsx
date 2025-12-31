@@ -177,7 +177,7 @@ function PieceDetail() {
 
       <div className="card">
         <h3>Images</h3>
-        <ImageUpload pieceId={id} phases={phases} onUploaded={handleImageUploaded} />
+        <ImageUpload pieceId={id} phases={phases} onUploaded={handleImageUploaded} defaultPhaseId={piece.current_phase_id || null} />
 
         {piece.images && piece.images.length > 0 ? (
           <>

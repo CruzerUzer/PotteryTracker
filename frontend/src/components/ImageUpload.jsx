@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { imagesAPI } from '../services/api';
 
-function ImageUpload({ pieceId, phases, onUploaded }) {
+function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
   const [files, setFiles] = useState([]);
-  const [phaseId, setPhaseId] = useState('');
+  const [phaseId, setPhaseId] = useState(defaultPhaseId || '');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [hasUserSelectedPhase, setHasUserSelectedPhase] = useState(false);
+
+  // Update phaseId when defaultPhaseId changes, but only if user hasn't manually selected a phase
+  useEffect(() => {
+    if (defaultPhaseId && !hasUserSelectedPhase) {
+      setPhaseId(defaultPhaseId);
+    }
+  }, [defaultPhaseId, hasUserSelectedPhase]);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -55,7 +63,9 @@ function ImageUpload({ pieceId, phases, onUploaded }) {
       if (successCount > 0) {
         setSuccess(`${successCount} image(s) uploaded successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}!`);
         setFiles([]);
-        setPhaseId('');
+        // Reset phaseId to defaultPhaseId if available, otherwise empty
+        setPhaseId(defaultPhaseId || '');
+        setHasUserSelectedPhase(false); // Reset flag so default can be applied again
         e.target.reset();
         if (onUploaded) {
           onUploaded();
@@ -85,13 +95,12 @@ function ImageUpload({ pieceId, phases, onUploaded }) {
             type="file"
             id="image-file"
             accept="image/*"
-            capture="environment"
             multiple
             onChange={handleFileChange}
             disabled={uploading}
           />
-          <small style={{ display: 'block', marginTop: '5px', color: '#9ca3af', fontSize: '0.875rem' }}>
-            You can select multiple images at once. On mobile devices, tap to take photos with your camera.
+          <small style={{ display: 'block', marginTop: '5px', color: 'var(--color-text-tertiary)', fontSize: '0.875rem' }}>
+            You can select multiple images at once. On mobile devices, you can choose from your gallery or take a new photo.
           </small>
           {files.length > 0 && (
             <div style={{ marginTop: '10px' }}>
@@ -115,7 +124,10 @@ function ImageUpload({ pieceId, phases, onUploaded }) {
           <select
             id="image-phase"
             value={phaseId}
-            onChange={(e) => setPhaseId(e.target.value)}
+            onChange={(e) => {
+              setPhaseId(e.target.value);
+              setHasUserSelectedPhase(true);
+            }}
             disabled={uploading}
             required
           >

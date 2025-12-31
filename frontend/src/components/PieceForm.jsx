@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { piecesAPI, phasesAPI, materialsAPI } from '../services/api';
+import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
+import ImageUpload from './ImageUpload';
 
 function PieceForm() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ function PieceForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [createdPieceId, setCreatedPieceId] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -32,7 +34,10 @@ function PieceForm() {
         phasesAPI.getAll(),
         materialsAPI.getAll(),
       ]);
-      setPhases(phasesData);
+      
+      // Sort phases by display_order
+      const sortedPhases = phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      setPhases(sortedPhases);
       setMaterials(materialsData);
 
       if (isEdit) {
@@ -43,6 +48,13 @@ function PieceForm() {
           current_phase_id: piece.current_phase_id || '',
           material_ids: piece.materials?.map((m) => m.id) || [],
         });
+      } else {
+        // For new pieces, set default phase to the first phase (by display_order)
+        const firstPhase = sortedPhases.length > 0 ? sortedPhases[0] : null;
+        setFormData(prev => ({
+          ...prev,
+          current_phase_id: firstPhase ? firstPhase.id.toString() : '',
+        }));
       }
     } catch (err) {
       setError(err.message);
@@ -76,18 +88,28 @@ function PieceForm() {
         current_phase_id: formData.current_phase_id || null,
       };
 
+      let pieceId;
       if (isEdit) {
         await piecesAPI.update(id, data);
+        pieceId = id;
+        // For edit mode, navigate to detail page
+        navigate(`/pieces/${pieceId}`);
       } else {
-        await piecesAPI.create(data);
+        const newPiece = await piecesAPI.create(data);
+        pieceId = newPiece.id;
+        setCreatedPieceId(pieceId);
+        // For new pieces, stay on the form so user can upload images
+        // Don't navigate yet - let them upload images first if they want
       }
-
-      navigate('/kanban');
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleImageUploaded = () => {
+    // Images uploaded successfully, could show a success message or refresh
   };
 
   if (loading) {
@@ -174,6 +196,16 @@ function PieceForm() {
           <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '8px 20px', fontSize: '0.9rem' }}>
             {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
           </button>
+          {createdPieceId && !isEdit && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate(`/pieces/${createdPieceId}`)}
+              style={{ padding: '8px 20px', fontSize: '0.9rem' }}
+            >
+              View Piece
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-secondary"
@@ -181,10 +213,26 @@ function PieceForm() {
             disabled={saving}
             style={{ padding: '8px 20px', fontSize: '0.9rem' }}
           >
-            Cancel
+            {createdPieceId ? 'Back to Kanban' : 'Cancel'}
           </button>
         </div>
       </form>
+
+      {/* Image Upload Section - Outside the form to prevent conflicts */}
+      {(isEdit || createdPieceId) && (
+        <div className="card" style={{ maxWidth: '600px', margin: '24px auto 0', padding: '24px' }}>
+          <h3 style={{ marginBottom: '16px', fontSize: '1.25rem' }}>Images</h3>
+          <ImageUpload 
+            pieceId={isEdit ? id : createdPieceId} 
+            phases={phases} 
+            onUploaded={handleImageUploaded}
+            defaultPhaseId={formData.current_phase_id || null}
+          />
+          <small style={{ display: 'block', marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '0.875rem' }}>
+            {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
+          </small>
+        </div>
+      )}
     </div>
   );
 }

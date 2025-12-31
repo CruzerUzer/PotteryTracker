@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PotteryTracker - Desktop Dark Theme - Kanban</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1A1A1A;
+            color: #F5F5F5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #2D2D2D;
+            border-right: 1px solid #404040;
+            padding: 20px 0;
+            box-shadow: 1px 0 3px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #A0A0A0;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: #404040;
+            color: #F5F5F5;
+        }
+
+        .sidebar-item.active {
+            background: #404040;
+            color: #D4A574;
+            font-weight: 600;
+            border-left: 3px solid #D4A574;
+        }
+
+        .sidebar-icon {
+            font-size: 20px;
+            width: 24px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2D2D2D;
+            padding: 16px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #404040;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #F5F5F5;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 8px 16px;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 200px;
+            background: #404040;
+            color: #F5F5F5;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #D4A574;
+        }
+
+        .btn-primary {
+            background: #D4A574;
+            color: #1A1A1A;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary:hover {
+            background: #F4A460;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #A0A0A0;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            overflow-x: auto;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            min-width: fit-content;
+        }
+
+        .kanban-column {
+            flex: 0 0 300px;
+            background: #2D2D2D;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 120px);
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #404040;
+        }
+
+        .column-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #F5F5F5;
+        }
+
+        .column-count {
+            background: #404040;
+            color: #F5F5F5;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .column-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card {
+            background: #1A1A1A;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 12px;
+            position: relative;
+            min-height: 140px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(212, 165, 116, 0.2);
+            border-color: #D4A574;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100px;
+            background: #2D2D2D;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6B7280;
+            font-size: 32px;
+            border: 1px solid #404040;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #F5F5F5;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .badge-blue {
+            background: #4A90E2;
+            color: #FFFFFF;
+        }
+
+        .badge-brown {
+            background: #D97706;
+            color: #FFFFFF;
+        }
+
+        .badge-purple {
+            background: #A855F7;
+            color: #FFFFFF;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: #A0A0A0;
+            margin-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #6B7280;
+            font-style: italic;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="#" class="sidebar-item active">
+            <span class="sidebar-icon">🏠</span>
+            <span>Kanban</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">📋</span>
+            <span>List</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">✅</span>
+            <span>Done</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">⚙️</span>
+            <span>Phases</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">📊</span>
+            <span>Materials</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">🎨</span>
+            <span>Export</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">⚙️</span>
+            <span>Settings</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <span class="sidebar-icon">🚪</span>
+            <span>Logout</span>
+        </a>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>PotteryTracker</h1>
+            <div class="header-actions">
+                <input type="text" class="search-input" placeholder="🔍 Search...">
+                <button class="btn-primary">➕ Add</button>
+                <button class="btn-icon">👤</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="kanban-board">
+                <div class="kanban-column">
+                    <div class="column-header">
+                        <div class="column-title">På tork</div>
+                        <div class="column-count">3</div>
+                    </div>
+                    <div class="column-content">
+                        <div class="card">
+                            <div class="card-image">🖼️</div>
+                            <div class="card-title">Blue Vase</div>
+                            <span class="phase-badge badge-blue">🔵 På tork</span>
+                            <div class="card-meta">📦 2 materials</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Mug Set</div>
+                            <span class="phase-badge badge-blue">🔵 På tork</span>
+                            <div class="card-meta">📦 1 material</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-image">🖼️</div>
+                            <div class="card-title">Pot</div>
+                            <span class="phase-badge badge-blue">🔵 På tork</span>
+                            <div class="card-meta">📦 2 materials</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="column-header">
+                        <div class="column-title">Skröjbränd</div>
+                        <div class="column-count">2</div>
+                    </div>
+                    <div class="column-content">
+                        <div class="card">
+                            <div class="card-image">🖼️</div>
+                            <div class="card-title">Bowl</div>
+                            <span class="phase-badge badge-brown">🟤 Skröjbränd</span>
+                            <div class="card-meta">📦 1 material</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Cup</div>
+                            <span class="phase-badge badge-brown">🟤 Skröjbränd</span>
+                            <div class="card-meta">📦 2 materials</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="column-header">
+                        <div class="column-title">Glaserad</div>
+                        <div class="column-count">1</div>
+                    </div>
+                    <div class="column-content">
+                        <div class="card">
+                            <div class="card-image">🖼️</div>
+                            <div class="card-title">Plate</div>
+                            <span class="phase-badge badge-purple">🟣 Glaserad</span>
+                            <div class="card-meta">📦 3 materials</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="column-header">
+                        <div class="column-title">Glasyrbränd</div>
+                        <div class="column-count">0</div>
+                    </div>
+                    <div class="column-content">
+                        <div class="empty-state">(Empty - drag pieces here)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+

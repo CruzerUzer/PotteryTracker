@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PotteryTracker - Mobile Light Theme - Kanban</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FAF9F6;
+            color: #1A1A1A;
+            width: 375px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: #FFFFFF;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1A1A1A;
+        }
+
+        .search-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 16px;
+            width: calc(100% - 32px);
+            cursor: pointer;
+        }
+
+        .kanban-container {
+            padding: 16px;
+        }
+
+        .kanban-column {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .column-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1A1A1A;
+        }
+
+        .column-count {
+            background: #F3F4F6;
+            color: #374151;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .card {
+            background: #FAF9F6;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+            min-height: 120px;
+        }
+
+        .card-image {
+            width: 70px;
+            height: 70px;
+            background: #F3F4F6;
+            border-radius: 6px;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9CA3AF;
+            font-size: 24px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #1A1A1A;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .badge-blue {
+            background: #E3F2FD;
+            color: #1A1A1A;
+        }
+
+        .badge-brown {
+            background: #FFF3E0;
+            color: #1A1A1A;
+        }
+
+        .badge-purple {
+            background: #F3E5F5;
+            color: #1A1A1A;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #9CA3AF;
+            font-style: italic;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 375px;
+            background: #FFFFFF;
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: #6B7280;
+            font-size: 12px;
+        }
+
+        .nav-item.active {
+            color: #8B4513;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PotteryTracker</h1>
+        <button class="search-btn">🔍</button>
+    </div>
+
+    <button class="add-btn">➕ Add New Piece</button>
+
+    <div class="kanban-container">
+        <div class="kanban-column">
+            <div class="column-header">
+                <div class="column-title">På tork</div>
+                <div class="column-count">3</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Blue Vase</div>
+                <span class="phase-badge badge-blue">🔵 På tork</span>
+                <div class="card-meta">📦 2 materials</div>
+                <div class="card-image">🖼️</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Mug Set</div>
+                <span class="phase-badge badge-blue">🔵 På tork</span>
+                <div class="card-meta">📦 1 material</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Pot</div>
+                <span class="phase-badge badge-blue">🔵 På tork</span>
+                <div class="card-meta">📦 2 materials</div>
+                <div class="card-image">🖼️</div>
+            </div>
+        </div>
+
+        <div class="kanban-column">
+            <div class="column-header">
+                <div class="column-title">Skröjbränd</div>
+                <div class="column-count">2</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Bowl</div>
+                <span class="phase-badge badge-brown">🟤 Skröjbränd</span>
+                <div class="card-meta">📦 1 material</div>
+                <div class="card-image">🖼️</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Cup</div>
+                <span class="phase-badge badge-brown">🟤 Skröjbränd</span>
+                <div class="card-meta">📦 2 materials</div>
+            </div>
+        </div>
+
+        <div class="kanban-column">
+            <div class="column-header">
+                <div class="column-title">Glaserad</div>
+                <div class="column-count">1</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Plate</div>
+                <span class="phase-badge badge-purple">🟣 Glaserad</span>
+                <div class="card-meta">📦 3 materials</div>
+                <div class="card-image">🖼️</div>
+            </div>
+        </div>
+
+        <div class="kanban-column">
+            <div class="column-header">
+                <div class="column-title">Glasyrbränd</div>
+                <div class="column-count">0</div>
+            </div>
+            <div class="empty-state">(Empty - tap to add)</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <span class="nav-icon">🏠</span>
+            <span>Kanban</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>List</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">➕</span>
+            <span>Add</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">🔍</span>
+            <span>Search</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </div>
+</body>
+</html>
+
+
+

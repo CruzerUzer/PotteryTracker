@@ -29,3 +29,5 @@ export const FRONTEND_VERSION = '${packageJson.version}';
   process.exit(1);
 }
 
+
+

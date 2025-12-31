@@ -809,3 +809,5 @@ Drag: Visual drag indicator
 
 This document provides comprehensive visual mockups showing how the PotteryTracker interface would look in both light and dark themes across mobile and desktop devices. Each mockup includes specific color values and layout details to guide implementation.
 
+
+

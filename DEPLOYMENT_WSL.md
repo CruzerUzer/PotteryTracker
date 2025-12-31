@@ -37,8 +37,19 @@ npm --version
 # Install PM2 for process management
 sudo npm install -g pm2
 
-# Install Nginx
+# Install Nginx (latest stable version)
+# Option 1: Install from Ubuntu repository (recommended for stability)
 sudo apt install -y nginx
+
+# Option 2: Install latest stable from official Nginx repository (for latest features)
+# Uncomment the following lines if you want the absolute latest version:
+# curl -fsSL https://nginx.org/keys/nginx_signing.key | sudo gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
+# echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu $(lsb_release -cs) nginx" | sudo tee /etc/apt/sources.list.d/nginx.list
+# sudo apt update
+# sudo apt install -y nginx
+
+# Verify Nginx version (should be 1.24+)
+nginx -v
 ```
 
 ## Step 3: Clone/Copy Your Project to WSL

@@ -11,12 +11,40 @@ const router = express.Router();
 router.use(requireAuth);
 
 // POST /api/pieces/:id/images - Upload image for a piece
-router.post('/:id/images', upload.single('image'), optimizeImage, async (req, res) => {
+router.post('/:id/images', (req, res, next) => {
+  logger.info('Image upload request received', {
+    pieceId: req.params.id,
+    contentType: req.headers['content-type'],
+    contentLength: req.headers['content-length']
+  });
+  next();
+}, upload.single('image'), (err, req, res, next) => {
+  // Handle multer errors (including fileFilter rejections)
+  if (err) {
+    logger.error('Multer upload error', {
+      error: err.message,
+      code: err.code,
+      field: err.field,
+      stack: err.stack
+    });
+    return res.status(400).json({ error: err.message || 'File upload failed' });
+  }
+  next();
+}, optimizeImage, async (req, res) => {
   try {
     const { id } = req.params;
     const { phase_id } = req.body;
 
+    logger.debug('Processing upload', {
+      pieceId: id,
+      phaseId: phase_id,
+      hasFile: !!req.file,
+      filename: req.file?.originalname,
+      mimetype: req.file?.mimetype
+    });
+
     if (!req.file) {
+      logger.warn('No file in request', { pieceId: id, phaseId: phase_id });
       return res.status(400).json({ error: 'No image file provided' });
     }
 

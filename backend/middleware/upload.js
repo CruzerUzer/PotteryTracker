@@ -48,11 +48,20 @@ const fileFilter = (req, file, cb) => {
   // Accept standard MIME types OR if extension matches and MIME type starts with "image/"
   // This handles mobile browsers that may send generic "image/" MIME types
   const mimetype = allowedMimeTypes.test(file.mimetype) || 
-                   (file.mimetype.startsWith('image/') && extname);
+                   (file.mimetype && file.mimetype.startsWith('image/') && extname);
+
+  logger.debug('File filter check', {
+    filename: file.originalname,
+    mimetype: file.mimetype,
+    extname,
+    mimetypeMatch: allowedMimeTypes.test(file.mimetype || ''),
+    willAccept: extname || mimetype
+  });
 
   // Accept if extension matches OR mimetype is valid
   // Mobile browsers often send generic MIME types, but we still check extension
   if (extname || mimetype) {
+    logger.debug('File accepted by filter', { filename: file.originalname, mimetype: file.mimetype });
     return cb(null, true);
   } else {
     logger.warn('File upload rejected', {

@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { materialsAPI } from '../services/api';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 function MaterialManager() {
   const [materials, setMaterials] = useState([]);
@@ -72,7 +78,13 @@ function MaterialManager() {
   };
 
   if (loading) {
-    return <div className="card">Loading...</div>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">Loading...</div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const materialsByType = {
@@ -82,106 +94,122 @@ function MaterialManager() {
   };
 
   return (
-    <div>
-      <div className="actions-row">
-        <h2>Manage Materials</h2>
-        <button
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Manage Materials</h2>
+        <Button
           onClick={() => {
             setShowForm(true);
             setEditingId(null);
             setFormData({ name: '', type: 'clay' });
           }}
-          className="btn btn-primary"
         >
+          <Plus className="mr-2 h-4 w-4" />
           Add New Material
-        </button>
+        </Button>
       </div>
 
-      {error && <div className="error">{error}</div>}
-
-      {showForm && (
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <h3>{editingId ? 'Edit Material' : 'Create New Material'}</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="material-name">Name *</label>
-              <input
-                type="text"
-                id="material-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="material-type">Type *</label>
-              <select
-                id="material-type"
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                required
-              >
-                <option value="clay">Clay</option>
-                <option value="glaze">Glaze</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn btn-primary">
-                {editingId ? 'Update' : 'Create'}
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                Cancel
-              </button>
-            </div>
-          </form>
+      {error && (
+        <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+          {error}
         </div>
       )}
 
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingId ? 'Edit Material' : 'Create New Material'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="material-name">Name *</Label>
+                <Input
+                  id="material-name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="material-type">Type *</Label>
+                <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                  <SelectTrigger id="material-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clay">Clay</SelectItem>
+                    <SelectItem value="glaze">Glaze</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button type="submit">
+                  {editingId ? 'Update' : 'Create'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
       {materials.length === 0 ? (
-        <div className="card">
-          <p>No materials yet. Create your first material to get started!</p>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-[var(--color-text-tertiary)]">No materials yet. Create your first material to get started!</p>
+          </CardContent>
+        </Card>
       ) : (
-        <>
+        <div className="space-y-4">
           {Object.entries(materialsByType).map(
             ([type, typeMaterials]) =>
               typeMaterials.length > 0 && (
-                <div key={type} className="card" style={{ marginBottom: '20px' }}>
-                  <h3 style={{ textTransform: 'capitalize' }}>{type}</h3>
-                  <div className="material-list">
-                    {typeMaterials.map((material) => (
-                      <div key={material.id} className="material-item">
-                        <span className="name">{material.name}</span>
-                        <div className="actions">
-                          <button
-                            onClick={() => handleEdit(material)}
-                            className="btn btn-secondary"
-                            style={{ fontSize: '0.9rem', padding: '5px 10px' }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(material.id)}
-                            className="btn btn-danger"
-                            style={{ fontSize: '0.9rem', padding: '5px 10px' }}
-                          >
-                            Delete
-                          </button>
+                <Card key={type}>
+                  <CardHeader>
+                    <CardTitle className="capitalize">{type}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {typeMaterials.map((material) => (
+                        <div
+                          key={material.id}
+                          className="flex items-center justify-between p-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                        >
+                          <span className="font-medium">{material.name}</span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleEdit(material)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(material.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )
           )}
-        </>
+        </div>
       )}
     </div>
   );
 }
 
 export default MaterialManager;
-
-
-

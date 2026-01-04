@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 function PieceForm() {
   const { id } = useParams();
@@ -68,6 +74,10 @@ function PieceForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handlePhaseChange = (value) => {
+    setFormData((prev) => ({ ...prev, current_phase_id: value }));
+  };
+
   const handleMaterialToggle = (materialId) => {
     setFormData((prev) => ({
       ...prev,
@@ -92,14 +102,11 @@ function PieceForm() {
       if (isEdit) {
         await piecesAPI.update(id, data);
         pieceId = id;
-        // For edit mode, navigate to detail page
         navigate(`/pieces/${pieceId}`);
       } else {
         const newPiece = await piecesAPI.create(data);
         pieceId = newPiece.id;
         setCreatedPieceId(pieceId);
-        // For new pieces, stay on the form so user can upload images
-        // Don't navigate yet - let them upload images first if they want
       }
     } catch (err) {
       setError(err.message);
@@ -109,135 +116,144 @@ function PieceForm() {
   };
 
   const handleImageUploaded = () => {
-    // Images uploaded successfully, could show a success message or refresh
+    // Images uploaded successfully
   };
 
   if (loading) {
-    return <div className="card">Loading...</div>;
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="pt-6">
+          <div className="text-center">Loading...</div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '24px' }}>
-      <h2 style={{ marginBottom: '16px', paddingBottom: '12px', fontSize: '1.5rem' }}>
-        {isEdit ? 'Edit Piece' : 'Create New Piece'}
-      </h2>
-
-      {error && <div className="error" style={{ marginBottom: '16px' }}>{error}</div>}
-
-      <form onSubmit={handleSubmit}>
-        <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label htmlFor="name" style={{ marginBottom: '6px' }}>Name *</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            style={{ padding: '8px 12px' }}
-          />
-        </div>
-
-        <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label htmlFor="description" style={{ marginBottom: '6px' }}>Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            style={{ minHeight: '80px', padding: '8px 12px' }}
-          />
-        </div>
-
-        <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label htmlFor="current_phase_id" style={{ marginBottom: '6px' }}>Current Phase</label>
-          <select
-            id="current_phase_id"
-            name="current_phase_id"
-            value={formData.current_phase_id}
-            onChange={handleChange}
-            style={{ padding: '8px 12px' }}
-          >
-            <option value="">No phase</option>
-            {phases.map((phase) => (
-              <option key={phase.id} value={phase.id}>
-                {phase.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label style={{ marginBottom: '6px' }}>Materials</label>
-          {materials.length === 0 ? (
-            <p style={{ color: '#666', fontStyle: 'italic', fontSize: '0.875rem', margin: '4px 0' }}>
-              No materials available. Create materials first.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {materials.map((material) => (
-                <label key={material.id} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.material_ids.includes(material.id)}
-                    onChange={() => handleMaterialToggle(material.id)}
-                    style={{ marginRight: '10px', width: 'auto' }}
-                  />
-                  <span style={{ fontSize: '0.9rem' }}>
-                    {material.name} <small style={{ fontSize: '0.85rem', color: '#6b7280' }}>({material.type})</small>
-                  </span>
-                </label>
-              ))}
+    <div className="space-y-6">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>{isEdit ? 'Edit Piece' : 'Create New Piece'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+              {error}
             </div>
           )}
-        </div>
 
-        <div className="btn-group" style={{ marginTop: '16px' }}>
-          <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '8px 20px', fontSize: '0.9rem' }}>
-            {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
-          </button>
-          {createdPieceId && !isEdit && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => navigate(`/pieces/${createdPieceId}`)}
-              style={{ padding: '8px 20px', fontSize: '0.9rem' }}
-            >
-              View Piece
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => navigate('/kanban')}
-            disabled={saving}
-            style={{ padding: '8px 20px', fontSize: '0.9rem' }}
-          >
-            {createdPieceId ? 'Back to Kanban' : 'Cancel'}
-          </button>
-        </div>
-      </form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-      {/* Image Upload Section - Outside the form to prevent conflicts */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="current_phase_id">Current Phase</Label>
+              <Select value={formData.current_phase_id || ''} onValueChange={handlePhaseChange}>
+                <SelectTrigger id="current_phase_id">
+                  <SelectValue placeholder="Select a phase" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No phase</SelectItem>
+                  {phases.map((phase) => (
+                    <SelectItem key={phase.id} value={phase.id.toString()}>
+                      {phase.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Materials</Label>
+              {materials.length === 0 ? (
+                <p className="text-sm text-[var(--color-text-tertiary)] italic">
+                  No materials available. Create materials first.
+                </p>
+              ) : (
+                <div className="space-y-2 border border-[var(--color-border)] rounded-md p-4 bg-[var(--color-surface)]">
+                  {materials.map((material) => (
+                    <label
+                      key={material.id}
+                      className="flex items-center space-x-2 cursor-pointer hover:bg-[var(--color-surface-hover)] p-2 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.material_ids.includes(material.id)}
+                        onChange={() => handleMaterialToggle(material.id)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">
+                        {material.name} <span className="text-[var(--color-text-tertiary)]">({material.type})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" disabled={saving} className="flex-1">
+                {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+              </Button>
+              {createdPieceId && !isEdit && (
+                <Button type="button" variant="secondary" asChild>
+                  <Link to={`/pieces/${createdPieceId}`}>View Piece</Link>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/kanban')}
+                disabled={saving}
+              >
+                {createdPieceId ? 'Back to Kanban' : 'Cancel'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Image Upload Section */}
       {(isEdit || createdPieceId) && (
-        <div className="card" style={{ maxWidth: '600px', margin: '24px auto 0', padding: '24px' }}>
-          <h3 style={{ marginBottom: '16px', fontSize: '1.25rem' }}>Images</h3>
-          <ImageUpload 
-            pieceId={isEdit ? id : createdPieceId} 
-            phases={phases} 
-            onUploaded={handleImageUploaded}
-            defaultPhaseId={formData.current_phase_id || null}
-          />
-          <small style={{ display: 'block', marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '0.875rem' }}>
-            {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
-          </small>
-        </div>
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>Images</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload 
+              pieceId={isEdit ? id : createdPieceId} 
+              phases={phases} 
+              onUploaded={handleImageUploaded}
+              defaultPhaseId={formData.current_phase_id || null}
+            />
+            <p className="text-sm text-[var(--color-text-tertiary)] mt-4">
+              {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
 }
 
 export default PieceForm;
-
-
-

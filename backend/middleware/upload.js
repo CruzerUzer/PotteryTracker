@@ -39,16 +39,21 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter - only images
+// File filter - only images (including HEIC/HEIF from iOS devices)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|heic|heif/;
   const extname = allowedTypes.test(file.originalname.toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed!'));
+    logger.warn('File upload rejected', {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      reason: 'File type not allowed'
+    });
+    cb(new Error('Only image files are allowed (JPEG, PNG, GIF, WebP, HEIC)!'));
   }
 };
 
@@ -67,8 +72,23 @@ export const optimizeImage = async (req, res, next) => {
   }
 
   try {
-    const filePath = req.file.path;
-    const filename = req.file.filename;
+    let filePath = req.file.path;
+    let filename = req.file.filename;
+    const fileExt = filePath.split('.').pop().toLowerCase();
+    const originalExt = req.file.originalname.split('.').pop().toLowerCase();
+    
+    // Convert HEIC/HEIF files to JPEG (check both saved extension and original extension)
+    if (fileExt === 'heic' || fileExt === 'heif' || originalExt === 'heic' || originalExt === 'heif') {
+      const jpegPath = filePath.replace(/\.(heic|heif)$/i, '.jpg');
+      filename = filename.replace(/\.(heic|heif)$/i, '.jpg');
+      await sharp(filePath).jpeg({ quality: imageQuality, mozjpeg: true }).toFile(jpegPath);
+      unlinkSync(filePath); // Remove original HEIC file
+      filePath = jpegPath;
+      req.file.path = jpegPath; // Update req.file.path for later use
+      req.file.filename = filename; // Update filename
+      logger.info('Converted HEIC/HEIF to JPEG', { originalFilename: req.file.originalname, newFilename: filename });
+    }
+    
     const thumbnailPath = resolve(thumbnailDir, filename);
 
     // Get image metadata
@@ -86,8 +106,12 @@ export const optimizeImage = async (req, res, next) => {
         });
       
       // Apply format-specific optimizations based on file extension
+      // Convert HEIC/HEIF to JPEG for better compatibility
       const ext = filePath.split('.').pop().toLowerCase();
-      if (ext === 'jpg' || ext === 'jpeg') {
+      if (ext === 'heic' || ext === 'heif') {
+        // Convert HEIC/HEIF to JPEG
+        sharpInstance.jpeg({ quality: imageQuality, mozjpeg: true });
+      } else if (ext === 'jpg' || ext === 'jpeg') {
         sharpInstance.jpeg({ quality: imageQuality, mozjpeg: true });
       } else if (ext === 'png') {
         sharpInstance.png({ quality: Math.round(imageQuality / 100 * 9), compressionLevel: 9 });
@@ -108,11 +132,15 @@ export const optimizeImage = async (req, res, next) => {
       });
     } else {
       // Still optimize compression without resizing (preserve original format)
+      // Convert HEIC/HEIF to JPEG for better compatibility
       const ext = filePath.split('.').pop().toLowerCase();
       const sharpInstance = sharp(filePath);
       
       // Apply format-specific optimizations
-      if (ext === 'jpg' || ext === 'jpeg') {
+      if (ext === 'heic' || ext === 'heif') {
+        // Convert HEIC/HEIF to JPEG (this shouldn't happen since we convert in filename, but handle it anyway)
+        sharpInstance.jpeg({ quality: imageQuality, mozjpeg: true });
+      } else if (ext === 'jpg' || ext === 'jpeg') {
         sharpInstance.jpeg({ quality: imageQuality, mozjpeg: true });
       } else if (ext === 'png') {
         sharpInstance.png({ quality: Math.round(imageQuality / 100 * 9), compressionLevel: 9 });

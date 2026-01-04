@@ -32,6 +32,8 @@ export default {
           DEFAULT: 'var(--color-border)',
           hover: 'var(--color-border-hover)',
         },
+        ring: 'var(--color-primary)',
+        'ring-offset': 'var(--color-background)',
       },
       borderRadius: {
         sm: 'var(--radius-sm)',

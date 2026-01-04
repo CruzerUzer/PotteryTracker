@@ -94,10 +94,11 @@ export const optimizeImage = async (req, res, next) => {
     const originalExt = req.file.originalname.split('.').pop().toLowerCase();
     
     // Convert HEIC/HEIF files to JPEG (check both saved extension and original extension)
+    // rotate() auto-orients based on EXIF data (fixes iPhone photo rotation)
     if (fileExt === 'heic' || fileExt === 'heif' || originalExt === 'heic' || originalExt === 'heif') {
       const jpegPath = filePath.replace(/\.(heic|heif)$/i, '.jpg');
       filename = filename.replace(/\.(heic|heif)$/i, '.jpg');
-      await sharp(filePath).jpeg({ quality: imageQuality, mozjpeg: true }).toFile(jpegPath);
+      await sharp(filePath).rotate().jpeg({ quality: imageQuality, mozjpeg: true }).toFile(jpegPath);
       unlinkSync(filePath); // Remove original HEIC file
       filePath = jpegPath;
       req.file.path = jpegPath; // Update req.file.path for later use
@@ -177,7 +178,9 @@ export const optimizeImage = async (req, res, next) => {
     }
 
     // Generate thumbnail (always as JPEG for consistency)
+    // rotate() auto-orients based on EXIF data (fixes iPhone photo rotation)
     await sharp(filePath)
+      .rotate() // Auto-rotate based on EXIF orientation data
       .resize(thumbnailWidth, thumbnailHeight, {
         fit: 'inside',
         withoutEnlargement: true

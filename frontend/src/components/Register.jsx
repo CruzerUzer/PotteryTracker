@@ -51,6 +51,7 @@ function Register() {
             type="text"
             id="username"
             name="username"
+            autoComplete="username"
             value={formData.username}
             onChange={handleChange}
             required
@@ -63,6 +64,7 @@ function Register() {
             type="password"
             id="password"
             name="password"
+            autoComplete="new-password"
             value={formData.password}
             onChange={handleChange}
             required
@@ -75,6 +77,7 @@ function Register() {
             type="password"
             id="confirmPassword"
             name="confirmPassword"
+            autoComplete="new-password"
             value={formData.confirmPassword}
             onChange={handleChange}
             required

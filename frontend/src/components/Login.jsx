@@ -40,6 +40,7 @@ function Login() {
             type="text"
             id="username"
             name="username"
+            autoComplete="username"
             value={formData.username}
             onChange={handleChange}
             required
@@ -52,6 +53,7 @@ function Login() {
             type="password"
             id="password"
             name="password"
+            autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
             required

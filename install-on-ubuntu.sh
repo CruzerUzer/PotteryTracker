@@ -1,7 +1,7 @@
 #!/bin/bash
 # PotteryTracker Ubuntu Installation Script
 # This script installs PotteryTracker on Ubuntu (including WSL)
-# Run from any directory: bash install-ubuntu.sh
+# Run from any directory: bash install-on-ubuntu.sh
 
 set -e  # Exit on error
 
@@ -25,8 +25,8 @@ echo -e "${YELLOW}Please provide the following information:${NC}"
 echo ""
 
 # Installation directory
-read -p "Installation directory (default: ~/PotteryTracker): " INSTALL_DIR
-INSTALL_DIR="${INSTALL_DIR:-$HOME/PotteryTracker}"
+read -p "Installation directory (default: /srv/PotteryTracker): " INSTALL_DIR
+INSTALL_DIR="${INSTALL_DIR:-/srv/PotteryTracker}"
 echo ""
 
 # Project source
@@ -113,7 +113,7 @@ echo -e "${GREEN}System updated${NC}"
 echo ""
 
 echo -e "${YELLOW}Step 2: Installing required packages...${NC}"
-sudo apt install -y curl wget git build-essential
+sudo apt install -y curl wget git build-essential sqlite3
 echo -e "${GREEN}Required packages installed${NC}"
 echo ""
 
@@ -192,6 +192,13 @@ if [ "$SOURCE_CHOICE" = "1" ]; then
         git pull origin "$GIT_BRANCH"
     else
         echo -e "${GREEN}Cloning repository...${NC}"
+        # Create parent directory with sudo if needed (e.g., /srv)
+        PARENT_DIR=$(dirname "$INSTALL_DIR")
+        if [ ! -w "$PARENT_DIR" ]; then
+            echo -e "${YELLOW}Creating parent directory with sudo...${NC}"
+            sudo mkdir -p "$PARENT_DIR"
+            sudo chown -R $USER:$USER "$PARENT_DIR"
+        fi
         git clone -b "$GIT_BRANCH" "$GIT_URL" "$INSTALL_DIR"
         cd "$INSTALL_DIR"
     fi
@@ -202,7 +209,14 @@ elif [ "$SOURCE_CHOICE" = "2" ]; then
         exit 1
     fi
     echo -e "${GREEN}Copying from Windows path...${NC}"
-    mkdir -p "$(dirname "$INSTALL_DIR")"
+    PARENT_DIR=$(dirname "$INSTALL_DIR")
+    if [ ! -w "$PARENT_DIR" ]; then
+        echo -e "${YELLOW}Creating parent directory with sudo...${NC}"
+        sudo mkdir -p "$PARENT_DIR"
+        sudo chown -R $USER:$USER "$PARENT_DIR"
+    else
+        mkdir -p "$PARENT_DIR"
+    fi
     cp -r "$WINDOWS_PATH" "$INSTALL_DIR"
     cd "$INSTALL_DIR"
 elif [ "$SOURCE_CHOICE" = "3" ]; then
@@ -314,6 +328,10 @@ echo -e "${YELLOW}Step 9: Configuring Nginx...${NC}"
 
 NGINX_CONFIG="/etc/nginx/sites-available/potterytracker"
 FRONTEND_PATH="$INSTALL_DIR/frontend/dist"
+
+# Ensure nginx directories exist
+sudo mkdir -p /etc/nginx/sites-available
+sudo mkdir -p /etc/nginx/sites-enabled
 
 # Create Nginx configuration
 sudo tee "$NGINX_CONFIG" > /dev/null <<EOF

@@ -115,7 +115,9 @@ export const optimizeImage = async (req, res, next) => {
 
     if (needsResize) {
       // Resize and optimize main image (preserve original format)
+      // autoOrient() reads EXIF orientation data and applies correct rotation (fixes iPhone photos)
       const sharpInstance = sharp(filePath)
+        .rotate() // Auto-rotate based on EXIF orientation data
         .resize(imageMaxWidth, imageMaxHeight, {
           fit: 'inside',
           withoutEnlargement: true
@@ -149,8 +151,9 @@ export const optimizeImage = async (req, res, next) => {
     } else {
       // Still optimize compression without resizing (preserve original format)
       // Convert HEIC/HEIF to JPEG for better compatibility
+      // autoOrient() reads EXIF orientation data and applies correct rotation (fixes iPhone photos)
       const ext = filePath.split('.').pop().toLowerCase();
-      const sharpInstance = sharp(filePath);
+      const sharpInstance = sharp(filePath).rotate(); // Auto-rotate based on EXIF orientation data
       
       // Apply format-specific optimizations
       if (ext === 'heic' || ext === 'heif') {

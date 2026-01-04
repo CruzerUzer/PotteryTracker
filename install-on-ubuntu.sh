@@ -348,6 +348,9 @@ server {
     listen 80;
     server_name $SERVER_NAME;
 
+    # Allow file uploads up to 10MB (matches backend MAX_FILE_SIZE)
+    client_max_body_size 10M;
+
     # Frontend static files
     location / {
         root $FRONTEND_PATH;
@@ -366,6 +369,11 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
+        
+        # Increase timeouts for large file uploads
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
     }
 
     # Image serving
@@ -373,6 +381,11 @@ server {
         proxy_pass http://localhost:$BACKEND_PORT;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
+        
+        # Increase timeouts for large file uploads
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
     }
 }
 EOF

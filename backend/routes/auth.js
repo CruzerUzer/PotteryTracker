@@ -71,7 +71,7 @@ router.post('/register', async (req, res) => {
     logger.error('Error registering user', {
       error: error.message,
       stack: error.stack,
-      username: username
+      username: req.body?.username
     });
     res.status(500).json({ error: 'Failed to register user' });
   }

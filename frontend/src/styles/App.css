@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Design System - CSS Variables */
 :root {
   /* Light Theme Colors */

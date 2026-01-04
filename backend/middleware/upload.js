@@ -40,12 +40,19 @@ const storage = multer.diskStorage({
 });
 
 // File filter - only images (including HEIC/HEIF from iOS devices)
+// Mobile browsers often send generic or incorrect MIME types, so we check extension OR mimetype
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp|heic|heif/;
+  const allowedMimeTypes = /^image\/(jpeg|jpg|png|gif|webp|heic|heif|x-png|pjpeg)$/i;
   const extname = allowedTypes.test(file.originalname.toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  // Accept standard MIME types OR if extension matches and MIME type starts with "image/"
+  // This handles mobile browsers that may send generic "image/" MIME types
+  const mimetype = allowedMimeTypes.test(file.mimetype) || 
+                   (file.mimetype.startsWith('image/') && extname);
 
-  if (extname && mimetype) {
+  // Accept if extension matches OR mimetype is valid
+  // Mobile browsers often send generic MIME types, but we still check extension
+  if (extname || mimetype) {
     return cb(null, true);
   } else {
     logger.warn('File upload rejected', {

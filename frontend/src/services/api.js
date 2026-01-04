@@ -130,18 +130,41 @@ export const imagesAPI = {
     formData.append('image', file);
     formData.append('phase_id', phaseId.toString());
 
-    const response = await fetch(`${API_BASE}/pieces/${pieceId}/images`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
+    const url = `${API_BASE}/pieces/${pieceId}/images`;
+    console.log('Uploading to:', url, 'File:', file.name, 'Size:', file.size, 'Type:', file.type);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-      throw new Error(error.error || 'Upload failed');
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      console.log('Upload response status:', response.status, response.statusText);
+      console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Upload error response:', errorData);
+        } catch (e) {
+          console.error('Failed to parse error response as JSON. Response text:', await response.text().catch(() => 'Could not read response'));
+          errorData = { error: 'Upload failed' };
+        }
+        throw new Error(errorData.error || `Upload failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      return result;
+    } catch (error) {
+      console.error('Upload fetch error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Could not connect to server');
+      }
+      throw error;
     }
-
-    return response.json();
   },
   getByPiece: (pieceId) => apiCall(`/pieces/${pieceId}/images`),
   getFileUrl: (imageId, thumbnail = false) => {

@@ -93,10 +93,16 @@ echo -e "${BLUE}Current branch: $CURRENT_BRANCH${NC}"
 read -p "Branch to update to (default: $CURRENT_BRANCH): " UPDATE_BRANCH
 UPDATE_BRANCH="${UPDATE_BRANCH:-$CURRENT_BRANCH}"
 
-# Stash any local changes
+# Stash any local changes (including untracked files that might conflict)
 if [ -d ".git" ]; then
-    echo -e "${YELLOW}Stashing local changes...${NC}"
-    git stash push -m "Pre-update stash $(date +%Y%m%d_%H%M%S)" || true
+    echo -e "${YELLOW}Stashing local changes (including untracked files)...${NC}"
+    # Stash including untracked files to handle conflicts
+    git stash push -u -m "Pre-update stash $(date +%Y%m%d_%H%M%S)" || {
+        # If stash fails, check if there are actually changes
+        if [ -n "$(git status --porcelain)" ]; then
+            echo -e "${YELLOW}Warning: Could not stash changes, attempting to continue...${NC}"
+        fi
+    }
     
     # Fetch latest
     echo -e "${YELLOW}Fetching latest changes...${NC}"
@@ -104,12 +110,26 @@ if [ -d ".git" ]; then
     
     # Checkout and pull
     echo -e "${YELLOW}Updating to latest code...${NC}"
-    git checkout "$UPDATE_BRANCH" 2>/dev/null || git checkout -b "$UPDATE_BRANCH" "origin/$UPDATE_BRANCH"
-    git pull origin "$UPDATE_BRANCH" || {
-        echo -e "${RED}Error: Failed to pull latest changes${NC}"
-        echo -e "${YELLOW}You may need to resolve conflicts manually${NC}"
-        exit 1
-    }
+    # Try to checkout, handling case where branch doesn't exist locally
+    if git checkout "$UPDATE_BRANCH" 2>/dev/null; then
+        # Branch exists locally, pull updates
+        git pull origin "$UPDATE_BRANCH" || {
+            echo -e "${RED}Error: Failed to pull latest changes${NC}"
+            echo -e "${YELLOW}You may need to resolve conflicts manually${NC}"
+            exit 1
+        }
+    else
+        # Branch doesn't exist locally, create tracking branch
+        if git show-ref --verify --quiet refs/remotes/origin/"$UPDATE_BRANCH"; then
+            git checkout -b "$UPDATE_BRANCH" "origin/$UPDATE_BRANCH" || {
+                echo -e "${RED}Error: Failed to checkout branch $UPDATE_BRANCH${NC}"
+                exit 1
+            }
+        else
+            echo -e "${RED}Error: Branch $UPDATE_BRANCH does not exist on remote${NC}"
+            exit 1
+        fi
+    fi
     
     echo -e "${GREEN}Code updated successfully${NC}"
 else

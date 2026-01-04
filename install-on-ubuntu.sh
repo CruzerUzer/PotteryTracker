@@ -326,12 +326,21 @@ echo ""
 
 echo -e "${YELLOW}Step 9: Configuring Nginx...${NC}"
 
-NGINX_CONFIG="/etc/nginx/sites-available/potterytracker"
+# Use conf.d since that's what nginx.conf includes by default
+NGINX_CONFIG="/etc/nginx/conf.d/potterytracker.conf"
 FRONTEND_PATH="$INSTALL_DIR/frontend/dist"
 
-# Ensure nginx directories exist
-sudo mkdir -p /etc/nginx/sites-available
-sudo mkdir -p /etc/nginx/sites-enabled
+# Ensure nginx conf.d directory exists
+sudo mkdir -p /etc/nginx/conf.d
+
+# Disable default nginx config if it exists
+if [ -f "/etc/nginx/conf.d/default.conf" ]; then
+    echo -e "${YELLOW}Disabling default nginx configuration...${NC}"
+    sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled 2>/dev/null || true
+fi
+
+# Also remove default from sites-enabled if it exists
+sudo rm -f /etc/nginx/sites-enabled/default
 
 # Create Nginx configuration
 sudo tee "$NGINX_CONFIG" > /dev/null <<EOF
@@ -367,10 +376,6 @@ server {
     }
 }
 EOF
-
-# Enable site
-sudo ln -sf "$NGINX_CONFIG" /etc/nginx/sites-enabled/potterytracker
-sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test configuration
 if sudo nginx -t; then

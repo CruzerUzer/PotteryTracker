@@ -19,6 +19,21 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files || []);
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    const oversizedFiles = selectedFiles.filter(file => file.size > maxSize);
+    
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => {
+        const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
+        return `${f.name} (${sizeMB} MB)`;
+      }).join(', ');
+      setError(`File(s) too large: ${fileNames}. Maximum file size is 10 MB.`);
+      setFiles([]);
+      setSuccess(null);
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
     setFiles(selectedFiles);
     setError(null);
     setSuccess(null);

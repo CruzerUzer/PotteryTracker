@@ -144,6 +144,12 @@ export const imagesAPI = {
       console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
+        // Handle specific HTTP status codes with user-friendly messages
+        if (response.status === 413) {
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          throw new Error(`File too large (${fileSizeMB} MB). Maximum file size is 10 MB.`);
+        }
+        
         let errorData;
         try {
           errorData = await response.json();

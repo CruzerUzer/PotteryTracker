@@ -16,7 +16,83 @@ const __dirname = dirname(__filename);
  * @returns {Promise<Buffer>} - PDF buffer
  */
 export async function generatePdfReport(userId, db, uploadsDir) {
-  return new Promise(async (resolve, reject) => {
+  // Get user info first
+  const user = await db.get('SELECT username, created_at FROM users WHERE id = ?', [userId]);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Get all data first
+  const pieces = await db.all(`
+    SELECT 
+      p.id,
+      p.name,
+      p.description,
+      p.done,
+      p.created_at,
+      p.updated_at,
+      ph.name as phase_name,
+      ph.display_order as phase_order
+    FROM ceramic_pieces p
+    LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
+    WHERE p.user_id = ?
+    ORDER BY p.created_at DESC
+  `, [userId]);
+
+  const pieceMaterials = await db.all(`
+    SELECT 
+      pm.piece_id,
+      m.name as material_name,
+      m.type as material_type
+    FROM piece_materials pm
+    INNER JOIN materials m ON pm.material_id = m.id AND m.user_id = ?
+    WHERE pm.piece_id IN (SELECT id FROM ceramic_pieces WHERE user_id = ?)
+    ORDER BY pm.piece_id, m.type, m.name
+  `, [userId, userId]);
+
+  const pieceImages = await db.all(`
+    SELECT 
+      pi.piece_id,
+      pi.filename,
+      pi.original_filename,
+      pi.created_at,
+      ph.name as phase_name
+    FROM piece_images pi
+    INNER JOIN phases ph ON pi.phase_id = ph.id AND ph.user_id = ?
+    WHERE pi.piece_id IN (SELECT id FROM ceramic_pieces WHERE user_id = ?)
+    ORDER BY pi.piece_id, pi.created_at
+  `, [userId, userId]);
+
+  const stats = await db.get(`
+    SELECT 
+      COUNT(*) as total_pieces,
+      SUM(CASE WHEN done = 1 THEN 1 ELSE 0 END) as done_pieces,
+      SUM(CASE WHEN done = 0 THEN 1 ELSE 0 END) as in_progress_pieces,
+      COUNT(DISTINCT pi.id) as total_images
+    FROM ceramic_pieces p
+    LEFT JOIN piece_images pi ON p.id = pi.piece_id
+    WHERE p.user_id = ?
+  `, [userId]);
+
+  // Group materials and images by piece_id
+  const materialsByPiece = {};
+  pieceMaterials.forEach(pm => {
+    if (!materialsByPiece[pm.piece_id]) {
+      materialsByPiece[pm.piece_id] = [];
+    }
+    materialsByPiece[pm.piece_id].push(pm);
+  });
+
+  const imagesByPiece = {};
+  pieceImages.forEach(pi => {
+    if (!imagesByPiece[pi.piece_id]) {
+      imagesByPiece[pi.piece_id] = [];
+    }
+    imagesByPiece[pi.piece_id].push(pi);
+  });
+
+  // Now create PDF document
+  return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const chunks = [];
@@ -30,20 +106,19 @@ export async function generatePdfReport(userId, db, uploadsDir) {
             reject(new Error('PDF generation produced empty buffer'));
             return;
           }
+          // Validate PDF header
+          if (buffer.slice(0, 4).toString() !== '%PDF') {
+            reject(new Error('PDF buffer does not have valid PDF header'));
+            return;
+          }
           resolve(buffer);
         }
       });
       doc.on('error', (error) => {
         hasError = true;
+        logger.error('PDFKit error during generation', { error: error.message, userId });
         reject(error);
       });
-
-      // Get user info
-      const user = await db.get('SELECT username, created_at FROM users WHERE id = ?', [userId]);
-      if (!user) {
-        reject(new Error('User not found'));
-        return;
-      }
 
       // Title page
       doc.fontSize(24).text('PotteryTracker Report', { align: 'center' });
@@ -53,78 +128,6 @@ export async function generatePdfReport(userId, db, uploadsDir) {
       doc.moveDown();
       doc.fontSize(10).text(`Account Created: ${new Date(user.created_at).toLocaleDateString()}`, { align: 'center' });
       doc.addPage();
-
-      // Get all pieces with related data
-      const pieces = await db.all(`
-        SELECT 
-          p.id,
-          p.name,
-          p.description,
-          p.done,
-          p.created_at,
-          p.updated_at,
-          ph.name as phase_name,
-          ph.display_order as phase_order
-        FROM ceramic_pieces p
-        LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
-        WHERE p.user_id = ?
-        ORDER BY p.created_at DESC
-      `, [userId]);
-
-      // Get materials for each piece
-      const pieceMaterials = await db.all(`
-        SELECT 
-          pm.piece_id,
-          m.name as material_name,
-          m.type as material_type
-        FROM piece_materials pm
-        INNER JOIN materials m ON pm.material_id = m.id AND m.user_id = ?
-        WHERE pm.piece_id IN (SELECT id FROM ceramic_pieces WHERE user_id = ?)
-        ORDER BY pm.piece_id, m.type, m.name
-      `, [userId, userId]);
-
-      // Get images for each piece
-      const pieceImages = await db.all(`
-        SELECT 
-          pi.piece_id,
-          pi.filename,
-          pi.original_filename,
-          pi.created_at,
-          ph.name as phase_name
-        FROM piece_images pi
-        INNER JOIN phases ph ON pi.phase_id = ph.id AND ph.user_id = ?
-        WHERE pi.piece_id IN (SELECT id FROM ceramic_pieces WHERE user_id = ?)
-        ORDER BY pi.piece_id, pi.created_at
-      `, [userId, userId]);
-
-      // Group materials and images by piece_id
-      const materialsByPiece = {};
-      pieceMaterials.forEach(pm => {
-        if (!materialsByPiece[pm.piece_id]) {
-          materialsByPiece[pm.piece_id] = [];
-        }
-        materialsByPiece[pm.piece_id].push(pm);
-      });
-
-      const imagesByPiece = {};
-      pieceImages.forEach(pi => {
-        if (!imagesByPiece[pi.piece_id]) {
-          imagesByPiece[pi.piece_id] = [];
-        }
-        imagesByPiece[pi.piece_id].push(pi);
-      });
-
-      // Get statistics
-      const stats = await db.get(`
-        SELECT 
-          COUNT(*) as total_pieces,
-          SUM(CASE WHEN done = 1 THEN 1 ELSE 0 END) as done_pieces,
-          SUM(CASE WHEN done = 0 THEN 1 ELSE 0 END) as in_progress_pieces,
-          COUNT(DISTINCT pi.id) as total_images
-        FROM ceramic_pieces p
-        LEFT JOIN piece_images pi ON p.id = pi.piece_id
-        WHERE p.user_id = ?
-      `, [userId]);
 
       // Statistics section
       doc.fontSize(18).text('Statistics', { underline: true });

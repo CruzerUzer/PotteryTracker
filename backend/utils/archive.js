@@ -237,6 +237,8 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
         phases = JSON.parse(content.toString());
       } else if (file.path === 'data/piece_materials.json') {
         pieceMaterials = JSON.parse(content.toString());
+      } else if (file.path === 'data/piece_images.json') {
+        pieceImages = JSON.parse(content.toString());
       }
     }
 

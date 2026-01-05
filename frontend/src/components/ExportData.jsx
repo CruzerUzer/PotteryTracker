@@ -2,11 +2,16 @@ import React, { useState } from 'react';
 import { exportAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
-import { Download, FileJson, FileSpreadsheet, BarChart3 } from 'lucide-react';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Download, FileJson, FileSpreadsheet, BarChart3, Archive } from 'lucide-react';
 
 function ExportData() {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
+  const [archivePassword, setArchivePassword] = useState('');
+  const [encryptArchive, setEncryptArchive] = useState(false);
+  const [creatingArchive, setCreatingArchive] = useState(false);
 
   const handleExport = async (format) => {
     try {
@@ -66,6 +71,40 @@ function ExportData() {
     }
   };
 
+  const handleExportArchive = async () => {
+    try {
+      setCreatingArchive(true);
+      setError(null);
+      
+      // Create archive (stored on server)
+      const result = await exportAPI.exportArchive(encryptArchive ? archivePassword : undefined);
+      
+      // Download the archive file
+      const response = await exportAPI.downloadArchive(result.filename);
+      if (!response.ok) {
+        throw new Error('Failed to download archive');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Reset form
+      setArchivePassword('');
+      setEncryptArchive(false);
+    } catch (err) {
+      setError(err.message || 'Failed to export archive');
+    } finally {
+      setCreatingArchive(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Export Data</h2>
@@ -120,6 +159,47 @@ function ExportData() {
           >
             <BarChart3 className="mr-2 h-4 w-4" />
             {exporting ? 'Generating...' : 'Export Statistics'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Export Complete Archive</CardTitle>
+          <CardDescription>
+            Export all your data (pieces, materials, phases, images) as a ZIP archive. Includes a PDF report. Optionally encrypt with a password.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={encryptArchive}
+                onChange={(e) => setEncryptArchive(e.target.checked)}
+              />
+              <span>Encrypt archive with password</span>
+            </label>
+          </div>
+          {encryptArchive && (
+            <div className="space-y-2">
+              <Label htmlFor="archive-password">Archive Password</Label>
+              <Input
+                id="archive-password"
+                type="password"
+                value={archivePassword}
+                onChange={(e) => setArchivePassword(e.target.value)}
+                placeholder="Enter password for encryption"
+              />
+            </div>
+          )}
+          <Button
+            onClick={handleExportArchive}
+            disabled={creatingArchive || (encryptArchive && !archivePassword)}
+            variant="outline"
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            {creatingArchive ? 'Creating Archive...' : 'Export Archive'}
           </Button>
         </CardContent>
       </Card>

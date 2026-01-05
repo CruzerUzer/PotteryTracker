@@ -255,6 +255,47 @@ export const adminAPI = {
     method: 'POST',
     body: JSON.stringify({ action, archivePassword, deleteServerCopy }),
   }),
+  createUserArchive: async (userId, password, storageOption) => {
+    const response = await fetch(`${API_BASE}/admin/users/${userId}/archive`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password, storageOption }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Archive creation failed' }));
+      throw new Error(error.error || 'Archive creation failed');
+    }
+
+    // If download or both, return the blob for download
+    if (storageOption === 'download' || storageOption === 'both') {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `archive_${userId}_${Date.now()}.zip`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      // Also return JSON if both
+      if (storageOption === 'both') {
+        // Parse JSON from response if possible, but since we consumed the blob, just return success
+        return { message: 'Archive created and downloaded', filename };
+      }
+      return { message: 'Archive downloaded', filename };
+    }
+
+    // Server only - return JSON
+    return response.json();
+  },
   toggleAdmin: (userId) => apiCall(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
   getArchives: () => apiCall('/admin/archives'),
   downloadArchive: (archiveId) => {

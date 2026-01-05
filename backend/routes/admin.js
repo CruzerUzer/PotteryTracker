@@ -196,6 +196,72 @@ router.post('/users/:id/toggle-admin', async (req, res) => {
   }
 });
 
+// POST /api/admin/users/:id/archive - Create archive for user
+router.post('/users/:id/archive', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password, storageOption = 'server' } = req.body; // storageOption: 'server', 'download', or 'both'
+    const db = await getDb();
+
+    const user = await db.get('SELECT id, username FROM users WHERE id = ?', [id]);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create archive
+    const archiveResult = await createUserArchive(id, password || null, db, uploadsDir);
+    
+    logger.info('User archive created by admin', { userId: id, username: user.username, filename: archiveResult.filename, storageOption });
+
+    // If download or both, send the file
+    if (storageOption === 'download' || storageOption === 'both') {
+      const archivePath = resolve(archivesDir, archiveResult.filename);
+      
+      // Store archive record if storing on server (both or server only)
+      if (storageOption === 'both') {
+        await db.run(
+          'INSERT INTO user_archives (user_id, username, archive_filename, is_encrypted, file_size) VALUES (?, ?, ?, ?, ?)',
+          [id, user.username, archiveResult.filename, archiveResult.is_encrypted, archiveResult.size]
+        );
+      }
+      
+      res.download(archivePath, archiveResult.filename, (err) => {
+        if (err) {
+          logger.error('Error sending archive file for download', { error: err.message, userId: id, filename: archiveResult.filename });
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to download archive' });
+          }
+        }
+        // If download only, delete the file after sending
+        if (storageOption === 'download' && existsSync(archivePath)) {
+          try {
+            unlinkSync(archivePath);
+            logger.info('Archive file deleted after download-only', { userId: id, filename: archiveResult.filename });
+          } catch (deleteErr) {
+            logger.error('Failed to delete archive file after download', { error: deleteErr.message, userId: id, filename: archiveResult.filename });
+          }
+        }
+      });
+    } else {
+      // Server only - store record and return JSON response
+      await db.run(
+        'INSERT INTO user_archives (user_id, username, archive_filename, is_encrypted, file_size) VALUES (?, ?, ?, ?, ?)',
+        [id, user.username, archiveResult.filename, archiveResult.is_encrypted, archiveResult.size]
+      );
+      
+      res.json({
+        message: 'Archive created and stored on server',
+        filename: archiveResult.filename,
+        size: archiveResult.size,
+        is_encrypted: archiveResult.is_encrypted
+      });
+    }
+  } catch (error) {
+    logger.error('Error creating archive for user', { error: error.message, userId: req.params.id });
+    res.status(500).json({ error: 'Failed to create archive' });
+  }
+});
+
 // GET /api/admin/archives - List all archives
 router.get('/archives', async (req, res) => {
   try {

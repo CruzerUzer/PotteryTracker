@@ -13,7 +13,8 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { Label } from './ui/label';
-import { RefreshCw, Key, Trash2, Shield, ShieldOff, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { RefreshCw, Key, Trash2, Shield, ShieldOff, Search, Download } from 'lucide-react';
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -26,6 +27,11 @@ function UserManagement() {
   const [archivePassword, setArchivePassword] = useState('');
   const [encryptArchive, setEncryptArchive] = useState(false);
   const [deleteServerCopy, setDeleteServerCopy] = useState(false);
+  const [archiveUser, setArchiveUser] = useState(null);
+  const [archiveStorageOption, setArchiveStorageOption] = useState('server'); // 'server', 'download', or 'both'
+  const [archivePasswordExport, setArchivePasswordExport] = useState('');
+  const [encryptArchiveExport, setEncryptArchiveExport] = useState(false);
+  const [creatingArchive, setCreatingArchive] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -69,6 +75,29 @@ function UserManagement() {
       await loadUsers();
     } catch (err) {
       setError(err.message || 'Failed to delete/archive user');
+    }
+  };
+
+  const handleCreateArchive = async () => {
+    if (!archiveUser) return;
+    
+    try {
+      setCreatingArchive(true);
+      setError(null);
+      await adminAPI.createUserArchive(
+        archiveUser.id,
+        encryptArchiveExport ? archivePasswordExport : undefined,
+        archiveStorageOption
+      );
+      setArchiveUser(null);
+      setArchivePasswordExport('');
+      setEncryptArchiveExport(false);
+      setArchiveStorageOption('server');
+      await loadUsers();
+    } catch (err) {
+      setError(err.message || 'Failed to create archive');
+    } finally {
+      setCreatingArchive(false);
     }
   };
 
@@ -167,6 +196,14 @@ function UserManagement() {
                         </Button>
                         <Button
                           size="sm"
+                          variant="outline"
+                          onClick={() => setArchiveUser(user)}
+                          title="Export Archive"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => {
                             setDeleteUser(user);
@@ -198,6 +235,63 @@ function UserManagement() {
           onClose={() => setResetPasswordUser(null)}
         />
       )}
+
+      {/* Archive Export Dialog */}
+      <Dialog open={!!archiveUser} onOpenChange={(open) => !open && setArchiveUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Archive for {archiveUser?.username}</DialogTitle>
+            <DialogDescription>
+              Create an archive of all data for {archiveUser?.username}. You can store it on the server, download it, or both.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="storage-option">Storage Option</Label>
+              <Select value={archiveStorageOption} onValueChange={setArchiveStorageOption}>
+                <SelectTrigger id="storage-option">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="server">Store on Server</SelectItem>
+                  <SelectItem value="download">Download Only</SelectItem>
+                  <SelectItem value="both">Store and Download</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={encryptArchiveExport}
+                  onChange={(e) => setEncryptArchiveExport(e.target.checked)}
+                />
+                <span>Encrypt archive with password</span>
+              </label>
+            </div>
+            {encryptArchiveExport && (
+              <div className="space-y-2">
+                <Label htmlFor="archive-password-export">Archive Password</Label>
+                <Input
+                  id="archive-password-export"
+                  type="password"
+                  value={archivePasswordExport}
+                  onChange={(e) => setArchivePasswordExport(e.target.value)}
+                  placeholder="Enter password for encryption"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArchiveUser(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateArchive} disabled={creatingArchive}>
+              {creatingArchive ? 'Creating...' : 'Create Archive'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete/Archive Dialog */}
       <Dialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>

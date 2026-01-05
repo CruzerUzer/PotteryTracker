@@ -85,6 +85,12 @@ echo ""
 echo -e "${YELLOW}Step 2: Updating code from repository...${NC}"
 cd "$INSTALL_DIR"
 
+# Fix Git safe directory issue (common when repo is owned by different user)
+if [ -d ".git" ]; then
+    echo -e "${YELLOW}Configuring Git safe directory...${NC}"
+    git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
+fi
+
 # Check current branch
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 echo -e "${BLUE}Current branch: $CURRENT_BRANCH${NC}"

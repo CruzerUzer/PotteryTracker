@@ -174,9 +174,22 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     if (!password || password.length === 0) {
       throw new Error('Password required for encrypted archive');
     }
-    zipBuffer = decryptData(fileBuffer, password);
+    try {
+      zipBuffer = decryptData(fileBuffer, password);
+    } catch (decryptError) {
+      // Provide more helpful error message for decryption failures
+      if (decryptError.message.includes('auth') || decryptError.message.includes('tag')) {
+        throw new Error('Invalid password. The password provided is incorrect or the archive is corrupted.');
+      }
+      throw new Error(`Decryption failed: ${decryptError.message}`);
+    }
   } else {
     zipBuffer = fileBuffer;
+  }
+
+  // Validate that decrypted data looks like a ZIP file (starts with ZIP signature)
+  if (zipBuffer.length < 4 || zipBuffer[0] !== 0x50 || zipBuffer[1] !== 0x4B) {
+    throw new Error('Invalid archive format. The file may be corrupted or the password is incorrect.');
   }
 
   // Write temporary ZIP file
@@ -195,7 +208,16 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     }
 
     // Extract and process ZIP
-    const directory = await unzipper.Open.file(tempZipPath);
+    let directory;
+    try {
+      directory = await unzipper.Open.file(tempZipPath);
+    } catch (unzipError) {
+      // If unzipper fails, provide a helpful error message
+      if (unzipError.message && unzipError.message.toLowerCase().includes('not') && unzipError.message.toLowerCase().includes('archive')) {
+        throw new Error('Invalid archive format. The file may be corrupted, the password is incorrect, or the file is not a valid ZIP archive.');
+      }
+      throw new Error(`Failed to open archive: ${unzipError.message}`);
+    }
     
     // Read JSON files
     let pieces = [];

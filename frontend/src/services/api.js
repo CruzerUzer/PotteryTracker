@@ -62,6 +62,30 @@ export const authAPI = {
 
     return response.json();
   },
+
+  getRegistrationStatus: async () => {
+    const response = await fetch(`${API_BASE}/auth/registration-status`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      return { enabled: true, message: null };
+    }
+    return response.json();
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    return apiCall('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+
+  resetPasswordWithToken: async (token, password) => {
+    return apiCall(`/auth/reset-password/${token}`, {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  },
 };
 
 // Helper function for API calls
@@ -189,6 +213,65 @@ export const exportAPI = {
     });
   },
   getStats: () => apiCall('/export/stats'),
+  exportArchive: async (password) => {
+    return apiCall('/export/archive', {
+      method: 'POST',
+      body: JSON.stringify(password ? { password } : {}),
+    });
+  },
+  downloadArchive: (filename) => {
+    return fetch(`${API_BASE}/export/archive/download/${filename}`, {
+      credentials: 'include',
+    });
+  },
+  importArchive: async (file, password) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (password) {
+      formData.append('password', password);
+    }
+    const response = await fetch(`${API_BASE}/export/import`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Import failed' }));
+      throw new Error(error.error || 'Import failed');
+    }
+    return response.json();
+  },
+};
+
+// Admin API
+export const adminAPI = {
+  getUsers: () => apiCall('/admin/users'),
+  getUser: (id) => apiCall(`/admin/users/${id}`),
+  resetPassword: (userId, method) => apiCall(`/admin/users/${userId}/reset-password`, {
+    method: 'POST',
+    body: JSON.stringify({ method }),
+  }),
+  deleteUser: (userId, action, archivePassword, deleteServerCopy) => apiCall(`/admin/users/${userId}/delete`, {
+    method: 'POST',
+    body: JSON.stringify({ action, archivePassword, deleteServerCopy }),
+  }),
+  toggleAdmin: (userId) => apiCall(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
+  getArchives: () => apiCall('/admin/archives'),
+  downloadArchive: (archiveId) => {
+    return fetch(`${API_BASE}/admin/archives/${archiveId}/download`, {
+      credentials: 'include',
+    });
+  },
+  deleteArchive: (archiveId) => apiCall(`/admin/archives/${archiveId}/delete`, { method: 'POST' }),
+  importArchive: (archiveId, userId, password) => apiCall('/admin/import', {
+    method: 'POST',
+    body: JSON.stringify({ archiveId, userId, password }),
+  }),
+  getRegistrationStatus: () => apiCall('/admin/registration-status'),
+  setRegistrationStatus: (enabled, message) => apiCall('/admin/registration-status', {
+    method: 'POST',
+    body: JSON.stringify({ enabled, message }),
+  }),
 };
 
 // Version API

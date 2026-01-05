@@ -31,16 +31,16 @@ db.exec(schema, (err) => {
   }
   console.log('Database schema initialized successfully.');
 
-  // Create default user "Test" with password "Test"
-  bcrypt.hash('Test', 10, (hashErr, passwordHash) => {
+  // Create default user "Admin" with password "Admin" and admin privileges
+  bcrypt.hash('Admin', 10, (hashErr, passwordHash) => {
     if (hashErr) {
       console.error('Error hashing password:', hashErr.message);
       db.close();
       process.exit(1);
     }
   
-    db.run('INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)', 
-      ['Test', passwordHash], function(err) {
+    db.run('INSERT OR IGNORE INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)', 
+      ['Admin', passwordHash, 1], function(err) {
       if (err) {
         console.error('Error creating default user:', err.message);
         db.close();
@@ -48,7 +48,7 @@ db.exec(schema, (err) => {
       }
 
       // Get the actual user ID (this.lastID might be 0 if INSERT OR IGNORE didn't insert)
-      db.get('SELECT id FROM users WHERE username = ?', ['Test'], (userErr, user) => {
+      db.get('SELECT id FROM users WHERE username = ?', ['Admin'], (userErr, user) => {
         if (userErr || !user) {
           console.error('Error finding default user:', userErr?.message);
           db.close();

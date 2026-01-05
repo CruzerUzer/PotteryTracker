@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    is_admin INTEGER DEFAULT 0,
+    last_login TEXT,
+    must_change_password INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -73,5 +76,36 @@ CREATE INDEX IF NOT EXISTS idx_piece_materials_piece ON piece_materials(piece_id
 CREATE INDEX IF NOT EXISTS idx_piece_materials_material ON piece_materials(material_id);
 CREATE INDEX IF NOT EXISTS idx_piece_images_piece ON piece_images(piece_id);
 
+-- System settings table
+CREATE TABLE IF NOT EXISTS system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Password reset tokens table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- User archives table
+CREATE TABLE IF NOT EXISTS user_archives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    username TEXT NOT NULL,
+    archive_filename TEXT NOT NULL UNIQUE,
+    is_encrypted INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    file_size INTEGER
+);
+
+-- Initialize system settings
+INSERT OR IGNORE INTO system_settings (key, value) VALUES ('registration_enabled', '1');
 
 

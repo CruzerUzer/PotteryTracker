@@ -116,8 +116,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Update last_login
-    await db.run('UPDATE users SET last_login = datetime("now") WHERE id = ?', [user.id]);
+    // Update last_login (non-blocking - column may not exist if migration not run)
+    try {
+      await db.run('UPDATE users SET last_login = datetime("now") WHERE id = ?', [user.id]);
+    } catch (error) {
+      // Column may not exist if migration hasn't been run - log but don't fail login
+      logger.debug('Could not update last_login', { error: error.message, userId: user.id });
+    }
 
     // Set session
     req.session.userId = user.id;

@@ -12,6 +12,7 @@
     "seed-db": "node database/seed-data.js",
     "migrate-done": "node database/migrate_add_done.js",
     "migrate-multi-user": "node database/migrate_multi_user.js",
+    "migrate-admin": "node database/migrate_admin.js",
     "check-user": "node scripts/check-user.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"

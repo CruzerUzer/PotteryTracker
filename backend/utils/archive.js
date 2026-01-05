@@ -59,37 +59,12 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       ORDER BY pi.piece_id, pi.created_at
     `, [userId]);
 
-    // Generate PDF report
+    // Generate PDF report - TEMPORARILY DISABLED to prevent crashes
     let pdfBuffer = null;
     try {
-      logger.info('Starting PDF report generation', { userId });
-      pdfBuffer = await generatePdfReport(userId, db, uploadsDir);
-      logger.info('PDF report generated successfully', { 
-        userId, 
-        pdfSize: pdfBuffer ? pdfBuffer.length : 0,
-        hasPdf: !!pdfBuffer 
-      });
-      
-      // Validate PDF buffer (check for PDF header)
-      if (pdfBuffer && pdfBuffer.length > 4) {
-        const pdfHeader = pdfBuffer.slice(0, 4).toString();
-        if (pdfHeader !== '%PDF') {
-          logger.error('PDF buffer does not have valid PDF header', { 
-            userId, 
-            header: pdfHeader,
-            bufferLength: pdfBuffer.length,
-            firstBytes: pdfBuffer.slice(0, 10).toString('hex')
-          });
-          pdfBuffer = null; // Don't add invalid PDF
-        } else {
-          logger.info('PDF buffer validation passed', { userId, bufferLength: pdfBuffer.length });
-        }
-      } else if (pdfBuffer) {
-        logger.error('PDF buffer too small', { userId, bufferLength: pdfBuffer.length });
-        pdfBuffer = null;
-      } else {
-        logger.warn('PDF buffer is null after generation', { userId });
-      }
+      logger.info('PDF generation disabled temporarily', { userId });
+      // pdfBuffer = await generatePdfReport(userId, db, uploadsDir);
+      pdfBuffer = null; // Disabled
     } catch (error) {
       logger.error('Error generating PDF report for archive', { 
         error: error.message, 

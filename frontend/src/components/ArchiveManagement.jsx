@@ -109,6 +109,26 @@ function ArchiveManagement() {
     }
   };
 
+  const handleUploadImport = async () => {
+    if (!uploadFile || !uploadImportUserId) return;
+    
+    try {
+      setUploadImporting(true);
+      setError(null);
+      await adminAPI.importArchiveUpload(uploadFile, parseInt(uploadImportUserId), uploadImportPassword || undefined);
+      setUploadImportOpen(false);
+      setUploadFile(null);
+      setUploadImportUserId('');
+      setUploadImportPassword('');
+      await loadArchives();
+      await loadUsers();
+    } catch (err) {
+      setError(err.message || 'Failed to import archive');
+    } finally {
+      setUploadImporting(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown';
     try {
@@ -268,6 +288,68 @@ function ArchiveManagement() {
               disabled={!importUserId || (importArchive?.is_encrypted === 1 && !importPassword) || importing}
             >
               {importing ? 'Importing...' : 'Import'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Import Dialog */}
+      <Dialog open={uploadImportOpen} onOpenChange={setUploadImportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload and Import Archive</DialogTitle>
+            <DialogDescription>
+              Upload an archive file and import it to a user account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="upload-file">Archive File (.zip or .encrypted.zip)</Label>
+              <Input
+                id="upload-file"
+                type="file"
+                accept=".zip,.encrypted.zip"
+                onChange={(e) => setUploadFile(e.target.files[0] || null)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="upload-import-user">Target User</Label>
+              <Select value={uploadImportUserId} onValueChange={setUploadImportUserId}>
+                <SelectTrigger id="upload-import-user">
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id.toString()}>
+                      {user.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {uploadFile && uploadFile.name.endsWith('.encrypted.zip') && (
+              <div className="space-y-2">
+                <Label htmlFor="upload-import-password">Archive Password</Label>
+                <Input
+                  id="upload-import-password"
+                  type="password"
+                  value={uploadImportPassword}
+                  onChange={(e) => setUploadImportPassword(e.target.value)}
+                  placeholder="Enter password to decrypt archive"
+                  required
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUploadImportOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUploadImport}
+              disabled={!uploadFile || !uploadImportUserId || (uploadFile?.name.endsWith('.encrypted.zip') && !uploadImportPassword) || uploadImporting}
+            >
+              {uploadImporting ? 'Importing...' : 'Import'}
             </Button>
           </DialogFooter>
         </DialogContent>

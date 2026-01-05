@@ -374,6 +374,61 @@ router.post('/import', async (req, res) => {
   }
 });
 
+// POST /api/admin/import-upload - Import archive from uploaded file
+router.post('/import-upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { userId, password } = req.body;
+    const db = await getDb();
+
+    if (!userId) {
+      unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const user = await db.get('SELECT id FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Determine if encrypted by filename
+    const isEncrypted = req.file.originalname.endsWith('.encrypted.zip');
+    const archivePassword = isEncrypted ? password : null;
+
+    if (isEncrypted && !archivePassword) {
+      unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Password required for encrypted archive' });
+    }
+
+    const importResult = await importUserArchive(req.file.path, archivePassword, userId, db, uploadsDir);
+
+    // Cleanup uploaded file
+    unlinkSync(req.file.path);
+
+    logger.info('Archive imported from upload', { userId, filename: req.file.originalname, result: importResult });
+
+    res.json({
+      message: 'Archive imported successfully',
+      result: importResult
+    });
+  } catch (error) {
+    // Cleanup uploaded file on error
+    if (req.file) {
+      try {
+        unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        logger.error('Error cleaning up uploaded file', { error: cleanupError.message });
+      }
+    }
+    logger.error('Error importing archive from upload', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message || 'Failed to import archive' });
+  }
+});
+
 // GET /api/admin/registration-status - Get registration status
 router.get('/registration-status', async (req, res) => {
   try {

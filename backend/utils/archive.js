@@ -225,6 +225,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     let materials = [];
     let phases = [];
     let pieceMaterials = [];
+    let pieceImages = []; // Initialize as empty array for backward compatibility
     
     for (const file of directory.files) {
       const content = await file.buffer();

@@ -110,6 +110,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       archive.append(JSON.stringify(materials, null, 2), { name: 'data/materials.json' });
       archive.append(JSON.stringify(phases, null, 2), { name: 'data/phases.json' });
       archive.append(JSON.stringify(pieceMaterials, null, 2), { name: 'data/piece_materials.json' });
+      archive.append(JSON.stringify(pieceImages, null, 2), { name: 'data/piece_images.json' });
 
       // Add PDF report if generated
       if (pdfBuffer) {
@@ -309,30 +310,53 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     }
 
     // Extract and copy images
-    let imagesImported = 0;
+    const imageFilesToImport = new Set();
+    pieceImages.forEach(img => {
+      imageFilesToImport.add(img.filename);
+    });
+    
     for (const file of directory.files) {
       if (file.path.startsWith('images/') && !file.path.endsWith('/')) {
         const filename = file.path.replace('images/', '');
-        const imageBuffer = await file.buffer();
-        const imagePath = resolve(uploadsDir, filename);
-        
-        writeFileSync(imagePath, imageBuffer);
-        
-        // Try to find corresponding thumbnail
-        const thumbnailName = filename.replace(/\.[^/.]+$/, '.jpg');
-        const thumbnailEntry = directory.files.find(f => f.path === `thumbnails/${thumbnailName}`);
-        if (thumbnailEntry) {
-          const thumbnailBuffer = await thumbnailEntry.buffer();
-          const thumbnailPath = resolve(thumbnailDir, thumbnailName);
-          writeFileSync(thumbnailPath, thumbnailBuffer);
+        // Only copy images that are referenced in piece_images
+        if (imageFilesToImport.has(filename)) {
+          const imageBuffer = await file.buffer();
+          const imagePath = resolve(uploadsDir, filename);
+          
+          writeFileSync(imagePath, imageBuffer);
+          
+          // Try to find corresponding thumbnail
+          const thumbnailName = filename.replace(/\.[^/.]+$/, '.jpg');
+          const thumbnailEntry = directory.files.find(f => f.path === `thumbnails/${thumbnailName}`);
+          if (thumbnailEntry) {
+            const thumbnailBuffer = await thumbnailEntry.buffer();
+            const thumbnailPath = resolve(thumbnailDir, thumbnailName);
+            writeFileSync(thumbnailPath, thumbnailBuffer);
+          }
         }
-        
-        imagesImported++;
       }
     }
 
-    // Note: We don't import piece_images table data because we need to map old piece IDs
-    // Images are copied but not linked to pieces. This could be enhanced later.
+    // Import piece_images - map old piece IDs and phase IDs to new ones
+    let imagesImported = 0;
+    for (const img of pieceImages) {
+      const newPieceId = pieceIdMap[img.piece_id];
+      const newPhaseId = phaseIdMap[img.phase_id];
+      
+      if (newPieceId && newPhaseId) {
+        await db.run(
+          'INSERT INTO piece_images (piece_id, phase_id, filename, original_filename, created_at) VALUES (?, ?, ?, ?, ?)',
+          [newPieceId, newPhaseId, img.filename, img.original_filename || null, img.created_at]
+        );
+        imagesImported++;
+      } else {
+        logger.warn('Skipping image import - missing piece or phase mapping', {
+          piece_id: img.piece_id,
+          phase_id: img.phase_id,
+          filename: img.filename
+        });
+      }
+    }
 
     // Cleanup temp file
     unlinkSync(tempZipPath);

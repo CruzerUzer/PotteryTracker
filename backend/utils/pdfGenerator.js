@@ -16,14 +16,27 @@ const __dirname = dirname(__filename);
  * @returns {Promise<Buffer>} - PDF buffer
  */
 export async function generatePdfReport(userId, db, uploadsDir) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const chunks = [];
+      let hasError = false;
       
       doc.on('data', chunk => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
+      doc.on('end', () => {
+        if (!hasError) {
+          const buffer = Buffer.concat(chunks);
+          if (buffer.length === 0) {
+            reject(new Error('PDF generation produced empty buffer'));
+            return;
+          }
+          resolve(buffer);
+        }
+      });
+      doc.on('error', (error) => {
+        hasError = true;
+        reject(error);
+      });
 
       // Get user info
       const user = await db.get('SELECT username, created_at FROM users WHERE id = ?', [userId]);
@@ -205,10 +218,15 @@ export async function generatePdfReport(userId, db, uploadsDir) {
           }
         }
         
-        doc.moveDown(1);
+      doc.moveDown(1);
         doc.addPage();
       }
 
+      // Ensure PDF is properly finalized
+      if (pieces.length === 0) {
+        doc.fontSize(12).text('No pieces found.', { align: 'center' });
+      }
+      
       doc.end();
     } catch (error) {
       reject(error);

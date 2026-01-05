@@ -35,7 +35,9 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
   const timestamp = Date.now();
   const isEncrypted = password && password.length > 0;
   const extension = isEncrypted ? '.encrypted.zip' : '.zip';
-  const tempZipFilename = `user_${userId}_${timestamp}${extension}`;
+  // Include username in filename for readability
+  const sanitizedUsername = user.username.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const tempZipFilename = `${sanitizedUsername}_${timestamp}${extension}`;
   const tempZipPath = resolve(archivesDir, `temp_${tempZipFilename}`);
   const finalPath = resolve(archivesDir, tempZipFilename);
 

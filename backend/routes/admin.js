@@ -276,7 +276,13 @@ router.get('/archives', async (req, res) => {
     
     const archives = await db.all('SELECT * FROM user_archives ORDER BY created_at DESC');
     
-    res.json(archives);
+    // Filter to only include archives that actually exist on the server
+    const existingArchives = archives.filter(archive => {
+      const archivePath = resolve(archivesDir, archive.archive_filename);
+      return existsSync(archivePath);
+    });
+    
+    res.json(existingArchives);
   } catch (error) {
     logger.error('Error fetching archives', { error: error.message });
     res.status(500).json({ error: 'Failed to fetch archives' });

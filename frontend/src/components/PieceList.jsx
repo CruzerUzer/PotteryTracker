@@ -103,12 +103,11 @@ function PieceList() {
 
             <div className="space-y-2">
               <Label>Phase</Label>
-              <Select value={selectedPhase} onValueChange={setSelectedPhase}>
+              <Select value={selectedPhase || undefined} onValueChange={(value) => setSelectedPhase(value || '')}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Phases" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Phases</SelectItem>
                   {phases.map((phase) => (
                     <SelectItem key={phase.id} value={phase.id.toString()}>
                       {phase.name}
@@ -120,12 +119,11 @@ function PieceList() {
 
             <div className="space-y-2">
               <Label>Material</Label>
-              <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+              <Select value={selectedMaterial || undefined} onValueChange={(value) => setSelectedMaterial(value || '')}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Materials" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Materials</SelectItem>
                   {materials.map((material) => (
                     <SelectItem key={material.id} value={material.id.toString()}>
                       {material.name} ({material.type})

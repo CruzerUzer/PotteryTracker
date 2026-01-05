@@ -75,7 +75,7 @@ function PieceForm() {
   };
 
   const handlePhaseChange = (value) => {
-    setFormData((prev) => ({ ...prev, current_phase_id: value }));
+    setFormData((prev) => ({ ...prev, current_phase_id: value || '' }));
   };
 
   const handleMaterialToggle = (materialId) => {
@@ -168,12 +168,11 @@ function PieceForm() {
 
             <div className="space-y-2">
               <Label htmlFor="current_phase_id">Current Phase</Label>
-              <Select value={formData.current_phase_id || ''} onValueChange={handlePhaseChange}>
+              <Select value={formData.current_phase_id || undefined} onValueChange={(value) => handlePhaseChange(value || '')}>
                 <SelectTrigger id="current_phase_id">
-                  <SelectValue placeholder="Select a phase" />
+                  <SelectValue placeholder="No phase" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No phase</SelectItem>
                   {phases.map((phase) => (
                     <SelectItem key={phase.id} value={phase.id.toString()}>
                       {phase.name}

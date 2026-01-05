@@ -148,9 +148,9 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         <div className="space-y-2">
           <Label htmlFor="image-phase">Phase</Label>
           <Select
-            value={phaseId || ''}
+            value={phaseId || undefined}
             onValueChange={(value) => {
-              setPhaseId(value);
+              setPhaseId(value || '');
               setHasUserSelectedPhase(true);
             }}
             disabled={uploading}
@@ -160,7 +160,6 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
               <SelectValue placeholder="Select a phase" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Select a phase</SelectItem>
               {phases.map((phase) => (
                 <SelectItem key={phase.id} value={phase.id.toString()}>
                   {phase.name}

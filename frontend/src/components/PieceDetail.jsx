@@ -160,12 +160,11 @@ function PieceDetail() {
           <div>
             <Label htmlFor="phase-select">Current Phase</Label>
             <div className="mt-2 max-w-xs">
-              <Select value={selectedPhase || ''} onValueChange={handlePhaseChange} disabled={updating}>
+              <Select value={selectedPhase || undefined} onValueChange={(value) => handlePhaseChange(value || '')} disabled={updating}>
                 <SelectTrigger id="phase-select">
-                  <SelectValue placeholder="Select a phase" />
+                  <SelectValue placeholder="No phase" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No phase</SelectItem>
                   {phases.map((phase) => (
                     <SelectItem key={phase.id} value={phase.id.toString()}>
                       {phase.name}

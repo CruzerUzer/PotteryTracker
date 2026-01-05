@@ -148,7 +148,10 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
 
       // Add PDF report if generated
       if (pdfBuffer) {
+        logger.info('Adding PDF report to archive', { userId, pdfSize: pdfBuffer.length });
         archive.append(pdfBuffer, { name: 'report.pdf' });
+      } else {
+        logger.warn('PDF buffer is null/false, not adding PDF to archive', { userId });
       }
 
       // Add images and thumbnails

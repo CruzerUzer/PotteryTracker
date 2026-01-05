@@ -244,22 +244,46 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     const materialIdMap = {}; // old_id -> new_id
     const pieceIdMap = {}; // old_id -> new_id
 
-    // Import phases
+    // Import phases - check if they already exist to avoid UNIQUE constraint errors
     for (const phase of phases) {
-      const result = await db.run(
-        'INSERT INTO phases (user_id, name, display_order, created_at) VALUES (?, ?, ?, ?)',
-        [targetUserId, phase.name, phase.display_order, phase.created_at]
+      // Check if phase already exists for this user
+      const existingPhase = await db.get(
+        'SELECT id FROM phases WHERE user_id = ? AND name = ?',
+        [targetUserId, phase.name]
       );
-      phaseIdMap[phase.id] = result.lastID;
+      
+      if (existingPhase) {
+        // Phase already exists, use existing ID
+        phaseIdMap[phase.id] = existingPhase.id;
+      } else {
+        // Phase doesn't exist, insert it
+        const result = await db.run(
+          'INSERT INTO phases (user_id, name, display_order, created_at) VALUES (?, ?, ?, ?)',
+          [targetUserId, phase.name, phase.display_order, phase.created_at]
+        );
+        phaseIdMap[phase.id] = result.lastID;
+      }
     }
 
-    // Import materials
+    // Import materials - check if they already exist to avoid duplicates (though materials don't have UNIQUE constraint)
     for (const material of materials) {
-      const result = await db.run(
-        'INSERT INTO materials (user_id, name, type, created_at) VALUES (?, ?, ?, ?)',
-        [targetUserId, material.name, material.type, material.created_at]
+      // Check if material already exists for this user with same name and type
+      const existingMaterial = await db.get(
+        'SELECT id FROM materials WHERE user_id = ? AND name = ? AND type = ?',
+        [targetUserId, material.name, material.type]
       );
-      materialIdMap[material.id] = result.lastID;
+      
+      if (existingMaterial) {
+        // Material already exists, use existing ID
+        materialIdMap[material.id] = existingMaterial.id;
+      } else {
+        // Material doesn't exist, insert it
+        const result = await db.run(
+          'INSERT INTO materials (user_id, name, type, created_at) VALUES (?, ?, ?, ?)',
+          [targetUserId, material.name, material.type, material.created_at]
+        );
+        materialIdMap[material.id] = result.lastID;
+      }
     }
 
     // Import pieces

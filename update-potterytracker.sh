@@ -64,7 +64,7 @@ read -p "Create backup before updating? (y/n, default: y): " CREATE_BACKUP
 CREATE_BACKUP="${CREATE_BACKUP:-y}"
 
 if [ "$CREATE_BACKUP" = "y" ]; then
-    # Create backup (exclude node_modules and dist for speed)
+    # Create backup (exclude node_modules and dist for speed, but preserve archives and uploads)
     PARENT_DIR=$(dirname "$INSTALL_DIR")
     cd "$PARENT_DIR"
     rsync -a --exclude 'node_modules' --exclude 'dist' --exclude '.git' "$INSTALL_DIR" "$BACKUP_DIR" 2>/dev/null || {
@@ -73,6 +73,7 @@ if [ "$CREATE_BACKUP" = "y" ]; then
         rm -rf "$BACKUP_DIR/node_modules" "$BACKUP_DIR/dist" 2>/dev/null || true
     }
     echo -e "${GREEN}Backup created at: $BACKUP_DIR${NC}"
+    echo -e "${YELLOW}Note: Archives and uploads directories are preserved in the installation${NC}"
 else
     BACKUP_DIR=""
 fi

@@ -395,9 +395,23 @@ router.post('/import-upload', upload.single('file'), async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Determine if encrypted by filename
-    const isEncrypted = req.file.originalname.endsWith('.encrypted.zip');
+    // Determine if encrypted by filename OR by file content (encrypted files don't start with ZIP signature)
+    // Read first few bytes to check if it's a ZIP file
+    const fileBuffer = readFileSync(req.file.path);
+    const isEncryptedByFilename = req.file.originalname.endsWith('.encrypted.zip');
+    const isEncryptedByContent = fileBuffer.length >= 4 && fileBuffer[0] !== 0x50 && fileBuffer[1] !== 0x4B;
+    const isEncrypted = isEncryptedByFilename || isEncryptedByContent;
     const archivePassword = isEncrypted ? password : null;
+
+    logger.debug('Archive upload detected', {
+      originalname: req.file.originalname,
+      filename: req.file.filename,
+      size: req.file.size,
+      isEncryptedByFilename,
+      isEncryptedByContent,
+      isEncrypted,
+      hasPassword: !!password
+    });
 
     if (isEncrypted && !archivePassword) {
       unlinkSync(req.file.path);

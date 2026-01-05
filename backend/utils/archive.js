@@ -168,7 +168,11 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
   // Read and decrypt if needed
   const fileBuffer = readFileSync(archivePath);
   const filename = archivePath.split(/[/\\]/).pop();
-  const isEncrypted = filename.endsWith('.encrypted.zip');
+  
+  // Check if encrypted by filename OR by file content (encrypted files don't start with ZIP signature)
+  const isEncryptedByFilename = filename.endsWith('.encrypted.zip');
+  const isEncryptedByContent = fileBuffer.length >= 4 && fileBuffer[0] !== 0x50 && fileBuffer[1] !== 0x4B;
+  const isEncrypted = isEncryptedByFilename || isEncryptedByContent;
 
   let zipBuffer;
   if (isEncrypted) {
@@ -177,9 +181,16 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     }
     try {
       zipBuffer = decryptData(fileBuffer, password);
+      logger.debug('Archive decrypted successfully', { filename, size: zipBuffer.length });
     } catch (decryptError) {
       // Provide more helpful error message for decryption failures
-      if (decryptError.message.includes('auth') || decryptError.message.includes('tag')) {
+      logger.error('Decryption failed', { 
+        error: decryptError.message, 
+        filename,
+        fileSize: fileBuffer.length,
+        hasPassword: !!password
+      });
+      if (decryptError.message.includes('auth') || decryptError.message.includes('tag') || decryptError.message.includes('Unsupported state')) {
         throw new Error('Invalid password. The password provided is incorrect or the archive is corrupted.');
       }
       throw new Error(`Decryption failed: ${decryptError.message}`);
@@ -190,6 +201,13 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
 
   // Validate that decrypted data looks like a ZIP file (starts with ZIP signature)
   if (zipBuffer.length < 4 || zipBuffer[0] !== 0x50 || zipBuffer[1] !== 0x4B) {
+    logger.error('Invalid ZIP signature after decryption', { 
+      filename,
+      firstBytes: zipBuffer.length >= 4 ? [zipBuffer[0], zipBuffer[1], zipBuffer[2], zipBuffer[3]] : 'too short',
+      expected: [0x50, 0x4B],
+      isEncrypted,
+      hasPassword: !!password
+    });
     throw new Error('Invalid archive format. The file may be corrupted or the password is incorrect.');
   }
 

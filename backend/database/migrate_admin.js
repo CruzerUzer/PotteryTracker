@@ -6,7 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbPath = process.env.DB_PATH || join(__dirname, 'database.db');
+// Use same path logic as server (backend/utils/db.js)
+const dbPath = process.env.DB_PATH || join(__dirname, '..', 'database', 'database.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {

@@ -6,8 +6,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Use same path logic as server (backend/utils/db.js)
-const dbPath = process.env.DB_PATH || join(__dirname, '..', 'database', 'database.db');
+// Use same path logic as server (backend/utils/db.js and backend/server.js)
+// Since this script is in backend/database/, we use database.db in the same directory
+// Server uses: process.env.DB_PATH || join(__dirname, '..', 'database', 'database.db') from backend/utils/
+const dbPath = process.env.DB_PATH || join(__dirname, 'database.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {

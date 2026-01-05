@@ -101,7 +101,7 @@ router.post('/login', async (req, res) => {
     const db = await getDb();
 
     // Find user
-    const user = await db.get('SELECT id, username, password_hash FROM users WHERE username = ?', [username.trim()]);
+    const user = await db.get('SELECT id, username, password_hash, is_admin FROM users WHERE username = ?', [username.trim()]);
     
     if (!user) {
       logger.warn('Login attempt failed: User not found', { username: username.trim() });
@@ -133,6 +133,7 @@ router.post('/login', async (req, res) => {
     res.json({
       id: user.id,
       username: user.username,
+      is_admin: user.is_admin === 1,
       message: 'Login successful'
     });
   } catch (error) {

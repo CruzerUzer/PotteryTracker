@@ -1,18 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ArrowLeft, Save, Palette } from 'lucide-react';
+import { ArrowLeft, Save, Palette, Lock } from 'lucide-react';
 
 function Settings() {
   const navigate = useNavigate();
   const { settings, updateSettings } = useTheme();
+  const { user, checkAuth } = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
   const [saved, setSaved] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const handleChange = (key, value) => {
     setLocalSettings((prev) => ({ ...prev, [key]: value }));
@@ -36,6 +44,43 @@ function Settings() {
     setSaved(false);
   };
 
+  useEffect(() => {
+    // Check if user needs to change password
+    // This would come from the user object if we add it
+    // For now, we'll check on mount - this is a placeholder
+  }, [user]);
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 3) {
+      setPasswordError('New password must be at least 3 characters');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      await authAPI.changePassword(mustChangePassword ? undefined : passwordForm.currentPassword, passwordForm.newPassword);
+      setPasswordSuccess(true);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setMustChangePassword(false);
+      await checkAuth(); // Refresh user data
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -51,6 +96,72 @@ function Settings() {
           Settings saved!
         </div>
       )}
+
+      {/* Password Change Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Change Password
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {mustChangePassword && (
+            <div className="mb-4 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 text-sm">
+              You must change your password before continuing.
+            </div>
+          )}
+          {passwordError && (
+            <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+              {passwordError}
+            </div>
+          )}
+          {passwordSuccess && (
+            <div className="mb-4 p-3 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 text-sm">
+              Password changed successfully!
+            </div>
+          )}
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            {!mustChangePassword && (
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current Password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  autoComplete="current-password"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+              <Input
+                id="confirm-new-password"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={changingPassword}>
+              {changingPassword ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -8,12 +8,13 @@ import {
   Settings, 
   Database, 
   FileDown, 
-  LogOut 
+  LogOut,
+  Shield
 } from 'lucide-react';
 
 function Sidebar() {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
 
   const handleLogout = async () => {
     await logout();
@@ -26,6 +27,7 @@ function Sidebar() {
     { path: '/phases', icon: Settings, label: 'Phases' },
     { path: '/materials', icon: Database, label: 'Materials' },
     { path: '/export', icon: FileDown, label: 'Export' },
+    ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
   const isActive = (path) => {

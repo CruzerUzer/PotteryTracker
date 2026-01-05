@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -10,8 +11,23 @@ function Register() {
   const [formData, setFormData] = useState({ username: '', password: '', confirmPassword: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [registrationMessage, setRegistrationMessage] = useState(null);
   const navigate = useNavigate();
   const { register } = useAuth();
+
+  useEffect(() => {
+    // Check registration status on mount
+    authAPI.getRegistrationStatus()
+      .then(status => {
+        setRegistrationEnabled(status.enabled);
+        setRegistrationMessage(status.message);
+      })
+      .catch(() => {
+        // If check fails, assume registration is enabled
+        setRegistrationEnabled(true);
+      });
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,9 +65,18 @@ function Register() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Register</CardTitle>
-          <CardDescription>Create a new account to start tracking your pottery</CardDescription>
+          <CardDescription>
+            {registrationEnabled 
+              ? 'Create a new account to start tracking your pottery'
+              : (registrationMessage || 'Registration is currently closed by administrator')}
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          {!registrationEnabled && (
+            <div className="mb-4 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 text-sm">
+              {registrationMessage || 'Registration is currently closed by administrator'}
+            </div>
+          )}
           {error && (
             <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
               {error}
@@ -68,6 +93,7 @@ function Register() {
                 value={formData.username}
                 onChange={handleChange}
                 required
+                disabled={!registrationEnabled}
               />
             </div>
             <div className="space-y-2">
@@ -80,6 +106,7 @@ function Register() {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                disabled={!registrationEnabled}
               />
             </div>
             <div className="space-y-2">
@@ -92,10 +119,11 @@ function Register() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
+                disabled={!registrationEnabled}
               />
             </div>
             <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={loading} className="flex-1">
+              <Button type="submit" disabled={loading || !registrationEnabled} className="flex-1">
                 {loading ? 'Registering...' : 'Register'}
               </Button>
               <Button type="button" variant="secondary" asChild>

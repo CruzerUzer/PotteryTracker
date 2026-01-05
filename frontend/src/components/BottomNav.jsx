@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, List, Plus, Search, User } from 'lucide-react';
+import { LayoutDashboard, List, Plus, Search, User, Shield } from 'lucide-react';
 
 function BottomNav() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   if (!user) return null;
 
@@ -14,6 +14,7 @@ function BottomNav() {
     { path: '/list', icon: List, label: 'List' },
     { path: '/pieces/new', icon: Plus, label: 'Add' },
     { path: '/list', icon: Search, label: 'Search' }, // Search goes to list with filters
+    ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
   const isActive = (path) => {

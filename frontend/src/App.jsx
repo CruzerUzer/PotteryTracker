@@ -16,6 +16,8 @@ import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Settings from './components/Settings';
+import AdminPanel from './components/AdminPanel';
+import ResetPassword from './components/ResetPassword';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +37,24 @@ function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return <div className="card loading">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -201,6 +221,14 @@ function AppContent() {
                   <ProtectedRoute>
                     <Settings />
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminPanel />
+                  </AdminRoute>
                 }
               />
               <Route path="*" element={<Navigate to="/" replace />} />

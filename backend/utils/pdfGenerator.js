@@ -16,7 +16,7 @@ const __dirname = dirname(__filename);
  * @returns {Promise<Buffer>} - PDF buffer
  */
 export async function generatePdfReport(userId, db, uploadsDir) {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const chunks = [];

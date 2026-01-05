@@ -99,12 +99,16 @@ export async function generatePdfReport(userId, db, uploadsDir) {
       const chunks = [];
       let hasError = false;
       
-      // PDFKit requires piping - create a pass-through stream to collect data
-      doc.on('data', chunk => {
+      // PDFKit requires piping BEFORE adding content
+      // Create a PassThrough stream and pipe to it FIRST
+      const stream = new PassThrough();
+      
+      // Collect data from the stream (not from doc.on('data'))
+      stream.on('data', chunk => {
         chunks.push(chunk);
       });
       
-      doc.on('end', () => {
+      stream.on('end', () => {
         if (!hasError) {
           const buffer = Buffer.concat(chunks);
           if (buffer.length === 0) {
@@ -133,24 +137,20 @@ export async function generatePdfReport(userId, db, uploadsDir) {
         }
       });
       
+      stream.on('error', (err) => {
+        hasError = true;
+        logger.error('PDF stream error', { error: err.message, userId });
+        reject(err);
+      });
+      
       doc.on('error', (error) => {
         hasError = true;
         logger.error('PDFKit error during generation', { error: error.message, stack: error.stack, userId });
         reject(error);
       });
       
-      // PDFKit requires the document to be piped to a stream
-      // Pipe to a PassThrough stream to trigger data events
-      const stream = new PassThrough();
+      // Pipe document to stream - MUST be done BEFORE adding content
       doc.pipe(stream);
-      
-      // Consume the stream to prevent backpressure
-      stream.on('data', () => {}); // Data is already collected via doc.on('data')
-      stream.on('error', (err) => {
-        hasError = true;
-        logger.error('PDF stream error', { error: err.message, userId });
-        reject(err);
-      });
 
       // Title page
       doc.fontSize(24).text('PotteryTracker Report', { align: 'center' });

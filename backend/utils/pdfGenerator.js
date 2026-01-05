@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { PassThrough } from 'stream';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -98,7 +99,11 @@ export async function generatePdfReport(userId, db, uploadsDir) {
       const chunks = [];
       let hasError = false;
       
-      doc.on('data', chunk => chunks.push(chunk));
+      // PDFKit requires piping - create a pass-through stream to collect data
+      doc.on('data', chunk => {
+        chunks.push(chunk);
+      });
+      
       doc.on('end', () => {
         if (!hasError) {
           const buffer = Buffer.concat(chunks);
@@ -114,7 +119,7 @@ export async function generatePdfReport(userId, db, uploadsDir) {
               userId, 
               header, 
               bufferLength: buffer.length,
-              firstBytes: buffer.slice(0, 10).toString('hex')
+              firstBytes: buffer.slice(0, 20).toString()
             });
             reject(new Error('PDF buffer does not have valid PDF header'));
             return;
@@ -127,10 +132,24 @@ export async function generatePdfReport(userId, db, uploadsDir) {
           resolve(buffer);
         }
       });
+      
       doc.on('error', (error) => {
         hasError = true;
-        logger.error('PDFKit error during generation', { error: error.message, userId });
+        logger.error('PDFKit error during generation', { error: error.message, stack: error.stack, userId });
         reject(error);
+      });
+      
+      // PDFKit requires the document to be piped to a stream
+      // Pipe to a PassThrough stream to trigger data events
+      const stream = new PassThrough();
+      doc.pipe(stream);
+      
+      // Consume the stream to prevent backpressure
+      stream.on('data', () => {}); // Data is already collected via doc.on('data')
+      stream.on('error', (err) => {
+        hasError = true;
+        logger.error('PDF stream error', { error: err.message, userId });
+        reject(err);
       });
 
       // Title page

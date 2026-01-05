@@ -227,7 +227,10 @@ export async function generatePdfReport(userId, db, uploadsDir) {
         doc.fontSize(12).text('No pieces found.', { align: 'center' });
       }
       
+      // Finalize PDF
       doc.end();
+      
+      logger.debug('PDF generation completed', { userId, piecesCount: pieces.length, stats });
     } catch (error) {
       reject(error);
     }

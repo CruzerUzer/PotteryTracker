@@ -63,9 +63,35 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
     let pdfBuffer = null;
     try {
       pdfBuffer = await generatePdfReport(userId, db, uploadsDir);
+      logger.info('PDF report generated successfully', { 
+        userId, 
+        pdfSize: pdfBuffer ? pdfBuffer.length : 0,
+        hasPdf: !!pdfBuffer 
+      });
+      
+      // Validate PDF buffer (check for PDF header)
+      if (pdfBuffer && pdfBuffer.length > 4) {
+        const pdfHeader = pdfBuffer.slice(0, 4).toString();
+        if (pdfHeader !== '%PDF') {
+          logger.error('PDF buffer does not have valid PDF header', { 
+            userId, 
+            header: pdfHeader,
+            bufferLength: pdfBuffer.length 
+          });
+          pdfBuffer = null; // Don't add invalid PDF
+        }
+      } else if (pdfBuffer) {
+        logger.error('PDF buffer too small', { userId, bufferLength: pdfBuffer.length });
+        pdfBuffer = null;
+      }
     } catch (error) {
-      logger.error('Error generating PDF report for archive', { error: error.message, userId });
+      logger.error('Error generating PDF report for archive', { 
+        error: error.message, 
+        stack: error.stack,
+        userId 
+      });
       // Continue without PDF if generation fails
+      pdfBuffer = null;
     }
 
     // Create ZIP archive

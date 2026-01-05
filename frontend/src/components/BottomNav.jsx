@@ -14,7 +14,6 @@ function BottomNav() {
     { path: '/list', icon: List, label: 'List' },
     { path: '/pieces/new', icon: Plus, label: 'Add' },
     { path: '/list', icon: Search, label: 'Search' }, // Search goes to list with filters
-    { path: '/settings', icon: User, label: 'Profile' },
   ];
 
   const isActive = (path) => {

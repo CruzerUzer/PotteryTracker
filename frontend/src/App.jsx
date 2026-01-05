@@ -16,6 +16,15 @@ import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Settings from './components/Settings';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './components/ui/dropdown-menu';
+import { Settings as SettingsIcon, LogOut, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -32,7 +41,7 @@ function ProtectedRoute({ children }) {
 }
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
 
   if (loading) {
     return (
@@ -51,9 +60,52 @@ function AppContent() {
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h1 style={{ margin: 0 }}>PotteryTracker</h1>
               {user && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>{user.username}</span>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-surface)',
+                        color: 'var(--color-text-primary)',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'var(--color-surface-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'var(--color-surface)';
+                      }}
+                    >
+                      <User size={16} />
+                      <span>{user.username}</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+                        <SettingsIcon size={16} />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        await logout();
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                    >
+                      <LogOut size={16} />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </header>

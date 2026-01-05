@@ -131,6 +131,12 @@ body {
   padding: var(--spacing-lg);
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+}
+
 /* Header */
 header {
   background: var(--color-surface);
@@ -141,12 +147,29 @@ header {
   transition: background-color var(--transition-base), color var(--transition-base);
 }
 
+@media (max-width: 768px) {
+  header {
+    padding: var(--spacing-md) 0;
+  }
+  
+  header .container {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+}
+
 header h1 {
   text-align: center;
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--color-text-primary);
+}
+
+@media (max-width: 768px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
 }
 
 /* Navigation - Desktop Sidebar */
@@ -770,6 +793,14 @@ main {
   .main-content {
     margin-left: 0;
     padding-bottom: 80px;
+  }
+  
+  header .container {
+    padding: 0 var(--spacing-md);
+  }
+  
+  header h1 {
+    font-size: 1.25rem;
   }
 }
 

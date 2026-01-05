@@ -153,23 +153,32 @@ function KanbanView() {
               {getPiecesForPhase(phase.id).map((piece) => (
                 <div
                   key={piece.id}
-                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] ${
+                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden ${
                     draggedPiece?.id === piece.id ? 'opacity-50' : ''
-                  } ${!piece.latest_image_id ? '' : ''}`}
+                  }`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, piece)}
                   onDragEnd={handleDragEnd}
                 >
                   <Link
                     to={`/pieces/${piece.id}`}
-                    className="block p-4 pb-24 text-decoration-none"
+                    className="block text-decoration-none"
                     onClick={(e) => {
                       if (isDragging) {
                         e.preventDefault();
                       }
                     }}
                   >
-                    <div className="space-y-2">
+                    {piece.latest_image_id && (
+                      <div className="w-full h-32 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)]">
+                        <img
+                          src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
+                          alt={piece.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="font-semibold text-sm m-0 line-clamp-2">{piece.name}</h4>
                         {piece.done === 1 && (
@@ -196,15 +205,6 @@ function KanbanView() {
                         </span>
                       </div>
                     </div>
-                    {piece.latest_image_id && (
-                      <div className="absolute bottom-3 right-3 w-16 h-16 rounded-md overflow-hidden border border-[var(--color-border)] shadow-sm bg-[var(--color-surface-hover)]">
-                        <img
-                          src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
-                          alt={piece.name}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                    )}
                   </Link>
                 </div>
               ))}
@@ -236,7 +236,7 @@ function KanbanView() {
             {getPiecesForPhase(null).map((piece) => (
               <div
                 key={piece.id}
-                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] relative ${
+                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden ${
                   draggedPiece?.id === piece.id ? 'opacity-50' : ''
                 }`}
                 draggable
@@ -245,14 +245,23 @@ function KanbanView() {
               >
                 <Link
                   to={`/pieces/${piece.id}`}
-                  className="block p-4 pb-24 text-decoration-none"
+                  className="block text-decoration-none"
                   onClick={(e) => {
                     if (isDragging) {
                       e.preventDefault();
                     }
                   }}
                 >
-                  <div className="space-y-2">
+                  {piece.latest_image_id && (
+                    <div className="w-full h-32 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)]">
+                      <img
+                        src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
+                        alt={piece.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-semibold text-sm m-0 line-clamp-2">{piece.name}</h4>
                       {piece.done === 1 && (
@@ -279,15 +288,6 @@ function KanbanView() {
                       </span>
                     </div>
                   </div>
-                  {piece.latest_image_id && (
-                    <div className="absolute bottom-3 right-3 w-16 h-16 rounded-md overflow-hidden border border-[var(--color-border)] shadow-sm bg-[var(--color-surface-hover)]">
-                      <img
-                        src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
-                        alt={piece.name}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  )}
                 </Link>
               </div>
             ))}

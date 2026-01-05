@@ -26,7 +26,6 @@ function Sidebar() {
     { path: '/phases', icon: Settings, label: 'Phases' },
     { path: '/materials', icon: Database, label: 'Materials' },
     { path: '/export', icon: FileDown, label: 'Export' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const isActive = (path) => {
@@ -51,16 +50,6 @@ function Sidebar() {
           </Link>
         );
       })}
-      {user && (
-        <button
-          onClick={handleLogout}
-          className="sidebar-item"
-          style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
-        >
-          <LogOut className="sidebar-icon" size={20} />
-          <span>Logout</span>
-        </button>
-      )}
     </div>
   );
 }

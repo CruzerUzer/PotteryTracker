@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import multer from 'multer';
 import { getDb } from '../utils/db.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
 import { createUserArchive, importUserArchive } from '../utils/archive.js';
@@ -15,6 +16,12 @@ const __dirname = dirname(__filename);
 const router = express.Router();
 const uploadsDir = process.env.UPLOADS_DIR || resolve(__dirname, '..', 'uploads');
 const archivesDir = process.env.ARCHIVES_DIR || resolve(__dirname, '..', 'archives');
+
+// Configure multer for file upload
+const upload = multer({
+  dest: archivesDir,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500MB limit
+});
 
 // All admin routes require admin authentication
 router.use(requireAdmin);

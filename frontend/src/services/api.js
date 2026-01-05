@@ -308,6 +308,24 @@ export const adminAPI = {
     method: 'POST',
     body: JSON.stringify({ archiveId, userId, password }),
   }),
+  importArchiveUpload: async (file, userId, password) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('userId', userId);
+    if (password) formData.append('password', password);
+
+    const response = await fetch(`${API_BASE}/admin/import-upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Archive import failed' }));
+      throw new Error(error.error || 'Archive import failed');
+    }
+    return response.json();
+  },
   getRegistrationStatus: () => apiCall('/admin/registration-status'),
   setRegistrationStatus: (enabled, message) => apiCall('/admin/registration-status', {
     method: 'POST',

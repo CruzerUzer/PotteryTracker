@@ -25,6 +25,11 @@ function ArchiveManagement() {
   const [importPassword, setImportPassword] = useState('');
   const [importing, setImporting] = useState(false);
   const [deleteArchive, setDeleteArchive] = useState(null);
+  const [uploadImportOpen, setUploadImportOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadImportUserId, setUploadImportUserId] = useState('');
+  const [uploadImportPassword, setUploadImportPassword] = useState('');
+  const [uploadImporting, setUploadImporting] = useState(false);
 
   useEffect(() => {
     loadArchives();
@@ -134,7 +139,11 @@ function ArchiveManagement() {
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <Button onClick={() => setUploadImportOpen(true)} variant="default">
+          <Upload className="mr-2 h-4 w-4" />
+          Upload & Import Archive
+        </Button>
         <Button onClick={loadArchives} variant="outline">
           <RefreshCw className="mr-2 h-4 w-4" />
           Refresh

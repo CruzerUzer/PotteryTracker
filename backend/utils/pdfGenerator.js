@@ -103,14 +103,27 @@ export async function generatePdfReport(userId, db, uploadsDir) {
         if (!hasError) {
           const buffer = Buffer.concat(chunks);
           if (buffer.length === 0) {
+            logger.error('PDF generation produced empty buffer', { userId });
             reject(new Error('PDF generation produced empty buffer'));
             return;
           }
           // Validate PDF header
-          if (buffer.slice(0, 4).toString() !== '%PDF') {
+          const header = buffer.slice(0, 4).toString();
+          if (header !== '%PDF') {
+            logger.error('PDF buffer does not have valid PDF header', { 
+              userId, 
+              header, 
+              bufferLength: buffer.length,
+              firstBytes: buffer.slice(0, 10).toString('hex')
+            });
             reject(new Error('PDF buffer does not have valid PDF header'));
             return;
           }
+          logger.info('PDF generation completed successfully', { 
+            userId, 
+            bufferLength: buffer.length, 
+            piecesCount: pieces.length 
+          });
           resolve(buffer);
         }
       });

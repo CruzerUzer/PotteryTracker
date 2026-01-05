@@ -62,6 +62,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
     // Generate PDF report
     let pdfBuffer = null;
     try {
+      logger.info('Starting PDF report generation', { userId });
       pdfBuffer = await generatePdfReport(userId, db, uploadsDir);
       logger.info('PDF report generated successfully', { 
         userId, 
@@ -76,13 +77,18 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
           logger.error('PDF buffer does not have valid PDF header', { 
             userId, 
             header: pdfHeader,
-            bufferLength: pdfBuffer.length 
+            bufferLength: pdfBuffer.length,
+            firstBytes: pdfBuffer.slice(0, 10).toString('hex')
           });
           pdfBuffer = null; // Don't add invalid PDF
+        } else {
+          logger.info('PDF buffer validation passed', { userId, bufferLength: pdfBuffer.length });
         }
       } else if (pdfBuffer) {
         logger.error('PDF buffer too small', { userId, bufferLength: pdfBuffer.length });
         pdfBuffer = null;
+      } else {
+        logger.warn('PDF buffer is null after generation', { userId });
       }
     } catch (error) {
       logger.error('Error generating PDF report for archive', { 

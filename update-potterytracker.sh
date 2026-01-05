@@ -100,13 +100,36 @@ echo -e "${BLUE}Current branch: $CURRENT_BRANCH${NC}"
 read -p "Branch to update to (default: $CURRENT_BRANCH): " UPDATE_BRANCH
 UPDATE_BRANCH="${UPDATE_BRANCH:-$CURRENT_BRANCH}"
 
-# Stash any local changes (including untracked files that might conflict)
+# Backup data directories before git operations (archives, uploads, database)
+ARCHIVES_BACKUP=""
+UPLOADS_BACKUP=""
+DATABASE_BACKUP=""
 if [ -d ".git" ]; then
-    echo -e "${YELLOW}Stashing local changes (including untracked files)...${NC}"
-    # Stash including untracked files to handle conflicts
-    git stash push -u -m "Pre-update stash $(date +%Y%m%d_%H%M%S)" || {
+    # Create temporary backups of user data directories
+    if [ -d "backend/archives" ] && [ "$(ls -A backend/archives 2>/dev/null)" ]; then
+        ARCHIVES_BACKUP=$(mktemp -d)
+        cp -r backend/archives/* "$ARCHIVES_BACKUP/" 2>/dev/null || true
+        echo -e "${YELLOW}Backed up archives directory${NC}"
+    fi
+    if [ -d "backend/uploads" ] && [ "$(ls -A backend/uploads 2>/dev/null)" ]; then
+        UPLOADS_BACKUP=$(mktemp -d)
+        cp -r backend/uploads/* "$UPLOADS_BACKUP/" 2>/dev/null || true
+        echo -e "${YELLOW}Backed up uploads directory${NC}"
+    fi
+    if [ -d "backend/database" ] && [ -f "backend/database/database.db" ]; then
+        DATABASE_BACKUP=$(mktemp)
+        cp "backend/database/database.db" "$DATABASE_BACKUP" 2>/dev/null || true
+        echo -e "${YELLOW}Backed up database${NC}"
+    fi
+fi
+
+# Stash any local changes (excluding untracked files to preserve user data)
+if [ -d ".git" ]; then
+    echo -e "${YELLOW}Stashing local changes (preserving user data directories)...${NC}"
+    # Don't use -u flag to avoid stashing untracked files (user data)
+    git stash push -m "Pre-update stash $(date +%Y%m%d_%H%M%S)" || {
         # If stash fails, check if there are actually changes
-        if [ -n "$(git status --porcelain)" ]; then
+        if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
             echo -e "${YELLOW}Warning: Could not stash changes, attempting to continue...${NC}"
         fi
     }
@@ -136,6 +159,26 @@ if [ -d ".git" ]; then
             echo -e "${RED}Error: Branch $UPDATE_BRANCH does not exist on remote${NC}"
             exit 1
         fi
+    fi
+    
+    # Restore user data directories
+    if [ -n "$ARCHIVES_BACKUP" ] && [ -d "$ARCHIVES_BACKUP" ]; then
+        mkdir -p backend/archives
+        cp -r "$ARCHIVES_BACKUP"/* backend/archives/ 2>/dev/null || true
+        rm -rf "$ARCHIVES_BACKUP"
+        echo -e "${GREEN}Restored archives directory${NC}"
+    fi
+    if [ -n "$UPLOADS_BACKUP" ] && [ -d "$UPLOADS_BACKUP" ]; then
+        mkdir -p backend/uploads
+        cp -r "$UPLOADS_BACKUP"/* backend/uploads/ 2>/dev/null || true
+        rm -rf "$UPLOADS_BACKUP"
+        echo -e "${GREEN}Restored uploads directory${NC}"
+    fi
+    if [ -n "$DATABASE_BACKUP" ] && [ -f "$DATABASE_BACKUP" ]; then
+        mkdir -p backend/database
+        cp "$DATABASE_BACKUP" backend/database/database.db 2>/dev/null || true
+        rm -f "$DATABASE_BACKUP"
+        echo -e "${GREEN}Restored database${NC}"
     fi
     
     echo -e "${GREEN}Code updated successfully${NC}"

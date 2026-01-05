@@ -230,10 +230,11 @@ export async function generatePdfReport(userId, db, uploadsDir) {
         doc.fontSize(12).text('No pieces found.', { align: 'center' });
       }
       
-      // Finalize PDF
+      // Finalize PDF - this triggers the 'end' event
       doc.end();
       
-      logger.debug('PDF generation completed', { userId, piecesCount: pieces.length, stats });
+      // Note: logger.debug call removed - it was after doc.end() which is async
+      // The 'end' event handler will resolve the promise with the PDF buffer
     } catch (error) {
       reject(error);
     }

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { exportAPI } from '../services/api';
+import { Button } from './ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
+import { Download, FileJson, FileSpreadsheet, BarChart3 } from 'lucide-react';
 
 function ExportData() {
   const [exporting, setExporting] = useState(false);
@@ -47,7 +50,6 @@ function ExportData() {
       
       const stats = await exportAPI.getStats();
       
-      // Convert to JSON and download
       const blob = new Blob([JSON.stringify(stats, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -65,52 +67,64 @@ function ExportData() {
   };
 
   return (
-    <div className="card">
-      <h2>Export Data</h2>
-      {error && <div className="error">{error}</div>}
-      
-      <div style={{ marginBottom: '20px' }}>
-        <h3>Export Pieces</h3>
-        <p style={{ color: '#6b7280', marginBottom: '15px' }}>
-          Export all your pieces as CSV or JSON format.
-        </p>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={exporting}
-            className="btn btn-primary"
-          >
-            {exporting ? 'Exporting...' : 'Export as CSV'}
-          </button>
-          <button
-            onClick={() => handleExport('json')}
-            disabled={exporting}
-            className="btn btn-primary"
-          >
-            {exporting ? 'Exporting...' : 'Export as JSON'}
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Export Data</h2>
 
-      <div>
-        <h3>Export Statistics</h3>
-        <p style={{ color: '#6b7280', marginBottom: '15px' }}>
-          Get a detailed report with statistics about your pieces.
-        </p>
-        <button
-          onClick={handleExportStats}
-          disabled={exporting}
-          className="btn btn-secondary"
-        >
-          {exporting ? 'Generating...' : 'Export Statistics'}
-        </button>
-      </div>
+      {error && (
+        <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+          {error}
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Export Pieces</CardTitle>
+          <CardDescription>
+            Export all your pieces as CSV or JSON format.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3 flex-wrap">
+            <Button
+              onClick={() => handleExport('csv')}
+              disabled={exporting}
+              variant="outline"
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              {exporting ? 'Exporting...' : 'Export as CSV'}
+            </Button>
+            <Button
+              onClick={() => handleExport('json')}
+              disabled={exporting}
+              variant="outline"
+            >
+              <FileJson className="mr-2 h-4 w-4" />
+              {exporting ? 'Exporting...' : 'Export as JSON'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Export Statistics</CardTitle>
+          <CardDescription>
+            Get a detailed report with statistics about your pieces.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleExportStats}
+            disabled={exporting}
+            variant="outline"
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            {exporting ? 'Generating...' : 'Export Statistics'}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default ExportData;
-
-
-
-

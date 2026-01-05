@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { phasesAPI } from '../services/api';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { GripVertical, Edit, Trash2, Plus } from 'lucide-react';
 
 function PhaseManager() {
   const [phases, setPhases] = useState([]);
@@ -20,7 +25,6 @@ function PhaseManager() {
       setLoading(true);
       setError(null);
       const data = await phasesAPI.getAll();
-      // Sort by display_order
       const sorted = data.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
       setPhases(sorted);
     } catch (err) {
@@ -60,26 +64,22 @@ function PhaseManager() {
     const [removed] = newPhases.splice(draggedPhase.index, 1);
     newPhases.splice(targetIndex, 0, removed);
 
-    // Update display_order for all affected phases
     const updatedPhases = newPhases.map((phase, index) => ({
       ...phase,
       display_order: index
     }));
 
     try {
-      // Update all phases in parallel
       await Promise.all(
         updatedPhases.map((phase, index) =>
           phasesAPI.update(phase.id, { ...phase, display_order: index })
         )
       );
-      
       setPhases(updatedPhases);
       setDraggedPhase(null);
     } catch (err) {
       setError(err.message);
       setDraggedPhase(null);
-      // Reload on error
       loadPhases();
     }
   };
@@ -97,7 +97,6 @@ function PhaseManager() {
       if (editingId) {
         await phasesAPI.update(editingId, formData);
       } else {
-        // When creating, set display_order to the end
         const maxOrder = phases.length > 0 
           ? Math.max(...phases.map(p => p.display_order || 0))
           : -1;
@@ -139,115 +138,130 @@ function PhaseManager() {
   };
 
   if (loading) {
-    return <div className="card">Loading...</div>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">Loading...</div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div>
-      <div className="actions-row">
-        <h2>Manage Phases</h2>
-        <button
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Manage Phases</h2>
+        <Button
           onClick={() => {
             setShowForm(true);
             setEditingId(null);
             setFormData({ name: '', display_order: 0 });
           }}
-          className="btn btn-primary"
         >
+          <Plus className="mr-2 h-4 w-4" />
           Add New Phase
-        </button>
+        </Button>
       </div>
 
-      {error && <div className="error">{error}</div>}
-
-      {showForm && (
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <h3>{editingId ? 'Edit Phase' : 'Create New Phase'}</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="phase-name">Name *</label>
-              <input
-                type="text"
-                id="phase-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="phase-order">Display Order</label>
-              <input
-                type="number"
-                id="phase-order"
-                value={formData.display_order}
-                onChange={(e) =>
-                  setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })
-                }
-              />
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn btn-primary">
-                {editingId ? 'Update' : 'Create'}
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                Cancel
-              </button>
-            </div>
-          </form>
+      {error && (
+        <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+          {error}
         </div>
       )}
 
-      <div className="card">
-        {phases.length === 0 ? (
-          <p>No phases yet. Create your first phase to get started!</p>
-        ) : (
-          <div className="phase-list">
-            {phases.map((phase, index) => (
-              <div
-                key={phase.id}
-                className={`phase-item ${draggedPhase?.index === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, phase, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span className="drag-handle" style={{ cursor: 'grab', fontSize: '1.2rem', color: '#9ca3af' }}>☰</span>
-                  <div>
-                    <span className="name">{phase.name}</span>
-                    <small style={{ display: 'block', color: '#9ca3af', marginTop: '4px', fontSize: '0.75rem' }}>
-                      Position: {index + 1}
-                    </small>
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingId ? 'Edit Phase' : 'Create New Phase'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phase-name">Name *</Label>
+                <Input
+                  id="phase-name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phase-order">Display Order</Label>
+                <Input
+                  id="phase-order"
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) =>
+                    setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })
+                  }
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button type="submit">
+                  {editingId ? 'Update' : 'Create'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="pt-6">
+          {phases.length === 0 ? (
+            <p className="text-center text-[var(--color-text-tertiary)]">No phases yet. Create your first phase to get started!</p>
+          ) : (
+            <div className="space-y-2">
+              {phases.map((phase, index) => (
+                <div
+                  key={phase.id}
+                  className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors ${
+                    draggedPhase?.index === index ? 'opacity-50' : ''
+                  } ${dragOverIndex === index ? 'border-[var(--color-primary)] bg-[var(--color-surface-hover)]' : ''} hover:bg-[var(--color-surface-hover)]`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, phase, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="flex items-center gap-3">
+                    <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)] cursor-grab" />
+                    <div>
+                      <div className="font-medium">{phase.name}</div>
+                      <div className="text-sm text-[var(--color-text-tertiary)]">Position: {index + 1}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleEdit(phase)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(phase.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
                   </div>
                 </div>
-                <div className="actions">
-                  <button
-                    onClick={() => handleEdit(phase)}
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.9rem', padding: '5px 10px' }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(phase.id)}
-                    className="btn btn-danger"
-                    style={{ fontSize: '0.9rem', padding: '5px 10px' }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default PhaseManager;
-
-
-

@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { imagesAPI } from '../services/api';
+import { Button } from './ui/button';
+import { X, Trash2 } from 'lucide-react';
 
 function ImageLightbox({ images, currentIndex, onClose, onDelete }) {
   const currentImage = images[currentIndex];
@@ -16,7 +18,7 @@ function ImageLightbox({ images, currentIndex, onClose, onDelete }) {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -28,74 +30,44 @@ function ImageLightbox({ images, currentIndex, onClose, onDelete }) {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.95)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer'
-      }}
+      className="fixed inset-0 bg-black bg-opacity-95 z-[9999] flex items-center justify-center cursor-pointer"
       onClick={onClose}
     >
       <div
-        style={{
-          position: 'relative',
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
-        }}
+        className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
+        <Button
           onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '-40px',
-            right: 0,
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '32px',
-            cursor: 'pointer',
-            padding: '5px 15px'
-          }}
+          variant="ghost"
+          size="icon"
+          className="absolute -top-10 right-0 text-white hover:bg-white/20"
         >
-          ×
-        </button>
+          <X className="h-6 w-6" />
+        </Button>
         <img
           src={imagesAPI.getFileUrl(currentImage.id)}
           alt={currentImage.original_filename || 'Piece image'}
-          style={{
-            maxWidth: '100%',
-            maxHeight: '80vh',
-            objectFit: 'contain'
-          }}
+          className="max-w-full max-h-[80vh] object-contain"
         />
-        <div style={{ color: 'white', marginTop: '15px', textAlign: 'center' }}>
-          <div>{currentImage.phase_name || 'Unknown phase'}</div>
-          <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>
+        <div className="text-white mt-4 text-center">
+          <div className="font-medium">{currentImage.phase_name || 'Unknown phase'}</div>
+          <div className="text-sm opacity-80 mt-1">
             {new Date(currentImage.created_at).toLocaleDateString()}
           </div>
           {onDelete && (
-            <button
+            <Button
               onClick={() => {
                 if (window.confirm('Are you sure you want to delete this image?')) {
                   onDelete(currentImage.id);
                 }
               }}
-              className="btn btn-danger"
-              style={{ marginTop: '10px' }}
+              variant="destructive"
+              className="mt-4"
             >
+              <Trash2 className="mr-2 h-4 w-4" />
               Delete Image
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -104,7 +76,3 @@ function ImageLightbox({ images, currentIndex, onClose, onDelete }) {
 }
 
 export default ImageLightbox;
-
-
-
-

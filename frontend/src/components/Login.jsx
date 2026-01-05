@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 
 function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -30,48 +34,56 @@ function Login() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: '400px', margin: '50px auto' }}>
-      <h2>Login</h2>
-      {error && <div className="error">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label htmlFor="username" style={{ marginBottom: '6px' }}>Username</label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            autoComplete="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-            style={{ padding: '8px 12px' }}
-          />
-        </div>
-        <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label htmlFor="password" style={{ marginBottom: '6px' }}>Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            autoComplete="current-password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            style={{ padding: '8px 12px' }}
-          />
-        </div>
-        <div className="btn-group" style={{ marginTop: '16px' }}>
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '8px 20px', fontSize: '0.9rem' }}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-          <Link to="/register" className="btn btn-secondary" style={{ padding: '8px 20px', fontSize: '0.9rem', textDecoration: 'none', display: 'inline-block' }}>
-            Register
-          </Link>
-        </div>
-      </form>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Login</CardTitle>
+          <CardDescription>Enter your credentials to access PotteryTracker</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? 'Logging in...' : 'Login'}
+              </Button>
+              <Button type="button" variant="secondary" asChild>
+                <Link to="/register">Register</Link>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default Login;
-

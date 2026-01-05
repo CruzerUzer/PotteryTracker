@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ArrowLeft, Save, Palette } from 'lucide-react';
 
 function Settings() {
   const navigate = useNavigate();
@@ -31,180 +37,166 @@ function Settings() {
   };
 
   return (
-    <div>
-      <div className="actions-row">
-        <h2>Settings</h2>
-        <button onClick={() => navigate(-1)} className="btn btn-secondary">
-          ← Back
-        </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Settings</h2>
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
       </div>
 
-      {saved && <div className="success">Settings saved!</div>}
-
-      <div className="card">
-        <h3>Appearance</h3>
-        <div className="form-group">
-          <label>Theme</label>
-          <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="radio"
-                name="theme"
-                value="light"
-                checked={localSettings.theme === 'light'}
-                onChange={(e) => handleChange('theme', e.target.value)}
-              />
-              Light
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="radio"
-                name="theme"
-                value="dark"
-                checked={localSettings.theme === 'dark'}
-                onChange={(e) => handleChange('theme', e.target.value)}
-              />
-              Dark
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="radio"
-                name="theme"
-                value="auto"
-                checked={localSettings.theme === 'auto'}
-                onChange={(e) => handleChange('theme', e.target.value)}
-              />
-              Auto
-            </label>
-          </div>
+      {saved && (
+        <div className="p-3 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 text-sm">
+          Settings saved!
         </div>
+      )}
 
-        <div className="form-group">
-          <label>Font Size: {localSettings.fontSize}%</label>
-          <input
-            type="range"
-            min="75"
-            max="150"
-            value={localSettings.fontSize}
-            onChange={(e) => handleChange('fontSize', parseInt(e.target.value))}
-            style={{ width: '100%', marginTop: '8px' }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Layout Density</label>
-          <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="radio"
-                name="density"
-                value="compact"
-                checked={localSettings.layoutDensity === 'compact'}
-                onChange={(e) => handleChange('layoutDensity', e.target.value)}
-              />
-              Compact
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="radio"
-                name="density"
-                value="comfortable"
-                checked={localSettings.layoutDensity === 'comfortable'}
-                onChange={(e) => handleChange('layoutDensity', e.target.value)}
-              />
-              Comfortable
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="radio"
-                name="density"
-                value="spacious"
-                checked={localSettings.layoutDensity === 'spacious'}
-                onChange={(e) => handleChange('layoutDensity', e.target.value)}
-              />
-              Spacious
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>View Preferences</h3>
-        <div className="form-group">
-          <label>Default View</label>
-          <select
-            value={localSettings.defaultView}
-            onChange={(e) => handleChange('defaultView', e.target.value)}
-          >
-            <option value="kanban">Kanban</option>
-            <option value="list">List</option>
-            <option value="grid">Grid</option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-            <span>Show Images in Cards</span>
-            <input
-              type="checkbox"
-              checked={localSettings.showImagesInCards}
-              onChange={(e) => handleChange('showImagesInCards', e.target.checked)}
-            />
-          </label>
-        </div>
-
-        <div className="form-group">
-          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-            <span>Show Descriptions</span>
-            <input
-              type="checkbox"
-              checked={localSettings.showDescriptions}
-              onChange={(e) => handleChange('showDescriptions', e.target.checked)}
-            />
-          </label>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>Phase Colors</h3>
-        {Object.entries(localSettings.phaseColors).map(([phaseName, color]) => (
-          <div key={phaseName} className="form-group">
-            <label>{phaseName}</label>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  backgroundColor: color,
-                  border: '2px solid var(--color-border)',
-                }}
-              />
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => handlePhaseColorChange(phaseName, e.target.value)}
-                style={{ width: '60px', height: '40px', cursor: 'pointer' }}
-              />
-              <span style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>{color}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <Label>Theme</Label>
+            <div className="flex gap-4">
+              {['light', 'dark', 'auto'].map((theme) => (
+                <label key={theme} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value={theme}
+                    checked={localSettings.theme === theme}
+                    onChange={(e) => handleChange('theme', e.target.value)}
+                    className="w-4 h-4"
+                  />
+                  <span className="capitalize">{theme}</span>
+                </label>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
 
-      <div className="btn-group">
-        <button onClick={handleSave} className="btn btn-primary">
-          Save Preferences
-        </button>
-        <button onClick={() => navigate(-1)} className="btn btn-secondary">
-          Cancel
-        </button>
-      </div>
+          <div className="space-y-2">
+            <Label>Font Size: {localSettings.fontSize}%</Label>
+            <input
+              type="range"
+              min="75"
+              max="150"
+              value={localSettings.fontSize}
+              onChange={(e) => handleChange('fontSize', parseInt(e.target.value))}
+              className="w-full"
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Layout Density</Label>
+            <div className="flex gap-4">
+              {['compact', 'comfortable', 'spacious'].map((density) => (
+                <label key={density} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="density"
+                    value={density}
+                    checked={localSettings.layoutDensity === density}
+                    onChange={(e) => handleChange('layoutDensity', e.target.value)}
+                    className="w-4 h-4"
+                  />
+                  <span className="capitalize">{density}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>View Preferences</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="default-view">Default View</Label>
+            <Select
+              value={localSettings.defaultView}
+              onValueChange={(value) => handleChange('defaultView', value)}
+            >
+              <SelectTrigger id="default-view">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kanban">Kanban</SelectItem>
+                <SelectItem value="list">List</SelectItem>
+                <SelectItem value="grid">Grid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span>Show Images in Cards</span>
+              <input
+                type="checkbox"
+                checked={localSettings.showImagesInCards}
+                onChange={(e) => handleChange('showImagesInCards', e.target.checked)}
+                className="w-4 h-4"
+              />
+            </label>
+
+            <label className="flex items-center justify-between cursor-pointer">
+              <span>Show Descriptions</span>
+              <input
+                type="checkbox"
+                checked={localSettings.showDescriptions}
+                onChange={(e) => handleChange('showDescriptions', e.target.checked)}
+                className="w-4 h-4"
+              />
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Phase Colors
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {Object.entries(localSettings.phaseColors).map(([phaseName, color]) => (
+            <div key={phaseName} className="space-y-2">
+              <Label>{phaseName}</Label>
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-lg border-2 border-[var(--color-border)]"
+                  style={{ backgroundColor: color }}
+                />
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => handlePhaseColorChange(phaseName, e.target.value)}
+                  className="w-16 h-12 cursor-pointer rounded border border-[var(--color-border)]"
+                />
+                <span className="text-sm text-[var(--color-text-secondary)] font-mono">{color}</span>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardFooter className="gap-2">
+          <Button onClick={handleSave} className="flex-1">
+            <Save className="mr-2 h-4 w-4" />
+            Save Preferences
+          </Button>
+          <Button variant="secondary" onClick={() => navigate(-1)}>
+            Cancel
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
 
 export default Settings;
-
-
-

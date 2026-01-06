@@ -60,9 +60,9 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
     `, [userId]);
 
     // Generate PDF report - TEMPORARILY DISABLED to prevent crashes
+    // TODO: Fix PDF generation to prevent server crashes
     let pdfBuffer = null;
     try {
-      logger.info('PDF generation disabled temporarily', { userId });
       // pdfBuffer = await generatePdfReport(userId, db, uploadsDir);
       pdfBuffer = null; // Disabled
     } catch (error) {

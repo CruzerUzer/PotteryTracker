@@ -21,14 +21,37 @@ sudo apt install -y certbot python3-certbot-nginx
 
 ### Step 2: Update Nginx Configuration
 
-1. Copy the Nginx configuration template to your server:
+1. **On your Ubuntu server** (via SSH), first ensure you've pulled the latest code:
 
 ```bash
-# From your project directory, copy to server (adjust paths as needed)
+# Navigate to your PotteryTracker installation directory
+cd /srv/PotteryTracker  # or wherever you installed it
+
+# Make sure you're on the feature/force-https branch (or main if merged)
+git fetch origin
+git checkout feature/force-https  # or main if you've merged
+git pull origin feature/force-https
+```
+
+2. Copy the Nginx configuration template from your repo to the Nginx sites-available directory:
+
+```bash
+# Copy from your project directory to Nginx config location
 sudo cp nginx/potterytracker.conf /etc/nginx/sites-available/potterytracker
 ```
 
-2. **IMPORTANT**: Edit the configuration file to match your setup:
+**Note**: This command runs on your server. The `nginx/potterytracker.conf` file should be in your git repository on the server (after pulling).
+
+**Alternative**: If you prefer to copy from your local Windows machine to the server:
+```bash
+# From your LOCAL Windows machine (PowerShell or Git Bash)
+scp nginx/potterytracker.conf user@your-server-ip:/tmp/potterytracker.conf
+
+# Then on the server:
+sudo mv /tmp/potterytracker.conf /etc/nginx/sites-available/potterytracker
+```
+
+3. **IMPORTANT**: Edit the configuration file to match your setup:
 
 ```bash
 sudo nano /etc/nginx/sites-available/potterytracker
@@ -39,13 +62,13 @@ Update these values:
 - `root` path in the `location /` block: Update to your frontend/dist path (e.g., `/srv/PotteryTracker/frontend/dist`)
 - `proxy_pass` port: Update if your backend uses a different port (default: 3001)
 
-3. Enable the site:
+4. Enable the site:
 
 ```bash
 sudo ln -sf /etc/nginx/sites-available/potterytracker /etc/nginx/sites-enabled/
 ```
 
-4. Test the configuration:
+5. Test the configuration:
 
 ```bash
 sudo nginx -t

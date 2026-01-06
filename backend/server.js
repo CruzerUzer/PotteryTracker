@@ -28,12 +28,6 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // This allows Express to trust the X-Forwarded-Proto header from Nginx
 app.set('trust proxy', 1);
 
-// Detect if we should use secure cookies (HTTPS)
-// Check environment variable first, then default based on production environment
-// When behind Nginx with HTTPS, X-Forwarded-Proto will be 'https', and req.secure will be true
-const useSecureCookies = process.env.HTTPS_ENABLED === 'true' || 
-                         (NODE_ENV === 'production' && process.env.HTTPS_ENABLED !== 'false');
-
 // Configure CORS with credentials
 const corsOrigin = process.env.CORS_ORIGIN === 'true' 
   ? true 
@@ -45,23 +39,44 @@ app.use(cors({
 }));
 
 // Session configuration
-// secure: true means cookies only sent over HTTPS
-// When behind Nginx, Express will detect HTTPS via X-Forwarded-Proto header (requires trust proxy)
+// When behind Nginx with HTTPS, X-Forwarded-Proto header will be 'https'
+// With trust proxy set, req.secure will be true for HTTPS requests
+// For production with HTTPS, set HTTPS_ENABLED=true in .env file
+const useSecureCookies = process.env.HTTPS_ENABLED === 'true' || 
+                         (NODE_ENV === 'production' && process.env.HTTPS_ENABLED !== 'false');
+
 app.use(session({
   secret: process.env.SESSION_SECRET || (NODE_ENV === 'production' 
     ? (() => { throw new Error('SESSION_SECRET must be set in production'); })()
     : 'pottery-tracker-secret-key-change-in-production'),
   resave: false,
   saveUninitialized: false,
+  name: 'connect.sid', // Explicit session cookie name
   cookie: {
-    secure: useSecureCookies, // true for HTTPS (production), false for HTTP (development)
+    secure: useSecureCookies, // true = cookies only sent over HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: useSecureCookies ? 'lax' : false // 'lax' for HTTPS, false for HTTP
-    // Note: With 'trust proxy' set, Express will correctly detect HTTPS from X-Forwarded-Proto
-    // and secure cookies will only be sent over HTTPS connections
+    sameSite: useSecureCookies ? 'none' : false, // 'none' required with secure: true for cross-site
+    // Don't set domain - let it default to current domain
+    // path defaults to '/'
   }
 }));
+
+// Debug middleware to log session issues (remove in production)
+if (NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.path === '/api/auth/me') {
+      logger.debug('Session check', {
+        hasSession: !!req.session,
+        sessionId: req.sessionID,
+        userId: req.session?.userId,
+        cookies: req.headers.cookie,
+        'x-forwarded-proto': req.headers['x-forwarded-proto']
+      });
+    }
+    next();
+  });
+}
 
 // Middleware
 app.use(express.json());

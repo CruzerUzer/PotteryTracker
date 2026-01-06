@@ -102,7 +102,9 @@ Certbot will:
 
 ### Step 4: Update Backend Environment Variables
 
-Set the `HTTPS_ENABLED` environment variable in your backend `.env` file:
+**IMPORTANT**: You must set `HTTPS_ENABLED=true` for secure cookies to work with HTTPS.
+
+Edit your backend `.env` file:
 
 ```bash
 cd /srv/PotteryTracker/backend  # or wherever your backend is
@@ -122,6 +124,13 @@ Then restart your backend:
 pm2 restart pottery-api
 # or whatever your PM2 process name is
 ```
+
+**Important**: After enabling HTTPS and setting `HTTPS_ENABLED=true`, users may need to:
+1. Clear their browser cookies for your domain
+2. Log in again (cookies will now be set with the secure flag)
+
+You can verify cookies are secure in browser DevTools:
+- Application → Cookies → Check that cookies have the "Secure" flag checked
 
 ### Step 5: Verify SSL Certificate Renewal
 
@@ -178,19 +187,47 @@ After setup, verify everything works:
    sudo tail -f /var/log/nginx/error.log
    ```
 
-### Cookies Not Working
+### Cookies Not Working / 401 Unauthorized After Login
 
-**Problem**: Login fails or sessions don't persist
+**Problem**: Login works but `/api/auth/me` returns 401, or sessions don't persist
+
+**Common Causes**:
+1. `HTTPS_ENABLED=true` not set in backend `.env` file
+2. Old cookies from before HTTPS was enabled (set without secure flag)
+3. Backend not restarted after changing `.env`
 
 **Solutions**:
-1. Verify `HTTPS_ENABLED=true` in backend `.env`
-2. Check browser console for cookie errors
-3. Ensure cookies are being sent:
+1. **Set HTTPS_ENABLED in backend `.env`**:
+   ```bash
+   cd /srv/PotteryTracker/backend
+   nano .env
+   # Add: HTTPS_ENABLED=true
+   ```
+
+2. **Restart backend**:
+   ```bash
+   pm2 restart pottery-api
+   ```
+
+3. **Clear browser cookies**:
    - Open browser DevTools → Application → Cookies
-   - Verify cookies have `Secure` flag checked
-4. Check backend logs:
+   - Delete all cookies for your domain
+   - Or use incognito/private window to test
+   - Log in again
+
+4. **Verify cookies are secure**:
+   - After logging in, check DevTools → Application → Cookies
+   - Cookies should have the "Secure" flag checked (grayed out means it's set)
+   - Domain should match your domain
+
+5. **Check backend logs** for session errors:
    ```bash
    pm2 logs pottery-api
+   ```
+
+6. **Verify Nginx proxy headers** are set correctly (should be in your config):
+   ```nginx
+   proxy_set_header X-Forwarded-Proto $scheme;
    ```
 
 ### Mixed Content Warnings

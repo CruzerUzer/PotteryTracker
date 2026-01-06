@@ -124,11 +124,39 @@ PORT=3001
    sudo systemctl reload nginx
    ```
 
-7. **Set Up SSL (Let's Encrypt)**
+7. **Set Up SSL/HTTPS (Let's Encrypt)**
+   
+   **For detailed HTTPS setup instructions, see [HTTPS_SETUP.md](./HTTPS_SETUP.md)**
+   
+   Quick setup:
    ```bash
+   # Install certbot
    sudo apt-get install certbot python3-certbot-nginx
-   sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+   
+   # Copy the Nginx HTTPS configuration template
+   sudo cp nginx/potterytracker.conf /etc/nginx/sites-available/potterytracker
+   
+   # Edit the config file to match your paths and domain
+   sudo nano /etc/nginx/sites-available/potterytracker
+   
+   # Enable the site
+   sudo ln -sf /etc/nginx/sites-available/potterytracker /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   
+   # Obtain SSL certificate (certbot will automatically configure Nginx)
+   sudo certbot --nginx -d yourdomain.com
+   
+   # Update backend .env to enable HTTPS
+   # Add: HTTPS_ENABLED=true
+   # Then restart: pm2 restart pottery-api
    ```
+   
+   **Important**: After enabling HTTPS, update your backend `.env` file:
+   ```env
+   HTTPS_ENABLED=true
+   NODE_ENV=production
+   ```
+   Then restart your backend: `pm2 restart pottery-api`
 
 ### Option 2: Cloud Platform Deployment
 
@@ -306,11 +334,12 @@ Set `VITE_API_BASE` during frontend build if needed.
 ### 4. Security
 
 - Use environment variables for sensitive data
-- Enable HTTPS/SSL
+- **Enable HTTPS/SSL** (see [HTTPS_SETUP.md](./HTTPS_SETUP.md) for detailed instructions)
 - Set proper file permissions
 - Use CORS configuration for production
 - Implement rate limiting
 - Add authentication if needed (future enhancement)
+- **Secure cookies**: When HTTPS is enabled, backend automatically uses secure cookies
 
 ### 5. Monitoring
 

@@ -24,6 +24,16 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust proxy - necessary to correctly detect HTTPS when behind Nginx reverse proxy
+// This allows Express to trust the X-Forwarded-Proto header from Nginx
+app.set('trust proxy', 1);
+
+// Detect if we should use secure cookies (HTTPS)
+// Check environment variable first, then default based on production environment
+// When behind Nginx with HTTPS, X-Forwarded-Proto will be 'https', and req.secure will be true
+const useSecureCookies = process.env.HTTPS_ENABLED === 'true' || 
+                         (NODE_ENV === 'production' && process.env.HTTPS_ENABLED !== 'false');
+
 // Configure CORS with credentials
 const corsOrigin = process.env.CORS_ORIGIN === 'true' 
   ? true 
@@ -35,18 +45,21 @@ app.use(cors({
 }));
 
 // Session configuration
+// secure: true means cookies only sent over HTTPS
+// When behind Nginx, Express will detect HTTPS via X-Forwarded-Proto header (requires trust proxy)
 app.use(session({
   secret: process.env.SESSION_SECRET || (NODE_ENV === 'production' 
-    ? (() => { throw new Error('SESSION_SECRET must be set in production'); })() 
+    ? (() => { throw new Error('SESSION_SECRET must be set in production'); })()
     : 'pottery-tracker-secret-key-change-in-production'),
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to false for HTTP in development/WSL, true in production with HTTPS
+    secure: useSecureCookies, // true for HTTPS (production), false for HTTP (development)
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: false // Set to false to allow cookies in cross-site AJAX requests (for HTTP)
-    // Note: For HTTPS, use sameSite: 'none' with secure: true
+    sameSite: useSecureCookies ? 'lax' : false // 'lax' for HTTPS, false for HTTP
+    // Note: With 'trust proxy' set, Express will correctly detect HTTPS from X-Forwarded-Proto
+    // and secure cookies will only be sent over HTTPS connections
   }
 }));
 

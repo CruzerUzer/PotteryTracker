@@ -56,7 +56,7 @@ app.use(session({
     secure: useSecureCookies, // true = cookies only sent over HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: useSecureCookies ? 'none' : false, // 'none' required with secure: true for cross-site
+    sameSite: useSecureCookies ? 'lax' : false, // 'lax' for same-site requests, 'none' for cross-site
     // Don't set domain - let it default to current domain
     // path defaults to '/'
   }

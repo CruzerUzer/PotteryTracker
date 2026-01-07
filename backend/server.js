@@ -69,8 +69,10 @@ if (NODE_ENV !== 'production') {
       logger.debug('Session check', {
         hasSession: !!req.session,
         sessionId: req.sessionID,
-        userId: req.session?.userId,
-        cookies: req.headers.cookie,
+        userId: req.session?.userId || 'NOT SET',
+        username: req.session?.username || 'NOT SET',
+        sessionKeys: req.session ? Object.keys(req.session) : [],
+        cookies: req.headers.cookie ? 'present' : 'missing',
         'x-forwarded-proto': req.headers['x-forwarded-proto']
       });
     }

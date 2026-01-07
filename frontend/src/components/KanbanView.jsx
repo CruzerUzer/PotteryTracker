@@ -47,6 +47,11 @@ function KanbanView() {
   };
 
   const handleDragStart = (e, piece) => {
+    // Only allow drag if starting from the title element
+    if (!e.currentTarget.classList.contains('cursor-grab')) {
+      e.preventDefault();
+      return;
+    }
     setDraggedPiece(piece);
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
@@ -108,6 +113,10 @@ function KanbanView() {
 
   // Touch event handlers for mobile drag-and-drop
   const handleTouchStart = (e, piece) => {
+    // Only allow drag if starting from the title element
+    if (!e.currentTarget.classList.contains('cursor-grab')) {
+      return;
+    }
     const touch = e.touches[0];
     setTouchStart({
       x: touch.clientX,
@@ -236,8 +245,10 @@ function KanbanView() {
           <div
             key={phase.id}
             data-phase-id={phase.id}
-            className={`flex-shrink-0 w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all ${
-              dragOverColumn === phase.id ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)]' : ''
+            className={`flex-shrink-0 w-[107px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all duration-300 ${
+              dragOverColumn === phase.id 
+                ? 'border-[var(--color-primary)] border-2 shadow-xl bg-[var(--color-surface-hover)] scale-105 ring-2 ring-[var(--color-primary)] ring-opacity-50' 
+                : ''
             }`}
             onDragOver={(e) => handleDragOver(e, phase.id)}
             onDragLeave={handleDragLeave}
@@ -253,16 +264,11 @@ function KanbanView() {
               {getPiecesForPhase(phase.id).map((piece) => (
                 <div
                   key={piece.id}
-                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden touch-none select-none ${
-                    draggedPiece?.id === piece.id ? 'opacity-50' : ''
+                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden ${
+                    draggedPiece?.id === piece.id 
+                      ? 'opacity-30 scale-95 transform rotate-2 shadow-2xl border-[var(--color-primary)] border-2' 
+                      : ''
                   }`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, piece)}
-                  onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleTouchStart(e, piece)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                 >
                   <Link
                     to={`/pieces/${piece.id}`}
@@ -271,12 +277,6 @@ function KanbanView() {
                       if (isDragging) {
                         e.preventDefault();
                         e.stopPropagation();
-                      }
-                    }}
-                    onTouchStart={(e) => {
-                      // Prevent link navigation if we're starting a drag
-                      if (touchStart) {
-                        e.preventDefault();
                       }
                     }}
                   >
@@ -291,7 +291,25 @@ function KanbanView() {
                     )}
                     <div className="p-4 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold text-sm m-0 line-clamp-2">{piece.name}</h4>
+                        <h4 
+                          className="font-semibold text-sm m-0 line-clamp-2 cursor-grab active:cursor-grabbing touch-none select-none hover:text-[var(--color-primary)] transition-colors"
+                          draggable
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            handleDragStart(e, piece);
+                          }}
+                          onDragEnd={handleDragEnd}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            handleTouchStart(e, piece);
+                          }}
+                          onTouchMove={handleTouchMove}
+                          onTouchEnd={handleTouchEnd}
+                          style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+                          title="Drag to move between phases"
+                        >
+                          {piece.name}
+                        </h4>
                         {piece.done === 1 && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
                             Done
@@ -331,8 +349,10 @@ function KanbanView() {
         {/* Column for pieces without a phase */}
         <div
           data-phase-id="null"
-          className={`flex-shrink-0 w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all ${
-            dragOverColumn === null ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)]' : ''
+          className={`flex-shrink-0 w-[107px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all duration-300 ${
+            dragOverColumn === null 
+              ? 'border-[var(--color-primary)] border-2 shadow-xl bg-[var(--color-surface-hover)] scale-105 ring-2 ring-[var(--color-primary)] ring-opacity-50' 
+              : ''
           }`}
           onDragOver={(e) => handleDragOver(e, null)}
           onDragLeave={handleDragLeave}
@@ -348,16 +368,11 @@ function KanbanView() {
             {getPiecesForPhase(null).map((piece) => (
               <div
                 key={piece.id}
-                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden touch-none select-none ${
-                  draggedPiece?.id === piece.id ? 'opacity-50' : ''
+                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden ${
+                  draggedPiece?.id === piece.id 
+                    ? 'opacity-30 scale-95 transform rotate-2 shadow-2xl border-[var(--color-primary)] border-2' 
+                    : ''
                 }`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, piece)}
-                onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleTouchStart(e, piece)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
               >
                 <Link
                   to={`/pieces/${piece.id}`}
@@ -366,12 +381,6 @@ function KanbanView() {
                     if (isDragging) {
                       e.preventDefault();
                       e.stopPropagation();
-                    }
-                  }}
-                  onTouchStart={(e) => {
-                    // Prevent link navigation if we're starting a drag
-                    if (touchStart) {
-                      e.preventDefault();
                     }
                   }}
                 >
@@ -386,7 +395,25 @@ function KanbanView() {
                   )}
                   <div className="p-4 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold text-sm m-0 line-clamp-2">{piece.name}</h4>
+                      <h4 
+                        className="font-semibold text-sm m-0 line-clamp-2 cursor-grab active:cursor-grabbing touch-none select-none hover:text-[var(--color-primary)] transition-colors"
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation();
+                          handleDragStart(e, piece);
+                        }}
+                        onDragEnd={handleDragEnd}
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
+                          handleTouchStart(e, piece);
+                        }}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+                        title="Drag to move between phases"
+                      >
+                        {piece.name}
+                      </h4>
                       {piece.done === 1 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
                           Done

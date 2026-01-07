@@ -24,6 +24,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust proxy - necessary to correctly detect HTTPS when behind Nginx reverse proxy
+// This allows Express to trust the X-Forwarded-Proto header from Nginx
+app.set('trust proxy', 1);
+
 // Configure CORS with credentials
 const corsOrigin = process.env.CORS_ORIGIN === 'true' 
   ? true 
@@ -35,18 +39,26 @@ app.use(cors({
 }));
 
 // Session configuration
+// When behind Nginx with HTTPS, X-Forwarded-Proto header will be 'https'
+// With trust proxy set, req.secure will be true for HTTPS requests
+// For production with HTTPS, set HTTPS_ENABLED=true in .env file
+const useSecureCookies = process.env.HTTPS_ENABLED === 'true' || 
+                         (NODE_ENV === 'production' && process.env.HTTPS_ENABLED !== 'false');
+
 app.use(session({
   secret: process.env.SESSION_SECRET || (NODE_ENV === 'production' 
-    ? (() => { throw new Error('SESSION_SECRET must be set in production'); })() 
+    ? (() => { throw new Error('SESSION_SECRET must be set in production'); })()
     : 'pottery-tracker-secret-key-change-in-production'),
   resave: false,
   saveUninitialized: false,
+  name: 'connect.sid', // Explicit session cookie name
   cookie: {
-    secure: false, // Set to false for HTTP in development/WSL, true in production with HTTPS
+    secure: useSecureCookies, // true = cookies only sent over HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: false // Set to false to allow cookies in cross-site AJAX requests (for HTTP)
-    // Note: For HTTPS, use sameSite: 'none' with secure: true
+    sameSite: useSecureCookies ? 'lax' : false, // 'lax' for same-site requests, 'none' for cross-site
+    path: '/', // Explicitly set path
+    // Don't set domain - let it default to current domain (potterytracker.faris.se)
   }
 }));
 

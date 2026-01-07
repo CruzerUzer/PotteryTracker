@@ -124,7 +124,7 @@ router.post('/login', async (req, res) => {
       logger.debug('Could not update last_login', { error: error.message, userId: user.id });
     }
 
-    // Set session
+    // Set session data
     req.session.userId = user.id;
     req.session.username = user.username;
     

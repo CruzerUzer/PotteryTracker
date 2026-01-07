@@ -13,6 +13,8 @@ function KanbanView() {
   const [draggedPiece, setDraggedPiece] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchElement, setTouchElement] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -104,6 +106,103 @@ function KanbanView() {
     setDragOverColumn(null);
   };
 
+  // Touch event handlers for mobile drag-and-drop
+  const handleTouchStart = (e, piece) => {
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      piece: piece,
+      time: Date.now()
+    });
+    setTouchElement(e.currentTarget);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStart) return;
+    
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    
+    // Only start dragging if moved more than 10px (to distinguish from tap)
+    if (deltaX > 10 || deltaY > 10) {
+      e.preventDefault();
+      
+      if (!isDragging) {
+        setDraggedPiece(touchStart.piece);
+        setIsDragging(true);
+      }
+      
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      // Find the column element
+      let columnElement = element;
+      while (columnElement && !columnElement.dataset.phaseId && columnElement !== document.body) {
+        columnElement = columnElement.parentElement;
+      }
+      
+      if (columnElement && columnElement.dataset.phaseId) {
+        const phaseId = columnElement.dataset.phaseId === 'null' ? null : parseInt(columnElement.dataset.phaseId);
+        if (touchStart.piece.current_phase_id !== phaseId) {
+          setDragOverColumn(phaseId);
+        }
+      } else {
+        setDragOverColumn(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = async (e) => {
+    if (!touchStart) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const wasDragging = deltaX > 10 || deltaY > 10;
+    
+    // If we were dragging (moved more than 10px), handle the drop
+    if (wasDragging && isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      // Find the column element
+      let columnElement = element;
+      while (columnElement && !columnElement.dataset.phaseId && columnElement !== document.body) {
+        columnElement = columnElement.parentElement;
+      }
+      
+      if (columnElement && columnElement.dataset.phaseId) {
+        const targetPhaseId = columnElement.dataset.phaseId === 'null' ? null : parseInt(columnElement.dataset.phaseId);
+        
+        if (touchStart.piece.current_phase_id !== targetPhaseId) {
+          try {
+            await piecesAPI.updatePhase(touchStart.piece.id, targetPhaseId || null);
+            
+            setPieces(prevPieces =>
+              prevPieces.map(piece =>
+                piece.id === touchStart.piece.id
+                  ? { ...piece, current_phase_id: targetPhaseId || null }
+                  : piece
+              )
+            );
+          } catch (err) {
+            setError(err.message);
+            loadData();
+          }
+        }
+      }
+    }
+    
+    setTouchStart(null);
+    setTouchElement(null);
+    setDraggedPiece(null);
+    setIsDragging(false);
+    setDragOverColumn(null);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -136,6 +235,7 @@ function KanbanView() {
         {phases.map((phase) => (
           <div
             key={phase.id}
+            data-phase-id={phase.id}
             className={`flex-shrink-0 w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all ${
               dragOverColumn === phase.id ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)]' : ''
             }`}
@@ -153,18 +253,29 @@ function KanbanView() {
               {getPiecesForPhase(phase.id).map((piece) => (
                 <div
                   key={piece.id}
-                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden ${
+                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden touch-none select-none ${
                     draggedPiece?.id === piece.id ? 'opacity-50' : ''
                   }`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, piece)}
                   onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, piece)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                 >
                   <Link
                     to={`/pieces/${piece.id}`}
                     className="block text-decoration-none"
                     onClick={(e) => {
                       if (isDragging) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    onTouchStart={(e) => {
+                      // Prevent link navigation if we're starting a drag
+                      if (touchStart) {
                         e.preventDefault();
                       }
                     }}
@@ -219,6 +330,7 @@ function KanbanView() {
         
         {/* Column for pieces without a phase */}
         <div
+          data-phase-id="null"
           className={`flex-shrink-0 w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all ${
             dragOverColumn === null ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)]' : ''
           }`}
@@ -236,18 +348,29 @@ function KanbanView() {
             {getPiecesForPhase(null).map((piece) => (
               <div
                 key={piece.id}
-                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden ${
+                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden touch-none select-none ${
                   draggedPiece?.id === piece.id ? 'opacity-50' : ''
                 }`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, piece)}
                 onDragEnd={handleDragEnd}
+                onTouchStart={(e) => handleTouchStart(e, piece)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
               >
                 <Link
                   to={`/pieces/${piece.id}`}
                   className="block text-decoration-none"
                   onClick={(e) => {
                     if (isDragging) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    // Prevent link navigation if we're starting a drag
+                    if (touchStart) {
                       e.preventDefault();
                     }
                   }}

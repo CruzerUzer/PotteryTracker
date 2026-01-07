@@ -62,24 +62,6 @@ app.use(session({
   }
 }));
 
-// Debug middleware to log session issues (remove in production)
-if (NODE_ENV !== 'production') {
-  app.use((req, res, next) => {
-    if (req.path === '/api/auth/me') {
-      logger.debug('Session check', {
-        hasSession: !!req.session,
-        sessionId: req.sessionID,
-        userId: req.session?.userId || 'NOT SET',
-        username: req.session?.username || 'NOT SET',
-        sessionKeys: req.session ? Object.keys(req.session) : [],
-        cookies: req.headers.cookie ? 'present' : 'missing',
-        'x-forwarded-proto': req.headers['x-forwarded-proto']
-      });
-    }
-    next();
-  });
-}
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

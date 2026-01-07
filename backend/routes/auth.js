@@ -124,18 +124,23 @@ router.post('/login', async (req, res) => {
       logger.debug('Could not update last_login', { error: error.message, userId: user.id });
     }
 
-    // Set session
+    // Set session data
     req.session.userId = user.id;
     req.session.username = user.username;
     
     logger.info('Login successful', { userId: user.id, username: user.username, sessionId: req.sessionID });
 
+    // Send response - express-session will automatically save the session
     res.json({
       id: user.id,
       username: user.username,
       is_admin: user.is_admin === 1,
       message: 'Login successful'
     });
+    
+    // Explicitly save session after response (non-blocking)
+    // This ensures the session is persisted even if response is sent quickly
+    req.session.save();
   } catch (error) {
     logger.error('Error logging in', {
       error: error.message,

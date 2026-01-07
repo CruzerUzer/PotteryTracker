@@ -57,8 +57,8 @@ app.use(session({
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: useSecureCookies ? 'lax' : false, // 'lax' for same-site requests, 'none' for cross-site
-    // Don't set domain - let it default to current domain
-    // path defaults to '/'
+    path: '/', // Explicitly set path
+    // Don't set domain - let it default to current domain (potterytracker.faris.se)
   }
 }));
 

@@ -78,7 +78,9 @@ function AppContent() {
         {user && (
           <header>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h1 style={{ margin: 0 }}>PotteryTracker</h1>
+              <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <h1 style={{ margin: 0, cursor: 'pointer' }}>PotteryTracker</h1>
+              </Link>
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -30,7 +30,7 @@ function PieceList() {
       setError(null);
       const [piecesData, phasesData, materialsData] = await Promise.all([
         piecesAPI.getAll({
-          phase_id: selectedPhase || null,
+          phase_id: selectedPhase === 'no-phase' ? 'no-phase' : (selectedPhase || null),
           material_id: selectedMaterial || null,
           search: searchTerm || null,
           date_from: dateFrom || null,
@@ -108,6 +108,7 @@ function PieceList() {
                   <SelectValue placeholder="All Phases" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="no-phase">No Phase</SelectItem>
                   {phases.map((phase) => (
                     <SelectItem key={phase.id} value={phase.id.toString()}>
                       {phase.name}

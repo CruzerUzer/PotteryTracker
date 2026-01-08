@@ -46,7 +46,7 @@ function Login() {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -54,6 +54,8 @@ function Login() {
                 name="username"
                 type="text"
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
                 value={formData.username}
                 onChange={handleChange}
                 required

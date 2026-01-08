@@ -1,7 +1,8 @@
 import React from 'react';
+import { FRONTEND_VERSION } from '../version';
 
 function Footer() {
-  const appVersion = '1.0.0';
+  const appVersion = FRONTEND_VERSION;
 
   return (
     <footer className="app-footer">

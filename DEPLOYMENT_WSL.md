@@ -423,6 +423,75 @@ Add to `~/.bashrc`:
 echo '~/start-potterytracker.sh' >> ~/.bashrc
 ```
 
+## Disabling Auto-start on Boot
+
+If you want to remove the automatic start on boot:
+
+### 1. Disable PM2 Startup (systemd service)
+
+```bash
+# Remove PM2 startup configuration
+pm2 unstartup
+
+# This will remove the systemd service that starts PM2 on boot
+```
+
+**Note:** If `pm2 unstartup` gives an error like `env: 'Files/Common': No such file or directory`, this is because your PATH contains Windows paths with spaces. Use the quoted PATH version:
+
+```bash
+# Instead of:
+sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 unstartup systemd -u USERNAME --hp /home/USERNAME
+
+# Use (with quotes around PATH assignment):
+sudo env "PATH=$PATH:/usr/bin" /usr/lib/node_modules/pm2/bin/pm2 unstartup systemd -u USERNAME --hp /home/USERNAME
+```
+
+Replace `USERNAME` with your actual WSL username.
+
+**Note:** You may see an error like `Failed to stop pm2-USERNAME.service: Unit pm2-USERNAME.service not loaded.` This is normal - it just means the service wasn't found or was already removed. The `unstartup` command will still disable auto-start even if this error appears.
+
+### 2. Verify PM2 Startup is Disabled
+
+```bash
+# Check if PM2 startup is configured
+pm2 startup
+
+# If it shows "PM2 startup script not found" or asks you to run a setup command,
+# then auto-start is disabled. If it shows a command to run, auto-start is still enabled.
+```
+
+### 3. Remove Startup Script from .bashrc
+
+```bash
+# Edit your .bashrc file
+nano ~/.bashrc
+
+# Remove or comment out the line that contains:
+# ~/start-potterytracker.sh
+
+# Or use sed to remove it automatically:
+sed -i '/start-potterytracker.sh/d' ~/.bashrc
+```
+
+### 4. (Optional) Remove the Startup Script File
+
+```bash
+# If you no longer need the startup script
+rm ~/start-potterytracker.sh
+```
+
+**Note:** After disabling auto-start, you'll need to manually start the services:
+
+```bash
+# Start PM2 processes manually
+cd ~/PotteryTracker/backend
+pm2 start server.js --name pottery-api
+pm2 save
+
+# Start Nginx (if not already running)
+sudo service nginx start
+```
+
 ## Step 12: Access Your Application
 
 ### Local Access (from Windows):

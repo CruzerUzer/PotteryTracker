@@ -66,6 +66,11 @@ function KanbanView() {
   };
 
   const handleDragStart = (e, piece) => {
+    // Stop event propagation if it came from a link or image
+    if (e.target.closest('a') || e.target.tagName === 'IMG') {
+      e.stopPropagation();
+      return;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     setDragPosition({ 
       x: e.clientX - rect.left, 
@@ -74,7 +79,7 @@ function KanbanView() {
     setDraggedPiece(piece);
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.target);
+    e.dataTransfer.setData('text/html', piece.id.toString());
   };
 
   const handleDragOver = (e, phaseId) => {
@@ -392,14 +397,15 @@ function KanbanView() {
                     opacity: isBeingDragged ? 0.4 : 1,
                     transform: isBeingDragged ? 'scale(0.9)' : 'none',
                     transition: isBeingDragged ? 'none' : 'all 0.2s',
-                    borderRadius: isBeingDragged ? '0.5rem' : undefined,
-                    pointerEvents: isBeingDragged ? 'none' : 'auto',
-                    visibility: isBeingDragged ? 'visible' : 'visible'
+                    borderRadius: isBeingDragged ? '0.5rem' : undefined
                   }}
                 >
                   <Link
                     to={`/pieces/${piece.id}`}
                     className="block text-decoration-none"
+                    draggable="false"
+                    onDragStart={(e) => e.preventDefault()}
+                    style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
                     onClick={(e) => {
                       if (isDragging || (touchStart && touchTimer)) {
                         e.preventDefault();

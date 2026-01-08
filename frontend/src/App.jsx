@@ -179,14 +179,6 @@ function AppContent() {
                 }
               />
               <Route
-                path="/pieces/:id/edit"
-                element={
-                  <ProtectedRoute>
-                    <PieceForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/pieces/:id"
                 element={
                   <ProtectedRoute>

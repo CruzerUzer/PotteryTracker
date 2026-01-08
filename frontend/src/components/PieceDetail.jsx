@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { piecesAPI, phasesAPI, imagesAPI } from '../services/api';
+import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
 import ImageLightbox from './ImageLightbox';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
-import { Edit, Trash2, ArrowLeft, Package, Image as ImageIcon } from 'lucide-react';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus } from 'lucide-react';
 
 function PieceDetail() {
   const { id } = useParams();
@@ -15,11 +17,18 @@ function PieceDetail() {
 
   const [piece, setPiece] = useState(null);
   const [phases, setPhases] = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [selectedPhase, setSelectedPhase] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  
+  // Inline editing state
+  const [editingField, setEditingField] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [editMaterials, setEditMaterials] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -29,12 +38,14 @@ function PieceDetail() {
     try {
       setLoading(true);
       setError(null);
-      const [pieceData, phasesData] = await Promise.all([
+      const [pieceData, phasesData, materialsData] = await Promise.all([
         piecesAPI.getById(id),
         phasesAPI.getAll(),
+        materialsAPI.getAll(),
       ]);
       setPiece(pieceData);
       setPhases(phasesData);
+      setMaterials(materialsData);
       setSelectedPhase(pieceData.current_phase_id || '');
     } catch (err) {
       setError(err.message);
@@ -86,6 +97,63 @@ function PieceDetail() {
     }
   };
 
+  const startEditing = (field, initialValue = null) => {
+    if (field === 'name') {
+      setEditValue(piece.name || '');
+    } else if (field === 'description') {
+      setEditValue(piece.description || '');
+    } else if (field === 'materials') {
+      setEditMaterials(piece.materials?.map(m => m.id) || []);
+    }
+    setEditingField(field);
+  };
+
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValue('');
+    setEditMaterials([]);
+  };
+
+  const saveField = async () => {
+    if (saving) return;
+    
+    setSaving(true);
+    try {
+      const updateData = {};
+      
+      if (editingField === 'name') {
+        if (!editValue.trim()) {
+          alert('Name cannot be empty');
+          setSaving(false);
+          return;
+        }
+        updateData.name = editValue.trim();
+      } else if (editingField === 'description') {
+        updateData.description = editValue.trim();
+      } else if (editingField === 'materials') {
+        updateData.material_ids = editMaterials;
+      }
+
+      await piecesAPI.update(id, updateData);
+      await loadData();
+      setEditingField(null);
+      setEditValue('');
+      setEditMaterials([]);
+    } catch (err) {
+      alert('Error saving: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMaterialToggle = (materialId) => {
+    setEditMaterials(prev =>
+      prev.includes(materialId)
+        ? prev.filter(id => id !== materialId)
+        : [...prev, materialId]
+    );
+  };
+
   if (loading) {
     return (
       <Card>
@@ -120,26 +188,61 @@ function PieceDetail() {
     <div className="space-y-6">
       {/* Header with actions */}
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <Button variant="ghost" size="icon" asChild>
             <Link to="/list">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">{piece.name}</h1>
+          {editingField === 'name' ? (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveField();
+                  if (e.key === 'Escape') cancelEditing();
+                }}
+                className="text-3xl font-bold flex-1"
+                autoFocus
+                disabled={saving}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={saveField}
+                disabled={saving}
+                className="text-green-600 hover:text-green-700"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={cancelEditing}
+                disabled={saving}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <h1
+              className="text-3xl font-bold cursor-pointer hover:text-[var(--color-primary)] transition-colors flex items-center gap-2 group"
+              onClick={() => startEditing('name')}
+              title="Click to edit"
+            >
+              {piece.name}
+              <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
+            </h1>
+          )}
           {piece.done === 1 && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
               Done
             </span>
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" asChild>
-            <Link to={`/pieces/${id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
           <Button variant="destructive" onClick={handleDelete}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
@@ -150,13 +253,63 @@ function PieceDetail() {
       {/* Main content */}
       <Card>
         <CardContent className="pt-6 space-y-6">
-          {piece.description && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="whitespace-pre-wrap text-[var(--color-text-primary)]">{piece.description}</p>
-            </div>
-          )}
+          {/* Description */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              Description
+            </h3>
+            {editingField === 'description' ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  rows={4}
+                  disabled={saving}
+                  className="w-full"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={saveField}
+                    disabled={saving}
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Save
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={cancelEditing}
+                    disabled={saving}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="whitespace-pre-wrap text-[var(--color-text-primary)] p-3 rounded-md border border-transparent hover:border-[var(--color-border)] cursor-pointer group transition-colors min-h-[3rem]"
+                onClick={() => startEditing('description')}
+                title="Click to edit"
+              >
+                {piece.description ? (
+                  <p className="flex items-start gap-2">
+                    <span className="flex-1">{piece.description}</span>
+                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0 mt-1" />
+                  </p>
+                ) : (
+                  <p className="text-[var(--color-text-tertiary)] italic flex items-center gap-2">
+                    <span>No description. Click to add one.</span>
+                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
+          {/* Phase */}
           <div>
             <Label htmlFor="phase-select">Current Phase</Label>
             <div className="mt-2 max-w-xs">
@@ -174,33 +327,88 @@ function PieceDetail() {
               </Select>
               {updating && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Updating...</p>}
             </div>
-            {currentPhase && (
-              <div className="mt-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-[var(--phase-color-1)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
-                  {currentPhase.name}
-                </span>
+          </div>
+
+          {/* Materials */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Materials
+            </h3>
+            {editingField === 'materials' ? (
+              <div className="space-y-3">
+                {materials.length === 0 ? (
+                  <p className="text-sm text-[var(--color-text-tertiary)] italic">
+                    No materials available. Create materials first.
+                  </p>
+                ) : (
+                  <div className="space-y-2 border border-[var(--color-border)] rounded-md p-4 bg-[var(--color-surface)]">
+                    {materials.map((material) => (
+                      <label
+                        key={material.id}
+                        className="flex items-center space-x-2 cursor-pointer hover:bg-[var(--color-surface-hover)] p-2 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editMaterials.includes(material.id)}
+                          onChange={() => handleMaterialToggle(material.id)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">
+                          {material.name} <span className="text-[var(--color-text-tertiary)]">({material.type})</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={saveField}
+                    disabled={saving}
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Save
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={cancelEditing}
+                    disabled={saving}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="p-3 rounded-md border border-transparent hover:border-[var(--color-border)] cursor-pointer group transition-colors"
+                onClick={() => startEditing('materials')}
+                title="Click to edit"
+              >
+                {piece.materials && piece.materials.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {piece.materials.map((material) => (
+                      <span
+                        key={material.id}
+                        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
+                      >
+                        {material.name} <span className="ml-2 text-[var(--color-text-tertiary)]">({material.type})</span>
+                      </span>
+                    ))}
+                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity ml-2" />
+                  </div>
+                ) : (
+                  <p className="text-[var(--color-text-tertiary)] italic flex items-center gap-2">
+                    <span>No materials. Click to add.</span>
+                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
+                  </p>
+                )}
               </div>
             )}
           </div>
-
-          {piece.materials && piece.materials.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Materials
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {piece.materials.map((material) => (
-                  <span
-                    key={material.id}
-                    className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
-                  >
-                    {material.name} <span className="ml-2 text-[var(--color-text-tertiary)]">({material.type})</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 

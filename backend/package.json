@@ -1,6 +1,6 @@
 {
   "name": "pottery-tracker-backend",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Backend API for PotteryTracker",
   "main": "server.js",
   "type": "module",

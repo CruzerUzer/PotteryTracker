@@ -64,8 +64,13 @@ router.get('/', async (req, res) => {
     
     // Filter by phase
     if (phase_id) {
-      query += ' AND p.current_phase_id = ?';
-      params.push(phase_id);
+      if (phase_id === 'no-phase') {
+        // Filter for pieces with no phase (null current_phase_id)
+        query += ' AND p.current_phase_id IS NULL';
+      } else {
+        query += ' AND p.current_phase_id = ?';
+        params.push(phase_id);
+      }
     }
     
     // Filter by material

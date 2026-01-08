@@ -129,7 +129,7 @@ function KanbanView() {
     });
     setTouchElement(e.currentTarget);
     
-    // Set a timer for touch delay (300ms)
+    // Set a timer for touch delay (300ms) - show visual feedback after delay
     const timer = setTimeout(() => {
       setDraggedPiece(piece);
       setIsDragging(true);
@@ -153,7 +153,7 @@ function KanbanView() {
     if (touchTimer && (deltaX > 5 || deltaY > 5)) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
-      // Start dragging immediately if moved
+      // Start dragging immediately if moved - show visual feedback
       if (!isDragging) {
         setDraggedPiece(touchStart.piece);
         setIsDragging(true);
@@ -164,9 +164,12 @@ function KanbanView() {
     if (deltaX > 10 || deltaY > 10) {
       e.preventDefault();
       
-      if (!isDragging && touchTimer) {
-        clearTimeout(touchTimer);
-        setTouchTimer(null);
+      // Ensure visual feedback is shown
+      if (!isDragging) {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          setTouchTimer(null);
+        }
         setDraggedPiece(touchStart.piece);
         setIsDragging(true);
       }
@@ -297,12 +300,14 @@ function KanbanView() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
-              {getPiecesForPhase(phase.id).map((piece) => (
+              {getPiecesForPhase(phase.id).map((piece) => {
+                const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
+                return (
                 <div
                   key={piece.id}
                   className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none ${
-                    draggedPiece?.id === piece.id 
-                      ? 'opacity-50' 
+                    isBeingDragged 
+                      ? 'opacity-50 scale-95 border-[var(--color-primary)] border-2 shadow-xl' 
                       : ''
                   }`}
                   draggable
@@ -325,8 +330,11 @@ function KanbanView() {
                     touchAction: 'none', 
                     WebkitUserSelect: 'none', 
                     userSelect: 'none',
-                    position: draggedPiece?.id === piece.id && isDragging ? 'relative' : 'static',
-                    zIndex: draggedPiece?.id === piece.id && isDragging ? 1000 : 'auto'
+                    position: isBeingDragged ? 'relative' : 'static',
+                    zIndex: isBeingDragged ? 1000 : 'auto',
+                    opacity: isBeingDragged ? 0.4 : undefined,
+                    transform: isBeingDragged ? 'scale(0.9)' : undefined,
+                    transition: isBeingDragged ? 'none' : 'all 0.2s'
                   }}
                 >
                   <Link
@@ -379,7 +387,8 @@ function KanbanView() {
                     </div>
                   </Link>
                 </div>
-              ))}
+                );
+              })}
               {getPiecesForPhase(phase.id).length === 0 && (
                 <div className="text-center text-[var(--color-text-tertiary)] italic py-8 text-sm">
                   No pieces
@@ -408,12 +417,14 @@ function KanbanView() {
             </span>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
-            {getPiecesForPhase(null).map((piece) => (
+            {getPiecesForPhase(null).map((piece) => {
+              const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
+              return (
               <div
                 key={piece.id}
                 className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none ${
-                  draggedPiece?.id === piece.id 
-                    ? 'opacity-50' 
+                  isBeingDragged 
+                    ? 'opacity-50 scale-95 border-[var(--color-primary)] border-2 shadow-xl' 
                     : ''
                 }`}
                 draggable
@@ -436,8 +447,11 @@ function KanbanView() {
                   touchAction: 'none', 
                   WebkitUserSelect: 'none', 
                   userSelect: 'none',
-                  position: draggedPiece?.id === piece.id && isDragging ? 'relative' : 'static',
-                  zIndex: draggedPiece?.id === piece.id && isDragging ? 1000 : 'auto'
+                  position: isBeingDragged ? 'relative' : 'static',
+                  zIndex: isBeingDragged ? 1000 : 'auto',
+                  opacity: isBeingDragged ? 0.4 : undefined,
+                  transform: isBeingDragged ? 'scale(0.9)' : undefined,
+                  transition: isBeingDragged ? 'none' : 'all 0.2s'
                 }}
               >
                 <Link
@@ -490,7 +504,8 @@ function KanbanView() {
                   </div>
                 </Link>
               </div>
-            ))}
+              );
+            })}
             {getPiecesForPhase(null).length === 0 && (
               <div className="text-center text-[var(--color-text-tertiary)] italic py-8 text-sm">
                 No pieces

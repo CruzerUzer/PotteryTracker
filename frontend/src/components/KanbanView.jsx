@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { piecesAPI, phasesAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { Plus, Package, Image as ImageIcon } from 'lucide-react';
+import { Plus, Package, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
 function KanbanView() {
   const [pieces, setPieces] = useState([]);
@@ -298,11 +298,15 @@ function KanbanView() {
       )}
 
       <div className="flex gap-2 overflow-x-auto pb-4 min-h-[500px]">
-        {phases.map((phase) => (
+        {phases.map((phase) => {
+          const isCollapsed = isColumnCollapsed(phase.id);
+          return (
           <div
             key={phase.id}
             data-phase-id={phase.id}
-            className={`flex-shrink-0 w-[150px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all duration-300 ${
+            className={`flex-shrink-0 w-[150px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col transition-all duration-300 ${
+              isCollapsed ? 'min-h-0' : 'min-h-[400px]'
+            } ${
               dragOverColumn === phase.id 
                 ? 'border-[var(--color-primary)] border-2 shadow-xl bg-[var(--color-surface-hover)] scale-105 ring-2 ring-[var(--color-primary)] ring-opacity-50' 
                 : ''
@@ -312,15 +316,25 @@ function KanbanView() {
             onDrop={(e) => handleDrop(e, phase.id)}
           >
             <div 
-              className="p-2 border-b border-[var(--color-border)] flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+              className={`p-2 flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors ${
+                isCollapsed ? '' : 'border-b border-[var(--color-border)]'
+              }`}
               onClick={() => toggleColumnCollapse(phase.id)}
+              title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
             >
-              <h3 className="font-semibold text-sm">{phase.name}</h3>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isCollapsed ? (
+                  <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+                )}
+                <h3 className="font-semibold text-sm truncate">{phase.name}</h3>
+              </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)] flex-shrink-0 ml-2">
                 {getPiecesForPhase(phase.id).length}
               </span>
             </div>
-            {!isColumnCollapsed(phase.id) && (
+            {!isCollapsed && (
             <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
               {getPiecesForPhase(phase.id).map((piece) => {
                 const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
@@ -419,30 +433,46 @@ function KanbanView() {
             </div>
             )}
           </div>
-        ))}
+          );
+        })}
         
         {/* Column for pieces without a phase */}
-        <div
-          data-phase-id="null"
-          className={`flex-shrink-0 w-[150px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col min-h-[400px] transition-all duration-300 ${
-            dragOverColumn === null 
-              ? 'border-[var(--color-primary)] border-2 shadow-xl bg-[var(--color-surface-hover)] scale-105 ring-2 ring-[var(--color-primary)] ring-opacity-50' 
-              : ''
-          }`}
+        {(() => {
+          const isCollapsed = isColumnCollapsed(null);
+          return (
+          <div
+            data-phase-id="null"
+            className={`flex-shrink-0 w-[150px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col transition-all duration-300 ${
+              isCollapsed ? 'min-h-0' : 'min-h-[400px]'
+            } ${
+              dragOverColumn === null 
+                ? 'border-[var(--color-primary)] border-2 shadow-xl bg-[var(--color-surface-hover)] scale-105 ring-2 ring-[var(--color-primary)] ring-opacity-50' 
+                : ''
+            }`}
           onDragOver={(e) => handleDragOver(e, null)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, null)}
         >
           <div 
-            className="p-2 border-b border-[var(--color-border)] flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+            className={`p-2 flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors ${
+              isCollapsed ? '' : 'border-b border-[var(--color-border)]'
+            }`}
             onClick={() => toggleColumnCollapse(null)}
+            title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
           >
-            <h3 className="font-semibold text-sm">No Phase</h3>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {isCollapsed ? (
+                <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+              ) : (
+                <ChevronUp className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+              )}
+              <h3 className="font-semibold text-sm truncate">No Phase</h3>
+            </div>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)] flex-shrink-0 ml-2">
               {getPiecesForPhase(null).length}
             </span>
           </div>
-          {!isColumnCollapsed(null) && (
+          {!isCollapsed && (
           <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
             {getPiecesForPhase(null).map((piece) => {
               const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
@@ -539,9 +569,10 @@ function KanbanView() {
               </div>
             )}
           </div>
-          )}
-        </div>
-      </div>
+            )}
+          </div>
+          );
+        })()}
     </div>
   );
 }

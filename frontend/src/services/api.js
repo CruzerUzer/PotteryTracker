@@ -127,7 +127,9 @@ export const materialsAPI = {
 export const piecesAPI = {
   getAll: (filters = {}) => {
     const params = new URLSearchParams();
-    if (filters.phase_id) params.append('phase_id', filters.phase_id);
+    if (filters.phase_id !== undefined && filters.phase_id !== null) {
+      params.append('phase_id', filters.phase_id);
+    }
     if (filters.material_id) params.append('material_id', filters.material_id);
     if (filters.search) params.append('search', filters.search);
     if (filters.date_from) params.append('date_from', filters.date_from);

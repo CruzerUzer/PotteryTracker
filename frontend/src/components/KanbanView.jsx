@@ -392,7 +392,9 @@ function KanbanView() {
                     opacity: isBeingDragged ? 0.4 : 1,
                     transform: isBeingDragged ? 'scale(0.9)' : 'none',
                     transition: isBeingDragged ? 'none' : 'all 0.2s',
-                    borderRadius: isBeingDragged ? '0.5rem' : undefined
+                    borderRadius: isBeingDragged ? '0.5rem' : undefined,
+                    pointerEvents: isBeingDragged ? 'none' : 'auto',
+                    visibility: isBeingDragged ? 'visible' : 'visible'
                   }}
                 >
                   <Link

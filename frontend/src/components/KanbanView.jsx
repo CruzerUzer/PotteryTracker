@@ -132,8 +132,9 @@ function KanbanView() {
 
   // Touch event handlers for mobile drag-and-drop
   const handleTouchStart = (e, piece) => {
-    // Prevent context menu
+    // Prevent context menu and text selection
     e.preventDefault();
+    e.stopPropagation();
     
     const touch = e.touches[0];
     const startTime = Date.now();
@@ -203,11 +204,22 @@ function KanbanView() {
   const handleTouchEnd = async (e) => {
     if (!touchStart) return;
 
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const wasDragging = deltaX > 10 || deltaY > 10;
+
     // Clear touch timer if still active
     if (touchTimer) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
-      // If timer was still active, user didn't hold long enough - just cancel
+      // If timer was still active and user didn't move, allow click navigation
+      if (!wasDragging) {
+        // Small delay to prevent text selection, then navigate
+        setTimeout(() => {
+          navigate(`/pieces/${touchStart.piece.id}`);
+        }, 50);
+      }
       setTouchStart(null);
       setTouchElement(null);
       return;
@@ -220,11 +232,6 @@ function KanbanView() {
       return;
     }
 
-    const touch = e.changedTouches[0];
-    const deltaX = Math.abs(touch.clientX - touchStart.x);
-    const deltaY = Math.abs(touch.clientY - touchStart.y);
-    const wasDragging = deltaX > 10 || deltaY > 10;
-    
     // If we were dragging (moved more than 10px), handle the drop
     if (wasDragging && isDragging) {
       e.preventDefault();
@@ -297,7 +304,7 @@ function KanbanView() {
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-4 min-h-[500px]">
+      <div className="flex gap-1 overflow-x-auto pb-4 min-h-[500px]">
         {phases.map((phase) => {
           const isCollapsed = isColumnCollapsed(phase.id);
           return (
@@ -343,7 +350,7 @@ function KanbanView() {
                   key={piece.id}
                   className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none ${
                     isBeingDragged 
-                      ? 'opacity-50 scale-95 border-[var(--color-primary)] border-2 shadow-xl' 
+                      ? 'opacity-50 scale-95 border-[var(--color-primary)] border-2 shadow-xl rounded-lg' 
                       : ''
                   }`}
                   draggable
@@ -370,14 +377,15 @@ function KanbanView() {
                     zIndex: isBeingDragged ? 1000 : 'auto',
                     opacity: isBeingDragged ? 0.4 : undefined,
                     transform: isBeingDragged ? 'scale(0.9)' : undefined,
-                    transition: isBeingDragged ? 'none' : 'all 0.2s'
+                    transition: isBeingDragged ? 'none' : 'all 0.2s',
+                    borderRadius: isBeingDragged ? '0.5rem' : undefined
                   }}
                 >
                   <Link
                     to={`/pieces/${piece.id}`}
-                    className="block text-decoration-none pointer-events-none"
+                    className="block text-decoration-none"
                     onClick={(e) => {
-                      if (isDragging || touchStart) {
+                      if (isDragging || (touchStart && touchTimer)) {
                         e.preventDefault();
                         e.stopPropagation();
                       }
@@ -438,137 +446,140 @@ function KanbanView() {
         
         {/* Column for pieces without a phase */}
         {(() => {
-          const isCollapsed = isColumnCollapsed(null);
+          const phaseId = null;
+          const isCollapsed = isColumnCollapsed(phaseId);
           return (
           <div
+            key="no-phase"
             data-phase-id="null"
-            className={`flex-shrink-0 w-[150px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col transition-all duration-300 ${
+            className={`flex-shrink-0 w-[175px] md:w-80 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] shadow-sm flex flex-col transition-all duration-300 ${
               isCollapsed ? 'min-h-0' : 'min-h-[400px]'
             } ${
-              dragOverColumn === null 
+              dragOverColumn === phaseId 
                 ? 'border-[var(--color-primary)] border-2 shadow-xl bg-[var(--color-surface-hover)] scale-105 ring-2 ring-[var(--color-primary)] ring-opacity-50' 
                 : ''
             }`}
-          onDragOver={(e) => handleDragOver(e, null)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, null)}
-        >
-          <div 
-            className={`p-2 flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors ${
-              isCollapsed ? '' : 'border-b border-[var(--color-border)]'
-            }`}
-            onClick={() => toggleColumnCollapse(null)}
-            title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
+            onDragOver={(e) => handleDragOver(e, phaseId)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, phaseId)}
           >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isCollapsed ? (
-                <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
-              ) : (
-                <ChevronUp className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
-              )}
-              <h3 className="font-semibold text-sm truncate">No Phase</h3>
+            <div 
+              className={`p-2 flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors ${
+                isCollapsed ? '' : 'border-b border-[var(--color-border)]'
+              }`}
+              onClick={() => toggleColumnCollapse(phaseId)}
+              title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
+            >
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {isCollapsed ? (
+                  <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+                )}
+                <h3 className="font-semibold text-sm truncate">No Phase</h3>
+              </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)] flex-shrink-0 ml-2">
+                {getPiecesForPhase(phaseId).length}
+              </span>
             </div>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)] flex-shrink-0 ml-2">
-              {getPiecesForPhase(null).length}
-            </span>
-          </div>
-          {!isCollapsed && (
-          <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
-            {getPiecesForPhase(null).map((piece) => {
-              const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
-              return (
-              <div
-                key={piece.id}
-                className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none ${
-                  isBeingDragged 
-                    ? 'opacity-50 scale-95 border-[var(--color-primary)] border-2 shadow-xl' 
-                    : ''
-                }`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, piece)}
-                onDragEnd={handleDragEnd}
-                onDrag={(e) => {
-                  if (isDragging && draggedPiece?.id === piece.id && e.clientX && e.clientY) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setDragPosition({ 
-                      x: e.clientX - rect.left, 
-                      y: e.clientY - rect.top 
-                    });
-                  }
-                }}
-                onTouchStart={(e) => handleTouchStart(e, piece)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{ 
-                  touchAction: 'none', 
-                  WebkitUserSelect: 'none', 
-                  userSelect: 'none',
-                  position: isBeingDragged ? 'relative' : 'static',
-                  zIndex: isBeingDragged ? 1000 : 'auto',
-                  opacity: isBeingDragged ? 0.4 : undefined,
-                  transform: isBeingDragged ? 'scale(0.9)' : undefined,
-                  transition: isBeingDragged ? 'none' : 'all 0.2s'
-                }}
-              >
-                <Link
-                  to={`/pieces/${piece.id}`}
-                  className="block text-decoration-none pointer-events-none"
-                  onClick={(e) => {
-                    if (isDragging || touchStart) {
-                      e.preventDefault();
-                      e.stopPropagation();
+            {!isCollapsed && (
+            <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
+              {getPiecesForPhase(phaseId).map((piece) => {
+                const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
+                return (
+                <div
+                  key={piece.id}
+                  className={`bg-[var(--color-surface)] rounded-md border border-[var(--color-border)] shadow-sm transition-all hover:shadow-md hover:border-[var(--color-border-hover)] overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none ${
+                    isBeingDragged 
+                      ? 'opacity-50 scale-95 border-[var(--color-primary)] border-2 shadow-xl rounded-lg' 
+                      : ''
+                  }`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, piece)}
+                  onDragEnd={handleDragEnd}
+                  onDrag={(e) => {
+                    if (isDragging && draggedPiece?.id === piece.id && e.clientX && e.clientY) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setDragPosition({ 
+                        x: e.clientX - rect.left, 
+                        y: e.clientY - rect.top 
+                      });
                     }
                   }}
+                  onTouchStart={(e) => handleTouchStart(e, piece)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ 
+                    touchAction: 'none', 
+                    WebkitUserSelect: 'none', 
+                    userSelect: 'none',
+                    position: isBeingDragged ? 'relative' : 'static',
+                    zIndex: isBeingDragged ? 1000 : 'auto',
+                    opacity: isBeingDragged ? 0.4 : undefined,
+                    transform: isBeingDragged ? 'scale(0.9)' : undefined,
+                    transition: isBeingDragged ? 'none' : 'all 0.2s',
+                    borderRadius: isBeingDragged ? '0.5rem' : undefined
+                  }}
                 >
-                  {piece.latest_image_id && (
-                    <div className="w-full h-32 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)]">
-                      <img
-                        src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
-                        alt={piece.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold text-sm m-0 line-clamp-2">
-                        {piece.name}
-                      </h4>
-                      {piece.done === 1 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-                          Done
-                        </span>
-                      )}
-                    </div>
-                    {piece.description && (
-                      <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2 m-0">
-                        {piece.description.length > 60
-                          ? piece.description.substring(0, 60) + '...'
-                          : piece.description}
-                      </p>
+                  <Link
+                    to={`/pieces/${piece.id}`}
+                    className="block text-decoration-none"
+                    onClick={(e) => {
+                      if (isDragging || (touchStart && touchTimer)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                  >
+                    {piece.latest_image_id && (
+                      <div className="w-full h-32 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)]">
+                        <img
+                          src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
+                          alt={piece.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     )}
-                    <div className="flex gap-3 text-xs text-[var(--color-text-tertiary)]">
-                      <span className="flex items-center gap-1">
-                        <Package className="h-3 w-3" />
-                        {piece.material_count || 0}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <ImageIcon className="h-3 w-3" />
-                        {piece.image_count || 0}
-                      </span>
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm m-0 line-clamp-2">
+                          {piece.name}
+                        </h4>
+                        {piece.done === 1 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
+                            Done
+                          </span>
+                        )}
+                      </div>
+                      {piece.description && (
+                        <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2 m-0">
+                          {piece.description.length > 60
+                            ? piece.description.substring(0, 60) + '...'
+                            : piece.description}
+                        </p>
+                      )}
+                      <div className="flex gap-3 text-xs text-[var(--color-text-tertiary)]">
+                        <span className="flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          {piece.material_count || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <ImageIcon className="h-3 w-3" />
+                          {piece.image_count || 0}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              </div>
-              );
-            })}
-            {getPiecesForPhase(null).length === 0 && (
-              <div className="text-center text-[var(--color-text-tertiary)] italic py-8 text-sm">
-                No pieces
-              </div>
-            )}
-          </div>
+                  </Link>
+                </div>
+                );
+              })}
+              {getPiecesForPhase(phaseId).length === 0 && (
+                <div className="text-center text-[var(--color-text-tertiary)] italic py-8 text-sm">
+                  No pieces
+                </div>
+              )}
+            </div>
             )}
           </div>
           );

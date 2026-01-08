@@ -17,6 +17,7 @@ function KanbanView() {
   const [touchElement, setTouchElement] = useState(null);
   const [touchTimer, setTouchTimer] = useState(null);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [collapsedColumns, setCollapsedColumns] = useState(new Set());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +47,22 @@ function KanbanView() {
       return pieces.filter(p => !p.current_phase_id);
     }
     return pieces.filter(p => p.current_phase_id === phaseId);
+  };
+
+  const toggleColumnCollapse = (phaseId) => {
+    setCollapsedColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(phaseId)) {
+        newSet.delete(phaseId);
+      } else {
+        newSet.add(phaseId);
+      }
+      return newSet;
+    });
+  };
+
+  const isColumnCollapsed = (phaseId) => {
+    return collapsedColumns.has(phaseId);
   };
 
   const handleDragStart = (e, piece) => {
@@ -146,33 +163,23 @@ function KanbanView() {
     const deltaX = Math.abs(touch.clientX - touchStart.x);
     const deltaY = Math.abs(touch.clientY - touchStart.y);
     
-    // Update drag position for visual feedback
-    setDragPosition({ x: touch.clientX, y: touch.clientY });
-    
-    // Cancel timer if user moves before delay completes
-    if (touchTimer && (deltaX > 5 || deltaY > 5)) {
+    // Only allow drag if the timer has completed (press-and-hold)
+    // If timer is still active, cancel the drag attempt
+    if (touchTimer) {
+      // User moved before delay completed - cancel drag
       clearTimeout(touchTimer);
       setTouchTimer(null);
-      // Start dragging immediately if moved - show visual feedback
-      if (!isDragging) {
-        setDraggedPiece(touchStart.piece);
-        setIsDragging(true);
-      }
+      setTouchStart(null);
+      setTouchElement(null);
+      return;
     }
     
-    // Only process drag if moved more than 10px (to distinguish from tap)
-    if (deltaX > 10 || deltaY > 10) {
+    // Only process drag if timer completed and user moved
+    if (isDragging && (deltaX > 10 || deltaY > 10)) {
       e.preventDefault();
       
-      // Ensure visual feedback is shown
-      if (!isDragging) {
-        if (touchTimer) {
-          clearTimeout(touchTimer);
-          setTouchTimer(null);
-        }
-        setDraggedPiece(touchStart.piece);
-        setIsDragging(true);
-      }
+      // Update drag position for visual feedback
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
       
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
       
@@ -200,6 +207,17 @@ function KanbanView() {
     if (touchTimer) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
+      // If timer was still active, user didn't hold long enough - just cancel
+      setTouchStart(null);
+      setTouchElement(null);
+      return;
+    }
+
+    // Only process drop if we were actually dragging (timer completed)
+    if (!isDragging) {
+      setTouchStart(null);
+      setTouchElement(null);
+      return;
     }
 
     const touch = e.changedTouches[0];
@@ -293,12 +311,16 @@ function KanbanView() {
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, phase.id)}
           >
-            <div className="p-2 border-b border-[var(--color-border)] flex items-center justify-between">
+            <div 
+              className="p-2 border-b border-[var(--color-border)] flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+              onClick={() => toggleColumnCollapse(phase.id)}
+            >
               <h3 className="font-semibold text-sm">{phase.name}</h3>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
                 {getPiecesForPhase(phase.id).length}
               </span>
             </div>
+            {!isColumnCollapsed(phase.id) && (
             <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
               {getPiecesForPhase(phase.id).map((piece) => {
                 const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
@@ -395,6 +417,7 @@ function KanbanView() {
                 </div>
               )}
             </div>
+            )}
           </div>
         ))}
         
@@ -410,12 +433,16 @@ function KanbanView() {
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, null)}
         >
-          <div className="p-2 border-b border-[var(--color-border)] flex items-center justify-between">
+          <div 
+            className="p-2 border-b border-[var(--color-border)] flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+            onClick={() => toggleColumnCollapse(null)}
+          >
             <h3 className="font-semibold text-sm">No Phase</h3>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
               {getPiecesForPhase(null).length}
             </span>
           </div>
+          {!isColumnCollapsed(null) && (
           <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
             {getPiecesForPhase(null).map((piece) => {
               const isBeingDragged = draggedPiece?.id === piece.id && (isDragging || (touchStart && touchStart.piece?.id === piece.id));
@@ -512,6 +539,7 @@ function KanbanView() {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>

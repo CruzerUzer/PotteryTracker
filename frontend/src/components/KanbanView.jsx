@@ -573,6 +573,7 @@ function KanbanView() {
           </div>
           );
         })()}
+      </div>
     </div>
   );
 }

@@ -119,7 +119,10 @@ function PieceDetail() {
     
     setSaving(true);
     try {
-      const updateData = {};
+      // Always include name since backend requires it for updates
+      const updateData = {
+        name: piece.name,
+      };
       
       if (editingField === 'name') {
         if (!editValue.trim()) {

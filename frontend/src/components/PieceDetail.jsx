@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
 import ImageLightbox from './ImageLightbox';
@@ -174,11 +174,9 @@ function PieceDetail() {
           <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm mb-4">
             {error || 'Piece not found'}
           </div>
-          <Button variant="secondary" asChild>
-            <Link to="/list">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to List
-            </Link>
+          <Button variant="secondary" onClick={() => navigate(-1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
           </Button>
         </CardContent>
       </Card>
@@ -192,10 +190,8 @@ function PieceDetail() {
       {/* Header with actions */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/list">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           {editingField === 'name' ? (
             <div className="flex items-center gap-2 flex-1 min-w-0">

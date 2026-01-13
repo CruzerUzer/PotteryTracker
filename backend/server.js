@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import session from 'express-session';
+import helmet from 'helmet';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, readFileSync } from 'fs';
@@ -16,6 +16,7 @@ import pieceImagesRouter from './routes/pieceImages.js';
 import imagesRouter from './routes/images.js';
 import exportRouter from './routes/export.js';
 import versionRouter from './routes/version.js';
+import { apiLimiter, authLimiter, uploadLimiter, passwordResetLimiter } from './middleware/rateLimiter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,38 +29,32 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // This allows Express to trust the X-Forwarded-Proto header from Nginx
 app.set('trust proxy', 1);
 
-// Configure CORS with credentials
-const corsOrigin = process.env.CORS_ORIGIN === 'true' 
-  ? true 
+// Helmet - Security headers middleware
+// Protects against common web vulnerabilities
+app.use(helmet({
+  // Allow cross-origin requests for API
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  // Content Security Policy - adjust based on your needs
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// Configure CORS
+// Note: With JWT authentication, we don't need credentials: true
+const corsOrigin = process.env.CORS_ORIGIN === 'true'
+  ? true
   : process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || true;
 
 app.use(cors({
   origin: corsOrigin,
-  credentials: true
-}));
-
-// Session configuration
-// When behind Nginx with HTTPS, X-Forwarded-Proto header will be 'https'
-// With trust proxy set, req.secure will be true for HTTPS requests
-// For production with HTTPS, set HTTPS_ENABLED=true in .env file
-const useSecureCookies = process.env.HTTPS_ENABLED === 'true' || 
-                         (NODE_ENV === 'production' && process.env.HTTPS_ENABLED !== 'false');
-
-app.use(session({
-  secret: process.env.SESSION_SECRET || (NODE_ENV === 'production' 
-    ? (() => { throw new Error('SESSION_SECRET must be set in production'); })()
-    : 'pottery-tracker-secret-key-change-in-production'),
-  resave: false,
-  saveUninitialized: false,
-  name: 'connect.sid', // Explicit session cookie name
-  cookie: {
-    secure: useSecureCookies, // true = cookies only sent over HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: useSecureCookies ? 'lax' : false, // 'lax' for same-site requests, 'none' for cross-site
-    path: '/', // Explicitly set path
-    // Don't set domain - let it default to current domain (potterytracker.faris.se)
-  }
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Middleware
@@ -128,14 +123,18 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api/auth', authRouter);
-app.use('/api/admin', adminRouter);
-app.use('/api/phases', phasesRouter);
-app.use('/api/materials', materialsRouter);
-app.use('/api/pieces', piecesRouter);
-app.use('/api/pieces', pieceImagesRouter); // Handles /api/pieces/:id/images routes
-app.use('/api/images', imagesRouter); // Handles /api/images/:id/file and /api/images/:id DELETE
-app.use('/api/export', exportRouter);
+// Apply rate limiting to routes
+// Auth routes have stricter rate limiting to prevent brute force attacks
+app.use('/api/auth', authLimiter, authRouter);
+
+// API routes have general rate limiting
+app.use('/api/admin', apiLimiter, adminRouter);
+app.use('/api/phases', apiLimiter, phasesRouter);
+app.use('/api/materials', apiLimiter, materialsRouter);
+app.use('/api/pieces', apiLimiter, piecesRouter);
+app.use('/api/pieces', uploadLimiter, pieceImagesRouter); // Image uploads have their own limiter
+app.use('/api/images', apiLimiter, imagesRouter);
+app.use('/api/export', apiLimiter, exportRouter);
 
 // #region agent log
 console.log('[SERVER] Direct version route registered at /api/version');

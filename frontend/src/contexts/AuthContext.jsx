@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, tokenManager } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -21,9 +21,23 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      // Check if we have a token before making API call
+      const token = tokenManager.getAccessToken();
+
+      if (!token) {
+        // No token means user is not authenticated
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // We have a token, verify it with the backend
       const currentUser = await authAPI.getCurrentUser();
       setUser(currentUser);
     } catch (error) {
+      console.error('Auth check failed:', error);
+      // If auth check fails, clear tokens and set user to null
+      tokenManager.clearTokens();
       setUser(null);
     } finally {
       setLoading(false);

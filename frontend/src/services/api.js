@@ -1,11 +1,106 @@
 const API_BASE = '/api';
 
+/**
+ * Token management utilities
+ * JWT tokens are stored in localStorage for persistence across page refreshes
+ */
+const TOKEN_KEY = 'pottery_access_token';
+const REFRESH_TOKEN_KEY = 'pottery_refresh_token';
+
+export const tokenManager = {
+  getAccessToken: () => localStorage.getItem(TOKEN_KEY),
+  getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_KEY),
+  setTokens: (accessToken, refreshToken) => {
+    localStorage.setItem(TOKEN_KEY, accessToken);
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+  },
+  clearTokens: () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  },
+};
+
+// Helper function for API calls with JWT authentication
+async function apiCall(endpoint, options = {}) {
+  const token = tokenManager.getAccessToken();
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  // Handle token expiration
+  if (response.status === 401) {
+    const errorData = await response.json().catch(() => ({}));
+
+    // If token expired, try to refresh it
+    if (errorData.error === 'Invalid or expired token' || errorData.message?.includes('expired')) {
+      const refreshToken = tokenManager.getRefreshToken();
+
+      if (refreshToken) {
+        try {
+          // Try to refresh the token
+          const refreshResponse = await fetch(`${API_BASE}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+          if (refreshResponse.ok) {
+            const { accessToken, refreshToken: newRefreshToken } = await refreshResponse.json();
+            tokenManager.setTokens(accessToken, newRefreshToken);
+
+            // Retry the original request with new token
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            const retryResponse = await fetch(`${API_BASE}${endpoint}`, {
+              ...options,
+              headers,
+            });
+
+            if (retryResponse.ok) {
+              return retryResponse.json();
+            }
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          // Clear invalid tokens and redirect to login
+          tokenManager.clearTokens();
+          window.location.href = '/login';
+          throw new Error('Session expired. Please login again.');
+        }
+      }
+
+      // No refresh token or refresh failed - clear tokens
+      tokenManager.clearTokens();
+      throw new Error('Authentication required');
+    }
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || error.message || `HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // Auth API
 export const authAPI = {
   login: async (username, password) => {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -17,13 +112,19 @@ export const authAPI = {
       throw new Error(error.error || 'Login failed');
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // Store tokens
+    if (data.accessToken && data.refreshToken) {
+      tokenManager.setTokens(data.accessToken, data.refreshToken);
+    }
+
+    return data;
   },
 
   register: async (username, password) => {
     const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -35,37 +136,71 @@ export const authAPI = {
       throw new Error(error.error || 'Registration failed');
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // Store tokens
+    if (data.accessToken && data.refreshToken) {
+      tokenManager.setTokens(data.accessToken, data.refreshToken);
+    }
+
+    return data;
   },
 
   logout: async () => {
-    const response = await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error('Logout failed');
+    try {
+      // Call logout endpoint (mainly for logging purposes)
+      await apiCall('/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+      // Continue with client-side logout even if API call fails
+    } finally {
+      // Always clear tokens on logout
+      tokenManager.clearTokens();
     }
-
-    return response.json();
   },
 
   getCurrentUser: async () => {
-    const response = await fetch(`${API_BASE}/auth/me`, {
-      credentials: 'include',
+    try {
+      return await apiCall('/auth/me');
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+      return null;
+    }
+  },
+
+  refreshToken: async () => {
+    const refreshToken = tokenManager.getRefreshToken();
+
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.ok) {
-      return null;
+      tokenManager.clearTokens();
+      throw new Error('Token refresh failed');
     }
 
-    return response.json();
+    const data = await response.json();
+    tokenManager.setTokens(data.accessToken, data.refreshToken);
+
+    return data;
   },
 
   getRegistrationStatus: async () => {
     const response = await fetch(`${API_BASE}/auth/registration-status`, {
-      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
     if (!response.ok) {
       return { enabled: true, message: null };
@@ -87,25 +222,6 @@ export const authAPI = {
     });
   },
 };
-
-// Helper function for API calls
-async function apiCall(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    credentials: 'include', // Include cookies for session
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-}
 
 // Phases API
 export const phasesAPI = {
@@ -159,10 +275,17 @@ export const imagesAPI = {
     const url = `${API_BASE}/pieces/${pieceId}/images`;
     console.log('Uploading to:', url, 'File:', file.name, 'Size:', file.size, 'Type:', file.type);
 
+    // Get JWT token for authorization
+    const token = tokenManager.getAccessToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch(url, {
         method: 'POST',
-        credentials: 'include',
+        headers,
         body: formData,
       });
 
@@ -210,8 +333,13 @@ export const imagesAPI = {
 export const exportAPI = {
   exportPieces: (format = 'json') => {
     // This will be handled by the component for file download
+    const token = tokenManager.getAccessToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     return fetch(`${API_BASE}/export/pieces?format=${format}`, {
-      credentials: 'include',
+      headers,
     });
   },
   getStats: () => apiCall('/export/stats'),
@@ -222,8 +350,13 @@ export const exportAPI = {
     });
   },
   downloadArchive: (filename) => {
+    const token = tokenManager.getAccessToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     return fetch(`${API_BASE}/export/archive/download/${filename}`, {
-      credentials: 'include',
+      headers,
     });
   },
   importArchive: async (file, password) => {
@@ -232,9 +365,16 @@ export const exportAPI = {
     if (password) {
       formData.append('password', password);
     }
+
+    const token = tokenManager.getAccessToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE}/export/import`, {
       method: 'POST',
-      credentials: 'include',
+      headers,
       body: formData,
     });
     if (!response.ok) {
@@ -258,12 +398,17 @@ export const adminAPI = {
     body: JSON.stringify({ action, archivePassword, deleteServerCopy }),
   }),
   createUserArchive: async (userId, password, storageOption) => {
+    const token = tokenManager.getAccessToken();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE}/admin/users/${userId}/archive`, {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ password, storageOption }),
     });
 
@@ -301,8 +446,13 @@ export const adminAPI = {
   toggleAdmin: (userId) => apiCall(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
   getArchives: () => apiCall('/admin/archives'),
   downloadArchive: (archiveId) => {
+    const token = tokenManager.getAccessToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     return fetch(`${API_BASE}/admin/archives/${archiveId}/download`, {
-      credentials: 'include',
+      headers,
     });
   },
   deleteArchive: (archiveId) => apiCall(`/admin/archives/${archiveId}/delete`, { method: 'POST' }),
@@ -316,9 +466,15 @@ export const adminAPI = {
     formData.append('userId', userId);
     if (password) formData.append('password', password);
 
+    const token = tokenManager.getAccessToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE}/admin/import-upload`, {
       method: 'POST',
-      credentials: 'include',
+      headers,
       body: formData,
     });
 

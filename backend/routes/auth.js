@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { getDb } from '../utils/db.js';
 import logger from '../utils/logger.js';
 import { requireAuth } from '../middleware/auth.js';
+import { generateTokenPair, verifyToken } from '../utils/jwt.js';
 
 const router = express.Router();
 
@@ -62,19 +63,26 @@ router.post('/register', async (req, res) => {
       );
     }
 
-    // Set session
-    req.session.userId = userId;
-    req.session.username = username.trim();
-
-    logger.info('User registered successfully with default phases', { 
-      userId: userId, 
+    // Generate JWT tokens
+    const user = {
+      id: userId,
       username: username.trim(),
-      phasesCreated: defaultPhases.length 
+      is_admin: false
+    };
+    const tokens = generateTokenPair(user);
+
+    logger.info('User registered successfully with default phases', {
+      userId: userId,
+      username: username.trim(),
+      phasesCreated: defaultPhases.length
     });
-    
+
     res.status(201).json({
       id: userId,
       username: username.trim(),
+      is_admin: false,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       message: 'User created successfully'
     });
   } catch (error) {
@@ -124,16 +132,17 @@ router.post('/login', async (req, res) => {
       logger.debug('Could not update last_login', { error: error.message, userId: user.id });
     }
 
-    // Set session data
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    
-    logger.info('Login successful', { userId: user.id, username: user.username, sessionId: req.sessionID });
+    // Generate JWT tokens
+    const tokens = generateTokenPair(user);
+
+    logger.info('Login successful', { userId: user.id, username: user.username });
 
     res.json({
       id: user.id,
       username: user.username,
       is_admin: user.is_admin === 1,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       message: 'Login successful'
     });
   } catch (error) {
@@ -147,43 +156,92 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/logout - Logout user
-router.post('/logout', (req, res) => {
-  const userId = req.session?.userId;
-  req.session.destroy((err) => {
-    if (err) {
-      logger.error('Error destroying session', {
-        error: err.message,
-        stack: err.stack,
-        userId: userId
-      });
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    logger.info('User logged out', { userId: userId });
-    res.json({ message: 'Logout successful' });
+// Note: With JWT, logout is handled client-side by removing the token
+// This endpoint is kept for API consistency and logging purposes
+router.post('/logout', requireAuth, (req, res) => {
+  logger.info('User logged out', { userId: req.userId });
+  res.json({
+    message: 'Logout successful. Please remove the token from client storage.'
   });
 });
 
-// GET /api/auth/me - Get current user
-router.get('/me', async (req, res) => {
-  if (req.session && req.session.userId) {
-    try {
-      const db = await getDb();
-      const user = await db.get('SELECT id, username, is_admin FROM users WHERE id = ?', [req.session.userId]);
-      if (user) {
-        res.json({
-          id: user.id,
-          username: user.username,
-          is_admin: user.is_admin === 1
-        });
-      } else {
-        res.status(401).json({ error: 'User not found' });
-      }
-    } catch (error) {
-      logger.error('Error fetching user', { error: error.message });
-      res.status(500).json({ error: 'Failed to fetch user' });
+// GET /api/auth/me - Get current user (requires JWT authentication)
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    // User info is already attached by requireAuth middleware
+    // But we fetch fresh data from DB to ensure it's up-to-date
+    const db = await getDb();
+    const user = await db.get(
+      'SELECT id, username, is_admin, last_login, created_at FROM users WHERE id = ?',
+      [req.userId]
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
+
+    res.json({
+      id: user.id,
+      username: user.username,
+      is_admin: user.is_admin === 1,
+      last_login: user.last_login,
+      created_at: user.created_at
+    });
+  } catch (error) {
+    logger.error('Error fetching user', { error: error.message, userId: req.userId });
+    res.status(500).json({ error: 'Failed to fetch user information' });
+  }
+});
+
+// POST /api/auth/refresh - Refresh access token using refresh token
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    // Verify refresh token
+    let decoded;
+    try {
+      decoded = verifyToken(refreshToken);
+    } catch (error) {
+      return res.status(401).json({
+        error: 'Invalid or expired refresh token',
+        message: error.message
+      });
+    }
+
+    // Check if it's a refresh token
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({ error: 'Invalid token type' });
+    }
+
+    // Verify user still exists
+    const db = await getDb();
+    const user = await db.get(
+      'SELECT id, username, is_admin FROM users WHERE id = ?',
+      [decoded.id]
+    );
+
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Generate new token pair
+    const tokens = generateTokenPair(user);
+
+    logger.info('Token refreshed', { userId: user.id });
+
+    res.json({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      message: 'Token refreshed successfully'
+    });
+  } catch (error) {
+    logger.error('Error refreshing token', { error: error.message });
+    res.status(500).json({ error: 'Failed to refresh token' });
   }
 });
 

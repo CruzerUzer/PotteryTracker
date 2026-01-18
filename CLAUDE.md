@@ -84,12 +84,17 @@ PotteryTracker/
 - **Image Uploads**: Multer + Sharp for resizing/thumbnails
 - **Multi-user**: Each user sees only their own pieces
 
-## Verification
+## Verification (MANDATORY)
 
-Before committing changes:
-1. `cd backend && npm test` - Run backend tests
-2. `cd frontend && npm run build` - Verify frontend builds
+**CRITICAL**: Production server updates via `update-potterytracker.sh` require these steps to pass.
+
+Before EVERY commit, verify:
+1. **Backend tests**: `cd backend && npm test` - MUST pass
+2. **Frontend build**: `cd frontend && npm run build` - MUST succeed
 3. Manual testing of affected features
+
+The update script runs: `npm install` (both dirs) → `npm run build` (frontend) → PM2 restart.
+If tests fail or build fails, the commit will break production deployment.
 
 ## File Boundaries
 

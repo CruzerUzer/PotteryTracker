@@ -41,20 +41,22 @@ router.get('/', async (req, res) => {
     const db = await getDb();
 
     let query = `
-      SELECT 
+      SELECT
         p.*,
         ph.name as phase_name,
+        loc.name as location_name,
         COUNT(DISTINCT pm.material_id) as material_count,
         COUNT(DISTINCT pi.id) as image_count,
         (
-          SELECT pi2.id 
-          FROM piece_images pi2 
-          WHERE pi2.piece_id = p.id 
-          ORDER BY pi2.created_at DESC 
+          SELECT pi2.id
+          FROM piece_images pi2
+          WHERE pi2.piece_id = p.id
+          ORDER BY pi2.created_at DESC
           LIMIT 1
         ) as latest_image_id
       FROM ceramic_pieces p
       LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
+      LEFT JOIN locations loc ON p.current_location_id = loc.id AND loc.user_id = p.user_id
       LEFT JOIN piece_materials pm ON p.id = pm.piece_id
       LEFT JOIN piece_images pi ON p.id = pi.piece_id
       WHERE p.user_id = ?
@@ -129,11 +131,12 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const db = await getDb();
 
-    // Get piece with phase (must belong to user)
+    // Get piece with phase and location (must belong to user)
     const piece = await db.get(`
-      SELECT p.*, ph.name as phase_name
+      SELECT p.*, ph.name as phase_name, loc.name as location_name
       FROM ceramic_pieces p
       LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
+      LEFT JOIN locations loc ON p.current_location_id = loc.id AND loc.user_id = p.user_id
       WHERE p.id = ? AND p.user_id = ?
     `, [id, req.userId]);
 
@@ -176,7 +179,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/pieces - Create a new piece
 router.post('/', async (req, res) => {
   try {
-    const { name, description, current_phase_id, material_ids } = req.body;
+    const { name, description, current_phase_id, current_location_id, material_ids } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ error: 'Piece name is required' });
@@ -192,13 +195,21 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Validate location if provided (must belong to user)
+    if (current_location_id) {
+      const location = await db.get('SELECT id FROM locations WHERE id = ? AND user_id = ?', [current_location_id, req.userId]);
+      if (!location) {
+        return res.status(400).json({ error: 'Invalid location_id' });
+      }
+    }
+
     // Check if the phase is the final phase
     const done = current_phase_id ? await isFinalPhase(db, current_phase_id, req.userId) : false;
 
     // Insert piece
     const result = await db.run(
-      'INSERT INTO ceramic_pieces (user_id, name, description, current_phase_id, done) VALUES (?, ?, ?, ?, ?)',
-      [req.userId, name.trim(), description || null, current_phase_id || null, done ? 1 : 0]
+      'INSERT INTO ceramic_pieces (user_id, name, description, current_phase_id, current_location_id, done) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.userId, name.trim(), description || null, current_phase_id || null, current_location_id || null, done ? 1 : 0]
     );
 
     const pieceId = result.lastID;
@@ -226,11 +237,12 @@ router.post('/', async (req, res) => {
       pieceId,
       name,
       phaseId: current_phase_id,
+      locationId: current_location_id,
       done,
       userId: req.userId
     });
 
-    res.status(201).json({ id: pieceId, name, description, current_phase_id, done });
+    res.status(201).json({ id: pieceId, name, description, current_phase_id, current_location_id, done });
   } catch (error) {
     logger.error('Error creating piece', {
       error: error.message,
@@ -246,7 +258,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, current_phase_id, material_ids } = req.body;
+    const { name, description, current_phase_id, current_location_id, material_ids } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ error: 'Piece name is required' });
@@ -268,13 +280,21 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    // Validate location if provided (must belong to user)
+    if (current_location_id) {
+      const location = await db.get('SELECT id FROM locations WHERE id = ? AND user_id = ?', [current_location_id, req.userId]);
+      if (!location) {
+        return res.status(400).json({ error: 'Invalid location_id' });
+      }
+    }
+
     // Check if the phase is the final phase
     const done = current_phase_id ? await isFinalPhase(db, current_phase_id, req.userId) : false;
 
     // Update piece
     const result = await db.run(
-      'UPDATE ceramic_pieces SET name = ?, description = ?, current_phase_id = ?, done = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
-      [name.trim(), description || null, current_phase_id || null, done ? 1 : 0, id, req.userId]
+      'UPDATE ceramic_pieces SET name = ?, description = ?, current_phase_id = ?, current_location_id = ?, done = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
+      [name.trim(), description || null, current_phase_id || null, current_location_id || null, done ? 1 : 0, id, req.userId]
     );
 
     // Update materials if provided
@@ -306,11 +326,12 @@ router.put('/:id', async (req, res) => {
       pieceId: id,
       name,
       phaseId: current_phase_id,
+      locationId: current_location_id,
       done,
       userId: req.userId
     });
 
-    res.json({ id: parseInt(id), name, description, current_phase_id, done });
+    res.json({ id: parseInt(id), name, description, current_phase_id, current_location_id, done });
   } catch (error) {
     logger.error('Error updating piece', {
       error: error.message,
@@ -371,6 +392,52 @@ router.patch('/:id/phase', async (req, res) => {
       userId: req.userId
     });
     res.status(500).json({ error: 'Failed to update piece phase' });
+  }
+});
+
+// PATCH /api/pieces/:id/location - Move piece to a different location
+router.patch('/:id/location', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { location_id } = req.body;
+
+    const db = await getDb();
+
+    // Verify piece belongs to user
+    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!piece) {
+      return res.status(404).json({ error: 'Piece not found' });
+    }
+
+    // Validate location if provided (must belong to user)
+    if (location_id) {
+      const location = await db.get('SELECT id FROM locations WHERE id = ? AND user_id = ?', [location_id, req.userId]);
+      if (!location) {
+        return res.status(400).json({ error: 'Invalid location_id' });
+      }
+    }
+
+    const result = await db.run(
+      'UPDATE ceramic_pieces SET current_location_id = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
+      [location_id || null, id, req.userId]
+    );
+
+    logger.info('Piece location updated', {
+      pieceId: id,
+      locationId: location_id,
+      userId: req.userId
+    });
+
+    res.json({ id: parseInt(id), location_id: location_id || null });
+  } catch (error) {
+    logger.error('Error updating piece location', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: id,
+      locationId: req.body.location_id,
+      userId: req.userId
+    });
+    res.status(500).json({ error: 'Failed to update piece location' });
   }
 });
 

@@ -20,6 +20,17 @@ CREATE TABLE IF NOT EXISTS phases (
     UNIQUE(user_id, name)
 );
 
+-- Locations table
+CREATE TABLE IF NOT EXISTS locations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, name)
+);
+
 -- Materials table
 CREATE TABLE IF NOT EXISTS materials (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,11 +48,13 @@ CREATE TABLE IF NOT EXISTS ceramic_pieces (
     name TEXT NOT NULL,
     description TEXT,
     current_phase_id INTEGER,
+    current_location_id INTEGER,
     done INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (current_phase_id) REFERENCES phases(id)
+    FOREIGN KEY (current_phase_id) REFERENCES phases(id),
+    FOREIGN KEY (current_location_id) REFERENCES locations(id)
 );
 
 -- Junction table for piece-materials relationship
@@ -72,6 +85,8 @@ CREATE INDEX IF NOT EXISTS idx_phases_user ON phases(user_id);
 CREATE INDEX IF NOT EXISTS idx_materials_user ON materials(user_id);
 CREATE INDEX IF NOT EXISTS idx_pieces_user ON ceramic_pieces(user_id);
 CREATE INDEX IF NOT EXISTS idx_pieces_phase ON ceramic_pieces(current_phase_id);
+CREATE INDEX IF NOT EXISTS idx_pieces_location ON ceramic_pieces(current_location_id);
+CREATE INDEX IF NOT EXISTS idx_locations_user ON locations(user_id);
 CREATE INDEX IF NOT EXISTS idx_piece_materials_piece ON piece_materials(piece_id);
 CREATE INDEX IF NOT EXISTS idx_piece_materials_material ON piece_materials(material_id);
 CREATE INDEX IF NOT EXISTS idx_piece_images_piece ON piece_images(piece_id);

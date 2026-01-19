@@ -5,7 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import PieceList from './components/PieceList';
 import PieceForm from './components/PieceForm';
 import PieceDetail from './components/PieceDetail';
-import PhaseManager from './components/PhaseManager';
+import WorkflowManager from './components/WorkflowManager';
 import MaterialManager from './components/MaterialManager';
 import KanbanView from './components/KanbanView';
 import DonePieces from './components/DonePieces';
@@ -190,7 +190,7 @@ function AppContent() {
                 path="/phases"
                 element={
                   <ProtectedRoute>
-                    <PhaseManager />
+                    <WorkflowManager />
                   </ProtectedRoute>
                 }
               />

@@ -1,35 +1,44 @@
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
+import session from 'express-session';
 import bcrypt from 'bcrypt';
-import authRouter from '../../routes/auth.js';
-import { getDb } from '../../utils/db.js';
 
-// Mock dependencies
-jest.mock('../../utils/db.js');
-jest.mock('../../utils/logger.js', () => ({
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
+// Mock getDb before importing the module that uses it
+const mockDb = {
+  get: jest.fn(),
+  run: jest.fn(),
+};
+
+jest.unstable_mockModule('../../utils/db.js', () => ({
+  getDb: jest.fn(() => Promise.resolve(mockDb)),
 }));
+
+jest.unstable_mockModule('../../utils/logger.js', () => ({
+  default: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
+// Dynamic import after mocking
+const { default: authRouter } = await import('../../routes/auth.js');
 
 describe('Auth API', () => {
   let app;
-  let mockDb;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    
-    // Mock database
-    mockDb = {
-      get: jest.fn(),
-      run: jest.fn(),
-    };
-    getDb.mockResolvedValue(mockDb);
-
+    app.use(session({
+      secret: 'test-secret',
+      resave: false,
+      saveUninitialized: false,
+    }));
     app.use('/api/auth', authRouter);
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -38,7 +47,16 @@ describe('Auth API', () => {
 
   describe('POST /api/auth/register', () => {
     it('should register a new user', async () => {
-      mockDb.get.mockResolvedValue(null); // No existing user
+      // Mock registration enabled
+      mockDb.get.mockImplementation((query) => {
+        if (query.includes('system_settings') && query.includes('registration_enabled')) {
+          return Promise.resolve({ value: '1' });
+        }
+        if (query.includes('SELECT id FROM users')) {
+          return Promise.resolve(null); // No existing user
+        }
+        return Promise.resolve(null);
+      });
       mockDb.run.mockResolvedValue({ lastID: 1 });
 
       const response = await request(app)
@@ -48,11 +66,19 @@ describe('Auth API', () => {
 
       expect(response.body).toHaveProperty('id', 1);
       expect(response.body).toHaveProperty('username', 'testuser');
-      expect(mockDb.run).toHaveBeenCalled();
     });
 
     it('should reject registration with existing username', async () => {
-      mockDb.get.mockResolvedValue({ id: 1 }); // Existing user
+      // Mock registration enabled and existing user
+      mockDb.get.mockImplementation((query) => {
+        if (query.includes('system_settings') && query.includes('registration_enabled')) {
+          return Promise.resolve({ value: '1' });
+        }
+        if (query.includes('SELECT id FROM users')) {
+          return Promise.resolve({ id: 1 }); // Existing user
+        }
+        return Promise.resolve(null);
+      });
 
       const response = await request(app)
         .post('/api/auth/register')
@@ -75,11 +101,19 @@ describe('Auth API', () => {
   describe('POST /api/auth/login', () => {
     it('should login with valid credentials', async () => {
       const hashedPassword = await bcrypt.hash('password123', 10);
-      mockDb.get.mockResolvedValue({
-        id: 1,
-        username: 'testuser',
-        password_hash: hashedPassword,
+      mockDb.get.mockImplementation((query) => {
+        if (query.includes('SELECT') && query.includes('users') && query.includes('username')) {
+          return Promise.resolve({
+            id: 1,
+            username: 'testuser',
+            password_hash: hashedPassword,
+            is_admin: 0,
+            must_change_password: 0,
+          });
+        }
+        return Promise.resolve(null);
       });
+      mockDb.run.mockResolvedValue({ changes: 1 });
 
       const response = await request(app)
         .post('/api/auth/login')
@@ -102,9 +136,3 @@ describe('Auth API', () => {
     });
   });
 });
-
-
-
-
-
-

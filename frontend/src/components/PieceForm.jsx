@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
+import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -18,9 +18,11 @@ function PieceForm() {
     name: '',
     description: '',
     current_phase_id: '',
+    current_location_id: '',
     material_ids: [],
   });
   const [phases, setPhases] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,14 +38,17 @@ function PieceForm() {
       setLoading(true);
       setError(null);
 
-      const [phasesData, materialsData] = await Promise.all([
+      const [phasesData, locationsData, materialsData] = await Promise.all([
         phasesAPI.getAll(),
+        locationsAPI.getAll(),
         materialsAPI.getAll(),
       ]);
-      
+
       // Sort phases by display_order
       const sortedPhases = phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      const sortedLocations = locationsData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
       setPhases(sortedPhases);
+      setLocations(sortedLocations);
       setMaterials(materialsData);
 
       if (isEdit) {
@@ -52,14 +57,17 @@ function PieceForm() {
           name: piece.name || '',
           description: piece.description || '',
           current_phase_id: piece.current_phase_id || '',
+          current_location_id: piece.current_location_id || '',
           material_ids: piece.materials?.map((m) => m.id) || [],
         });
       } else {
         // For new pieces, set default phase to the first phase (by display_order)
         const firstPhase = sortedPhases.length > 0 ? sortedPhases[0] : null;
+        const firstLocation = sortedLocations.length > 0 ? sortedLocations[0] : null;
         setFormData(prev => ({
           ...prev,
           current_phase_id: firstPhase ? firstPhase.id.toString() : '',
+          current_location_id: firstLocation ? firstLocation.id.toString() : '',
         }));
       }
     } catch (err) {
@@ -76,6 +84,10 @@ function PieceForm() {
 
   const handlePhaseChange = (value) => {
     setFormData((prev) => ({ ...prev, current_phase_id: value || '' }));
+  };
+
+  const handleLocationChange = (value) => {
+    setFormData((prev) => ({ ...prev, current_location_id: value || '' }));
   };
 
   const handleMaterialToggle = (materialId) => {
@@ -96,6 +108,7 @@ function PieceForm() {
       const data = {
         ...formData,
         current_phase_id: formData.current_phase_id || null,
+        current_location_id: formData.current_location_id || null,
       };
 
       let pieceId;
@@ -176,6 +189,22 @@ function PieceForm() {
                   {phases.map((phase) => (
                     <SelectItem key={phase.id} value={phase.id.toString()}>
                       {phase.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="current_location_id">Location</Label>
+              <Select value={formData.current_location_id || undefined} onValueChange={(value) => handleLocationChange(value || '')}>
+                <SelectTrigger id="current_location_id">
+                  <SelectValue placeholder="No location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id.toString()}>
+                      {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

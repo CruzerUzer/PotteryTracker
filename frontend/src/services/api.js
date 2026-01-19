@@ -115,6 +115,14 @@ export const phasesAPI = {
   delete: (id) => apiCall(`/phases/${id}`, { method: 'DELETE' }),
 };
 
+// Locations API
+export const locationsAPI = {
+  getAll: () => apiCall('/locations'),
+  create: (data) => apiCall('/locations', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => apiCall(`/locations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => apiCall(`/locations/${id}`, { method: 'DELETE' }),
+};
+
 // Materials API
 export const materialsAPI = {
   getAll: () => apiCall('/materials'),
@@ -146,6 +154,10 @@ export const piecesAPI = {
   updatePhase: (id, phaseId) => apiCall(`/pieces/${id}/phase`, {
     method: 'PATCH',
     body: JSON.stringify({ phase_id: phaseId }),
+  }),
+  updateLocation: (id, locationId) => apiCall(`/pieces/${id}/location`, {
+    method: 'PATCH',
+    body: JSON.stringify({ location_id: locationId }),
   }),
 };
 

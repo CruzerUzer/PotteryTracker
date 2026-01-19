@@ -1,32 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { phasesAPI } from '../services/api';
+import { phasesAPI, locationsAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { GripVertical, Edit, Trash2, Plus } from 'lucide-react';
+import { GripVertical, Edit, Trash2, Plus, Layers, MapPin } from 'lucide-react';
 
-function PhaseManager() {
+function WorkflowManager() {
+  const [activeTab, setActiveTab] = useState('phases');
   const [phases, setPhases] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '', display_order: 0 });
   const [showForm, setShowForm] = useState(false);
-  const [draggedPhase, setDraggedPhase] = useState(null);
+  const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
   useEffect(() => {
-    loadPhases();
+    loadData();
   }, []);
 
-  const loadPhases = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await phasesAPI.getAll();
-      const sorted = data.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-      setPhases(sorted);
+      const [phasesData, locationsData] = await Promise.all([
+        phasesAPI.getAll(),
+        locationsAPI.getAll(),
+      ]);
+      const sortedPhases = phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      const sortedLocations = locationsData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      setPhases(sortedPhases);
+      setLocations(sortedLocations);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -34,15 +41,20 @@ function PhaseManager() {
     }
   };
 
-  const handleDragStart = (e, phase, index) => {
-    setDraggedPhase({ phase, index });
+  const currentItems = activeTab === 'phases' ? phases : locations;
+  const currentAPI = activeTab === 'phases' ? phasesAPI : locationsAPI;
+  const setCurrentItems = activeTab === 'phases' ? setPhases : setLocations;
+  const itemLabel = activeTab === 'phases' ? 'Phase' : 'Location';
+
+  const handleDragStart = (e, item, index) => {
+    setDraggedItem({ item, index });
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e, index) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    if (draggedPhase && draggedPhase.index !== index) {
+    if (draggedItem && draggedItem.index !== index) {
       setDragOverIndex(index);
     }
   };
@@ -55,37 +67,37 @@ function PhaseManager() {
     e.preventDefault();
     setDragOverIndex(null);
 
-    if (!draggedPhase || draggedPhase.index === targetIndex) {
-      setDraggedPhase(null);
+    if (!draggedItem || draggedItem.index === targetIndex) {
+      setDraggedItem(null);
       return;
     }
 
-    const newPhases = [...phases];
-    const [removed] = newPhases.splice(draggedPhase.index, 1);
-    newPhases.splice(targetIndex, 0, removed);
+    const newItems = [...currentItems];
+    const [removed] = newItems.splice(draggedItem.index, 1);
+    newItems.splice(targetIndex, 0, removed);
 
-    const updatedPhases = newPhases.map((phase, index) => ({
-      ...phase,
+    const updatedItems = newItems.map((item, index) => ({
+      ...item,
       display_order: index
     }));
 
     try {
       await Promise.all(
-        updatedPhases.map((phase, index) =>
-          phasesAPI.update(phase.id, { ...phase, display_order: index })
+        updatedItems.map((item, index) =>
+          currentAPI.update(item.id, { ...item, display_order: index })
         )
       );
-      setPhases(updatedPhases);
-      setDraggedPhase(null);
+      setCurrentItems(updatedItems);
+      setDraggedItem(null);
     } catch (err) {
       setError(err.message);
-      setDraggedPhase(null);
-      loadPhases();
+      setDraggedItem(null);
+      loadData();
     }
   };
 
   const handleDragEnd = () => {
-    setDraggedPhase(null);
+    setDraggedItem(null);
     setDragOverIndex(null);
   };
 
@@ -95,38 +107,38 @@ function PhaseManager() {
 
     try {
       if (editingId) {
-        await phasesAPI.update(editingId, formData);
+        await currentAPI.update(editingId, formData);
       } else {
-        const maxOrder = phases.length > 0 
-          ? Math.max(...phases.map(p => p.display_order || 0))
+        const maxOrder = currentItems.length > 0
+          ? Math.max(...currentItems.map(p => p.display_order || 0))
           : -1;
-        await phasesAPI.create({ ...formData, display_order: maxOrder + 1 });
+        await currentAPI.create({ ...formData, display_order: maxOrder + 1 });
       }
       setFormData({ name: '', display_order: 0 });
       setEditingId(null);
       setShowForm(false);
-      loadPhases();
+      loadData();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const handleEdit = (phase) => {
-    setFormData({ name: phase.name, display_order: phase.display_order });
-    setEditingId(phase.id);
+  const handleEdit = (item) => {
+    setFormData({ name: item.name, display_order: item.display_order });
+    setEditingId(item.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this phase?')) {
+    if (!window.confirm(`Are you sure you want to delete this ${itemLabel.toLowerCase()}?`)) {
       return;
     }
 
     try {
-      await phasesAPI.delete(id);
-      loadPhases();
+      await currentAPI.delete(id);
+      loadData();
     } catch (err) {
-      alert('Error deleting phase: ' + err.message);
+      alert(`Error deleting ${itemLabel.toLowerCase()}: ` + err.message);
     }
   };
 
@@ -134,6 +146,14 @@ function PhaseManager() {
     setFormData({ name: '', display_order: 0 });
     setEditingId(null);
     setShowForm(false);
+    setError(null);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setShowForm(false);
+    setEditingId(null);
+    setFormData({ name: '', display_order: 0 });
     setError(null);
   };
 
@@ -150,7 +170,7 @@ function PhaseManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Manage Phases</h2>
+        <h2 className="text-2xl font-bold">Workflow</h2>
         <Button
           onClick={() => {
             setShowForm(true);
@@ -159,8 +179,34 @@ function PhaseManager() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add New Phase
+          Add New {itemLabel}
         </Button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-[var(--color-border)]">
+        <button
+          onClick={() => handleTabChange('phases')}
+          className={`flex items-center gap-2 px-4 py-2 -mb-px border-b-2 transition-colors ${
+            activeTab === 'phases'
+              ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+              : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+          }`}
+        >
+          <Layers className="h-4 w-4" />
+          Phases ({phases.length})
+        </button>
+        <button
+          onClick={() => handleTabChange('locations')}
+          className={`flex items-center gap-2 px-4 py-2 -mb-px border-b-2 transition-colors ${
+            activeTab === 'locations'
+              ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+              : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+          }`}
+        >
+          <MapPin className="h-4 w-4" />
+          Locations ({locations.length})
+        </button>
       </div>
 
       {error && (
@@ -172,14 +218,14 @@ function PhaseManager() {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? 'Edit Phase' : 'Create New Phase'}</CardTitle>
+            <CardTitle>{editingId ? `Edit ${itemLabel}` : `Create New ${itemLabel}`}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phase-name">Name *</Label>
+                <Label htmlFor="item-name">Name *</Label>
                 <Input
-                  id="phase-name"
+                  id="item-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -187,9 +233,9 @@ function PhaseManager() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phase-order">Display Order</Label>
+                <Label htmlFor="item-order">Display Order</Label>
                 <Input
-                  id="phase-order"
+                  id="item-order"
                   type="number"
                   value={formData.display_order}
                   onChange={(e) =>
@@ -212,18 +258,20 @@ function PhaseManager() {
 
       <Card>
         <CardContent className="pt-6">
-          {phases.length === 0 ? (
-            <p className="text-center text-[var(--color-text-tertiary)]">No phases yet. Create your first phase to get started!</p>
+          {currentItems.length === 0 ? (
+            <p className="text-center text-[var(--color-text-tertiary)]">
+              No {activeTab} yet. Create your first {itemLabel.toLowerCase()} to get started!
+            </p>
           ) : (
             <div className="space-y-2">
-              {phases.map((phase, index) => (
+              {currentItems.map((item, index) => (
                 <div
-                  key={phase.id}
+                  key={item.id}
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors ${
-                    draggedPhase?.index === index ? 'opacity-50' : ''
+                    draggedItem?.index === index ? 'opacity-50' : ''
                   } ${dragOverIndex === index ? 'border-[var(--color-primary)] bg-[var(--color-surface-hover)]' : ''} hover:bg-[var(--color-surface-hover)]`}
                   draggable
-                  onDragStart={(e) => handleDragStart(e, phase, index)}
+                  onDragStart={(e) => handleDragStart(e, item, index)}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
@@ -232,7 +280,7 @@ function PhaseManager() {
                   <div className="flex items-center gap-3">
                     <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)] cursor-grab" />
                     <div>
-                      <div className="font-medium">{phase.name}</div>
+                      <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-[var(--color-text-tertiary)]">Position: {index + 1}</div>
                     </div>
                   </div>
@@ -240,7 +288,7 @@ function PhaseManager() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleEdit(phase)}
+                      onClick={() => handleEdit(item)}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -248,7 +296,7 @@ function PhaseManager() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(phase.id)}
+                      onClick={() => handleDelete(item.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
@@ -264,4 +312,4 @@ function PhaseManager() {
   );
 }
 
-export default PhaseManager;
+export default WorkflowManager;

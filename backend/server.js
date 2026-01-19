@@ -10,6 +10,7 @@ import logger from './utils/logger.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import phasesRouter from './routes/phases.js';
+import locationsRouter from './routes/locations.js';
 import materialsRouter from './routes/materials.js';
 import piecesRouter from './routes/pieces.js';
 import pieceImagesRouter from './routes/pieceImages.js';
@@ -131,6 +132,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/phases', phasesRouter);
+app.use('/api/locations', locationsRouter);
 app.use('/api/materials', materialsRouter);
 app.use('/api/pieces', piecesRouter);
 app.use('/api/pieces', pieceImagesRouter); // Handles /api/pieces/:id/images routes

@@ -1,43 +1,48 @@
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import piecesRouter from '../../routes/pieces.js';
-import { requireAuth } from '../../middleware/auth.js';
-import { getDb } from '../../utils/db.js';
 
-// Mock dependencies
-jest.mock('../../middleware/auth.js');
-jest.mock('../../utils/db.js');
-jest.mock('../../utils/logger.js', () => ({
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
+// Mock database
+const mockDb = {
+  all: jest.fn(),
+  get: jest.fn(),
+  run: jest.fn(),
+};
+
+// Mock requireAuth
+const mockRequireAuth = jest.fn((req, res, next) => {
+  req.userId = 1;
+  next();
+});
+
+jest.unstable_mockModule('../../middleware/auth.js', () => ({
+  requireAuth: mockRequireAuth,
 }));
+
+jest.unstable_mockModule('../../utils/db.js', () => ({
+  getDb: jest.fn(() => Promise.resolve(mockDb)),
+}));
+
+jest.unstable_mockModule('../../utils/logger.js', () => ({
+  default: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
+// Dynamic import after mocking
+const { default: piecesRouter } = await import('../../routes/pieces.js');
 
 describe('Pieces API', () => {
   let app;
-  let mockDb;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    
-    // Mock requireAuth to always pass
-    requireAuth.mockImplementation((req, res, next) => {
-      req.userId = 1;
-      next();
-    });
-
-    // Mock database
-    mockDb = {
-      all: jest.fn(),
-      get: jest.fn(),
-      run: jest.fn(),
-    };
-    getDb.mockResolvedValue(mockDb);
-
     app.use('/api/pieces', piecesRouter);
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -50,7 +55,7 @@ describe('Pieces API', () => {
         { id: 1, name: 'Test Piece', user_id: 1 },
         { id: 2, name: 'Another Piece', user_id: 1 },
       ];
-      
+
       mockDb.all.mockResolvedValue(mockPieces);
 
       const response = await request(app)
@@ -73,7 +78,7 @@ describe('Pieces API', () => {
 
       expect(mockDb.all).toHaveBeenCalledWith(
         expect.stringContaining('AND p.current_phase_id = ?'),
-        expect.arrayContaining([1, 5])
+        expect.arrayContaining([1, '5'])
       );
     });
 
@@ -122,9 +127,3 @@ describe('Pieces API', () => {
     });
   });
 });
-
-
-
-
-
-

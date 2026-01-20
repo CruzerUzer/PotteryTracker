@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { piecesAPI, phasesAPI, locationsAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { Plus, Package, Image as ImageIcon, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { Plus, Package, Image as ImageIcon, ChevronDown, ChevronUp, ChevronRight, MapPin } from 'lucide-react';
 
 function KanbanView() {
   const [pieces, setPieces] = useState([]);
@@ -19,6 +19,7 @@ function KanbanView() {
   const [touchTimer, setTouchTimer] = useState(null);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [collapsedLanes, setCollapsedLanes] = useState(new Set());
+  const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns per location: "locationId-phaseId"
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,6 +82,24 @@ function KanbanView() {
   const isLaneCollapsed = (locationId) => {
     const key = locationId === null ? 'no-location' : locationId;
     return collapsedLanes.has(key);
+  };
+
+  const toggleColumnCollapse = (locationId, phaseId) => {
+    setCollapsedColumns(prev => {
+      const newSet = new Set(prev);
+      const key = `${locationId === null ? 'no-location' : locationId}-${phaseId}`;
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
+  const isColumnCollapsed = (locationId, phaseId) => {
+    const key = `${locationId === null ? 'no-location' : locationId}-${phaseId}`;
+    return collapsedColumns.has(key);
   };
 
   const handleDragStart = (e, piece) => {
@@ -421,73 +440,112 @@ function KanbanView() {
     return (
       <div
         key={locationId === null ? 'no-location' : locationId}
-        className="border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] mb-4"
+        className="border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] flex"
       >
-        {/* Lane Header */}
+        {/* Left Sidebar - Rotated Title */}
         <div
-          className={`p-2 flex items-center justify-between cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors ${
-            isCollapsed ? '' : 'border-b border-[var(--color-border)]'
-          }`}
+          className="flex-shrink-0 w-10 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col items-center justify-center gap-2 py-4 cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
           onClick={() => toggleLaneCollapse(locationId)}
           title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
         >
-          <div className="flex items-center gap-2">
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
-            ) : (
-              <ChevronUp className="h-4 w-4 text-[var(--color-text-secondary)]" />
-            )}
-            <MapPin className="h-4 w-4 text-[var(--color-text-secondary)]" />
-            <h3 className="font-semibold text-sm">{locationName}</h3>
+          {/* Collapse Button - Top */}
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)]" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
+          )}
+
+          {/* Rotated Location Text - Middle */}
+          <div
+            className="flex-1 flex items-center justify-center"
+            style={{
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <div className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              <span className="font-semibold text-sm">{locationName}</span>
+            </div>
           </div>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+
+          {/* Count Badge - Bottom */}
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
             {pieceCount}
           </span>
         </div>
 
-        {/* Lane Content - Phase Columns */}
+        {/* Right Content - Phase Columns with Headers */}
         {!isCollapsed && (
-          <div className="flex gap-1 overflow-x-auto p-2">
-            {phases.map((phase) => {
-              const cellPieces = getPiecesForCell(phase.id, locationId);
-              const cellId = `${phase.id}-${locationId}`;
-              const isHighlighted = isCellHighlighted(phase.id, locationId);
-
-              return (
-                <div
-                  key={phase.id}
-                  data-cell-id={cellId}
-                  className={`flex-shrink-0 w-[160px] md:w-48 bg-[var(--color-bg)] rounded-md border border-[var(--color-border)] flex flex-col min-h-[150px] transition-all ${
-                    isHighlighted
-                      ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)] scale-102 ring-2 ring-[var(--color-primary)] ring-opacity-50'
-                      : ''
-                  }`}
-                  onDragOver={(e) => handleDragOver(e, phase.id, locationId)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, phase.id, locationId)}
-                >
-                  {/* Column Header */}
-                  <div className="p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-xs truncate">{phase.name}</h4>
-                      <span className="text-xs text-[var(--color-text-tertiary)]">
-                        {cellPieces.length}
-                      </span>
+          <div className="flex-1 flex flex-col">
+            {/* Column Headers with Collapse Controls */}
+            <div className="flex gap-1 p-2 pb-1">
+              {phases.map(phase => {
+                const isColCollapsed = isColumnCollapsed(locationId, phase.id);
+                return (
+                  <div
+                    key={`header-${phase.id}`}
+                    className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
+                  >
+                    <div
+                      className="p-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
+                      onClick={() => toggleColumnCollapse(locationId, phase.id)}
+                      title={isColCollapsed ? 'Click to expand' : 'Click to collapse'}
+                    >
+                      {isColCollapsed ? (
+                        <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)] mx-auto" />
+                      ) : (
+                        <>
+                          <h4 className="font-medium text-xs truncate">{phase.name}</h4>
+                          <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                        </>
+                      )}
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Pieces */}
-                  <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto">
-                    {cellPieces.map(piece => renderPieceCard(piece))}
-                    {cellPieces.length === 0 && (
-                      <div className="text-center text-[var(--color-text-tertiary)] italic py-4 text-xs">
-                        Empty
+            {/* Phase Columns Content */}
+            <div className="flex gap-1 overflow-x-auto p-2 pt-1">
+              {phases.map((phase) => {
+                const isColCollapsed = isColumnCollapsed(locationId, phase.id);
+                const cellPieces = getPiecesForCell(phase.id, locationId);
+                const cellId = `${phase.id}-${locationId}`;
+                const isHighlighted = isCellHighlighted(phase.id, locationId);
+
+                return (
+                  <div
+                    key={phase.id}
+                    data-cell-id={cellId}
+                    className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
+                  >
+                    {!isColCollapsed && (
+                      <div className={`bg-[var(--color-bg)] rounded-md border border-[var(--color-border)] flex flex-col min-h-[150px] transition-all ${
+                        isHighlighted
+                          ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)] scale-102 ring-2 ring-[var(--color-primary)] ring-opacity-50'
+                          : ''
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, phase.id, locationId)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, phase.id, locationId)}
+                      >
+                        {/* Pieces */}
+                        <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto">
+                          {cellPieces.map(piece => renderPieceCard(piece))}
+                          {cellPieces.length === 0 && (
+                            <div className="text-center text-[var(--color-text-tertiary)] italic py-4 text-xs">
+                              Empty
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -523,7 +581,7 @@ function KanbanView() {
       )}
 
       {/* Swim Lanes */}
-      <div className="space-y-2">
+      <div className="space-y-1">
         {/* Locations with pieces first */}
         {locations.map(location => renderSwimLane(location))}
 

@@ -17,6 +17,7 @@ function WorkflowManager() {
   const [showForm, setShowForm] = useState(false);
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [dragPosition, setDragPosition] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -48,7 +49,18 @@ function WorkflowManager() {
 
   const handleDragStart = (e, item, index) => {
     setDraggedItem({ item, index });
+    setDragPosition({ x: e.clientX, y: e.clientY });
     e.dataTransfer.effectAllowed = 'move';
+    // Make default drag image invisible
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  };
+
+  const handleDrag = (e) => {
+    if (e.clientX !== 0 && e.clientY !== 0) {
+      setDragPosition({ x: e.clientX, y: e.clientY });
+    }
   };
 
   const handleDragOver = (e, index) => {
@@ -78,13 +90,13 @@ function WorkflowManager() {
 
     const updatedItems = newItems.map((item, index) => ({
       ...item,
-      display_order: index
+      display_order: index + 1
     }));
 
     try {
       await Promise.all(
         updatedItems.map((item, index) =>
-          currentAPI.update(item.id, { ...item, display_order: index })
+          currentAPI.update(item.id, { ...item, display_order: index + 1 })
         )
       );
       setCurrentItems(updatedItems);
@@ -99,17 +111,22 @@ function WorkflowManager() {
   const handleDragEnd = () => {
     setDraggedItem(null);
     setDragOverIndex(null);
+    setDragPosition(null);
   };
 
   // Touch event handlers for mobile support
   const handleTouchStart = (e, item, index) => {
+    const touch = e.touches[0];
     setDraggedItem({ item, index });
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
   };
 
   const handleTouchMove = (e) => {
     if (!draggedItem) return;
 
     const touch = e.touches[0];
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
     const itemElement = element?.closest('[data-drag-index]');
 
@@ -127,6 +144,7 @@ function WorkflowManager() {
     if (!draggedItem || dragOverIndex === null) {
       setDraggedItem(null);
       setDragOverIndex(null);
+      setDragPosition(null);
       return;
     }
 
@@ -135,6 +153,7 @@ function WorkflowManager() {
 
     if (draggedItem.index === targetIndex) {
       setDraggedItem(null);
+      setDragPosition(null);
       return;
     }
 
@@ -144,20 +163,22 @@ function WorkflowManager() {
 
     const updatedItems = newItems.map((item, index) => ({
       ...item,
-      display_order: index
+      display_order: index + 1
     }));
 
     try {
       await Promise.all(
         updatedItems.map((item, index) =>
-          currentAPI.update(item.id, { ...item, display_order: index })
+          currentAPI.update(item.id, { ...item, display_order: index + 1 })
         )
       );
       setCurrentItems(updatedItems);
       setDraggedItem(null);
+      setDragPosition(null);
     } catch (err) {
       setError(err.message);
       setDraggedItem(null);
+      setDragPosition(null);
       loadData();
     }
   };
@@ -330,11 +351,12 @@ function WorkflowManager() {
                   key={item.id}
                   data-drag-index={index}
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
-                    draggedItem?.index === index ? 'opacity-50 scale-95' : ''
+                    draggedItem?.index === index ? 'opacity-30' : ''
                   } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
                   style={{ touchAction: 'none' }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
+                  onDrag={handleDrag}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
@@ -380,6 +402,28 @@ function WorkflowManager() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating drag preview */}
+      {draggedItem && dragPosition && (
+        <div
+          className="fixed pointer-events-none z-50 opacity-80"
+          style={{
+            left: dragPosition.x,
+            top: dragPosition.y,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div className="flex items-center justify-between p-4 rounded-md border-2 border-[var(--color-primary)] bg-[var(--color-surface)] shadow-2xl max-w-md">
+            <div className="flex items-center gap-3">
+              <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+              <div>
+                <div className="font-medium">{draggedItem.item.name}</div>
+                <div className="text-sm text-[var(--color-text-tertiary)]">Position: {draggedItem.index + 1}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

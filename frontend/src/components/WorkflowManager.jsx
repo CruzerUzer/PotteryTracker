@@ -267,9 +267,9 @@ function WorkflowManager() {
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}
-                  className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors ${
-                    draggedItem?.index === index ? 'opacity-50' : ''
-                  } ${dragOverIndex === index ? 'border-[var(--color-primary)] bg-[var(--color-surface-hover)]' : ''} hover:bg-[var(--color-surface-hover)]`}
+                  className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
+                    draggedItem?.index === index ? 'opacity-50 scale-95' : ''
+                  } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
                   onDragOver={(e) => handleDragOver(e, index)}
@@ -277,18 +277,21 @@ function WorkflowManager() {
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
                 >
-                  <div className="flex items-center gap-3">
-                    <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)] cursor-grab" />
+                  <div className="flex items-center gap-3 pointer-events-none">
+                    <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
                     <div>
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-[var(--color-text-tertiary)]">Position: {index + 1}</div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pointer-events-auto">
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleEdit(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(item);
+                      }}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -296,7 +299,10 @@ function WorkflowManager() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete

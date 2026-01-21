@@ -535,7 +535,7 @@ function KanbanView() {
       )}
 
       {/* Main scroll container */}
-      <div className="overflow-x-auto">
+      <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
         {/* Global Phase Column Headers */}
         <div className="sticky top-0 z-10 flex gap-1 p-2 mb-1 min-w-min bg-[var(--color-background)]">
           {phases.map(phase => {

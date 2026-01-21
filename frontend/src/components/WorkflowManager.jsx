@@ -380,9 +380,10 @@ function WorkflowManager() {
                         e.stopPropagation();
                         handleEdit(item);
                       }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="destructive"
@@ -391,9 +392,10 @@ function WorkflowManager() {
                         e.stopPropagation();
                         handleDelete(item.id);
                       }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

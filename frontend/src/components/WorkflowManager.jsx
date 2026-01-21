@@ -101,6 +101,67 @@ function WorkflowManager() {
     setDragOverIndex(null);
   };
 
+  // Touch event handlers for mobile support
+  const handleTouchStart = (e, item, index) => {
+    setDraggedItem({ item, index });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!draggedItem) return;
+
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const itemElement = element?.closest('[data-drag-index]');
+
+    if (itemElement) {
+      const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+      if (!isNaN(targetIndex) && targetIndex !== draggedItem.index) {
+        setDragOverIndex(targetIndex);
+      }
+    }
+  };
+
+  const handleTouchEnd = async (e) => {
+    e.preventDefault();
+
+    if (!draggedItem || dragOverIndex === null) {
+      setDraggedItem(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const targetIndex = dragOverIndex;
+    setDragOverIndex(null);
+
+    if (draggedItem.index === targetIndex) {
+      setDraggedItem(null);
+      return;
+    }
+
+    const newItems = [...currentItems];
+    const [removed] = newItems.splice(draggedItem.index, 1);
+    newItems.splice(targetIndex, 0, removed);
+
+    const updatedItems = newItems.map((item, index) => ({
+      ...item,
+      display_order: index
+    }));
+
+    try {
+      await Promise.all(
+        updatedItems.map((item, index) =>
+          currentAPI.update(item.id, { ...item, display_order: index })
+        )
+      );
+      setCurrentItems(updatedItems);
+      setDraggedItem(null);
+    } catch (err) {
+      setError(err.message);
+      setDraggedItem(null);
+      loadData();
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -267,15 +328,20 @@ function WorkflowManager() {
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}
+                  data-drag-index={index}
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
                     draggedItem?.index === index ? 'opacity-50 scale-95' : ''
                   } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
+                  style={{ touchAction: 'none' }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, item, index)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                 >
                   <div className="flex items-center gap-3 pointer-events-none">
                     <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />

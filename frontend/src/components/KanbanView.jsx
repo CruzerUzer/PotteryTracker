@@ -537,7 +537,7 @@ function KanbanView() {
       {/* Main scroll container */}
       <div className="overflow-x-auto">
         {/* Global Phase Column Headers */}
-        <div className="flex gap-1 p-2 mb-1 min-w-min">
+        <div className="sticky top-0 z-10 flex gap-1 p-2 mb-1 min-w-min bg-[var(--color-background)]">
           {phases.map(phase => {
             const isColCollapsed = isColumnCollapsed(phase.id);
             return (

@@ -21,6 +21,7 @@ function KanbanView() {
   const [collapsedLanes, setCollapsedLanes] = useState(new Set());
   const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns globally by phaseId
   const navigate = useNavigate();
+  const isSyncingScroll = useRef(false);
 
   useEffect(() => {
     loadData();
@@ -102,32 +103,39 @@ function KanbanView() {
 
   // Scroll synchronization handler
   const handleScrollSync = useCallback((e) => {
+    // Prevent circular updates
+    if (isSyncingScroll.current) return;
+
     const scrollLeft = e.target.scrollLeft;
     const isGlobalHeader = e.target.classList.contains('global-header');
 
-    // Use requestAnimationFrame to prevent interrupting scroll momentum
-    requestAnimationFrame(() => {
-      if (isGlobalHeader) {
-        // Sync all swimlane contents with global header
-        document.querySelectorAll('.swimlane-content').forEach(content => {
-          if (Math.abs(content.scrollLeft - scrollLeft) > 1) {
-            content.scrollLeft = scrollLeft;
-          }
-        });
-      } else {
-        // Sync global header with swimlane content
-        const globalHeader = document.querySelector('.global-header');
-        if (globalHeader && Math.abs(globalHeader.scrollLeft - scrollLeft) > 1) {
-          globalHeader.scrollLeft = scrollLeft;
+    isSyncingScroll.current = true;
+
+    if (isGlobalHeader) {
+      // Sync all swimlane contents with global header
+      document.querySelectorAll('.swimlane-content').forEach(content => {
+        if (Math.abs(content.scrollLeft - scrollLeft) > 2) {
+          content.scrollLeft = scrollLeft;
         }
-        // Sync other swimlane contents
-        document.querySelectorAll('.swimlane-content').forEach(content => {
-          if (content !== e.target && Math.abs(content.scrollLeft - scrollLeft) > 1) {
-            content.scrollLeft = scrollLeft;
-          }
-        });
+      });
+    } else {
+      // Sync global header with swimlane content
+      const globalHeader = document.querySelector('.global-header');
+      if (globalHeader && Math.abs(globalHeader.scrollLeft - scrollLeft) > 2) {
+        globalHeader.scrollLeft = scrollLeft;
       }
-    });
+      // Sync other swimlane contents
+      document.querySelectorAll('.swimlane-content').forEach(content => {
+        if (content !== e.target && Math.abs(content.scrollLeft - scrollLeft) > 2) {
+          content.scrollLeft = scrollLeft;
+        }
+      });
+    }
+
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isSyncingScroll.current = false;
+    }, 10);
   }, []);
 
   const handleDragStart = (e, piece) => {
@@ -507,7 +515,7 @@ function KanbanView() {
 
         {/* Right Content - Phase Columns */}
         {!isCollapsed && (
-          <div className="flex-1 flex gap-1 overflow-x-auto p-2 swimlane-content" onScroll={handleScrollSync}>
+          <div className="flex-1 flex gap-1 overflow-x-auto p-2 swimlane-content" onScroll={handleScrollSync} style={{ scrollBehavior: 'auto' }}>
             {phases.map((phase) => {
               const isColCollapsed = isColumnCollapsed(phase.id);
               const cellPieces = getPiecesForCell(phase.id, locationId);
@@ -581,7 +589,7 @@ function KanbanView() {
       {/* Global Phase Column Headers */}
       <div className="flex gap-1 mb-1">
         <div className="flex-shrink-0 w-10" /> {/* Spacer for location sidebar */}
-        <div className="flex-1 flex gap-1 overflow-x-auto p-2 global-header" onScroll={handleScrollSync}>
+        <div className="flex-1 flex gap-1 overflow-x-auto p-2 global-header" onScroll={handleScrollSync} style={{ scrollBehavior: 'auto' }}>
           {phases.map(phase => {
             const isColCollapsed = isColumnCollapsed(phase.id);
             return (

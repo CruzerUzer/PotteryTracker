@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { piecesAPI, phasesAPI, locationsAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
@@ -21,7 +21,6 @@ function KanbanView() {
   const [collapsedLanes, setCollapsedLanes] = useState(new Set());
   const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns globally by phaseId
   const navigate = useNavigate();
-  const isSyncingScroll = useRef(false);
 
   useEffect(() => {
     loadData();
@@ -100,43 +99,6 @@ function KanbanView() {
   const isColumnCollapsed = (phaseId) => {
     return collapsedColumns.has(phaseId);
   };
-
-  // Scroll synchronization handler
-  const handleScrollSync = useCallback((e) => {
-    // Prevent circular updates
-    if (isSyncingScroll.current) return;
-
-    const scrollLeft = e.target.scrollLeft;
-    const isGlobalHeader = e.target.classList.contains('global-header');
-
-    isSyncingScroll.current = true;
-
-    if (isGlobalHeader) {
-      // Sync all swimlane contents with global header
-      document.querySelectorAll('.swimlane-content').forEach(content => {
-        if (Math.abs(content.scrollLeft - scrollLeft) > 2) {
-          content.scrollLeft = scrollLeft;
-        }
-      });
-    } else {
-      // Sync global header with swimlane content
-      const globalHeader = document.querySelector('.global-header');
-      if (globalHeader && Math.abs(globalHeader.scrollLeft - scrollLeft) > 2) {
-        globalHeader.scrollLeft = scrollLeft;
-      }
-      // Sync other swimlane contents
-      document.querySelectorAll('.swimlane-content').forEach(content => {
-        if (content !== e.target && Math.abs(content.scrollLeft - scrollLeft) > 2) {
-          content.scrollLeft = scrollLeft;
-        }
-      });
-    }
-
-    // Reset flag after a short delay
-    setTimeout(() => {
-      isSyncingScroll.current = false;
-    }, 10);
-  }, []);
 
   const handleDragStart = (e, piece) => {
     if (e.target.closest('a') || e.target.tagName === 'IMG') {
@@ -477,45 +439,31 @@ function KanbanView() {
     return (
       <div
         key={laneKey}
-        className="border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] flex"
+        className="border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]"
       >
-        {/* Left Sidebar - Rotated Title */}
+        {/* Location Header */}
         <div
-          className="flex-shrink-0 w-10 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col items-center justify-center gap-2 py-4 cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+          className="p-3 bg-[var(--color-surface)] border-b border-[var(--color-border)] cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
           onClick={() => toggleLaneCollapse(locationId)}
           title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
         >
-          {/* Collapse Button - Top */}
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)]" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
-          )}
-
-          {/* Rotated Location Text - Middle */}
-          <div
-            className="flex-1 flex items-center justify-center"
-            style={{
-              writingMode: 'vertical-rl',
-              transform: 'rotate(180deg)',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span className="font-semibold text-sm">{locationName}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)]" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
+            )}
+            <MapPin className="h-4 w-4" />
+            <span className="font-semibold text-sm">{locationName}</span>
           </div>
-
-          {/* Count Badge - Bottom */}
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
             {pieceCount}
           </span>
         </div>
 
-        {/* Right Content - Phase Columns */}
+        {/* Phase Columns */}
         {!isCollapsed && (
-          <div className="flex-1 flex gap-1 overflow-x-auto p-2 swimlane-content" onScroll={handleScrollSync} style={{ scrollBehavior: 'auto' }}>
+          <div className="flex gap-1 p-2">
             {phases.map((phase) => {
               const isColCollapsed = isColumnCollapsed(phase.id);
               const cellPieces = getPiecesForCell(phase.id, locationId);
@@ -586,10 +534,10 @@ function KanbanView() {
         </div>
       )}
 
-      {/* Global Phase Column Headers */}
-      <div className="flex gap-1 mb-1">
-        <div className="flex-shrink-0 w-10" /> {/* Spacer for location sidebar */}
-        <div className="flex-1 flex gap-1 overflow-x-auto p-2 global-header" onScroll={handleScrollSync} style={{ scrollBehavior: 'auto' }}>
+      {/* Main scroll container */}
+      <div className="overflow-x-auto">
+        {/* Global Phase Column Headers */}
+        <div className="flex gap-1 p-2 mb-1 min-w-min">
           {phases.map(phase => {
             const isColCollapsed = isColumnCollapsed(phase.id);
             return (
@@ -615,15 +563,15 @@ function KanbanView() {
             );
           })}
         </div>
-      </div>
 
-      {/* Swim Lanes */}
-      <div className="space-y-1">
-        {/* Locations with pieces first */}
-        {locations.map(location => renderSwimLane(location))}
+        {/* Swim Lanes */}
+        <div className="space-y-1 min-w-min">
+          {/* Locations with pieces first */}
+          {locations.map(location => renderSwimLane(location))}
 
-        {/* No location lane at the bottom */}
-        {renderSwimLane(null)}
+          {/* No location lane at the bottom */}
+          {renderSwimLane(null)}
+        </div>
       </div>
     </div>
   );

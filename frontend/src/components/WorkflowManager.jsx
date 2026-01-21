@@ -18,6 +18,9 @@ function WorkflowManager() {
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [dragPosition, setDragPosition] = useState(null);
+  const [touchTimer, setTouchTimer] = useState(null);
+  const [touchStart, setTouchStart] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -114,26 +117,54 @@ function WorkflowManager() {
     setDragPosition(null);
   };
 
-  // Touch event handlers for mobile support
+  // Touch event handlers for mobile support with delay
   const handleTouchStart = (e, item, index) => {
     const touch = e.touches[0];
-    setDraggedItem({ item, index });
-    setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      item: item,
+      index: index
+    });
+
+    // Set a timer to start dragging after 300ms
+    const timer = setTimeout(() => {
+      setDraggedItem({ item, index });
+      setIsDragging(true);
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+    }, 300);
+
+    setTouchTimer(timer);
   };
 
   const handleTouchMove = (e) => {
-    if (!draggedItem) return;
+    if (!touchStart) return;
 
     const touch = e.touches[0];
-    setDragPosition({ x: touch.clientX, y: touch.clientY });
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
 
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    const itemElement = element?.closest('[data-drag-index]');
+    // If user moves finger before timer completes, cancel drag and allow scrolling
+    if (touchTimer && (deltaX > 10 || deltaY > 10)) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+      setTouchStart(null);
+      return;
+    }
 
-    if (itemElement) {
-      const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
-      if (!isNaN(targetIndex) && targetIndex !== draggedItem.index) {
-        setDragOverIndex(targetIndex);
+    // If dragging has started, update position
+    if (isDragging && draggedItem) {
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      const itemElement = element?.closest('[data-drag-index]');
+
+      if (itemElement) {
+        const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+        if (!isNaN(targetIndex) && targetIndex !== draggedItem.index) {
+          setDragOverIndex(targetIndex);
+        }
       }
     }
   };
@@ -141,10 +172,21 @@ function WorkflowManager() {
   const handleTouchEnd = async (e) => {
     e.preventDefault();
 
-    if (!draggedItem || dragOverIndex === null) {
+    // Clear timer if it hasn't fired yet
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+      setTouchStart(null);
+      return;
+    }
+
+    setTouchStart(null);
+
+    if (!isDragging || !draggedItem || dragOverIndex === null) {
       setDraggedItem(null);
       setDragOverIndex(null);
       setDragPosition(null);
+      setIsDragging(false);
       return;
     }
 
@@ -154,6 +196,7 @@ function WorkflowManager() {
     if (draggedItem.index === targetIndex) {
       setDraggedItem(null);
       setDragPosition(null);
+      setIsDragging(false);
       return;
     }
 
@@ -175,10 +218,12 @@ function WorkflowManager() {
       setCurrentItems(updatedItems);
       setDraggedItem(null);
       setDragPosition(null);
+      setIsDragging(false);
     } catch (err) {
       setError(err.message);
       setDraggedItem(null);
       setDragPosition(null);
+      setIsDragging(false);
       loadData();
     }
   };

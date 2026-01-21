@@ -398,7 +398,7 @@ function WorkflowManager() {
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
                     draggedItem?.index === index ? 'opacity-30' : ''
                   } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
-                  style={{ touchAction: 'none' }}
+                  style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
                   onDrag={handleDrag}

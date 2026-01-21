@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
+import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Plus, X, Package, Image as ImageIcon } from 'lucide-react';
+import { Plus, X, Package, Image as ImageIcon, MapPin } from 'lucide-react';
 
 function PieceList() {
   const [pieces, setPieces] = useState([]);
   const [phases, setPhases] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [selectedPhase, setSelectedPhase] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState('');
@@ -28,7 +29,7 @@ function PieceList() {
     try {
       setLoading(true);
       setError(null);
-      const [piecesData, phasesData, materialsData] = await Promise.all([
+      const [piecesData, phasesData, locationsData, materialsData] = await Promise.all([
         piecesAPI.getAll({
           phase_id: selectedPhase === 'no-phase' ? 'no-phase' : (selectedPhase || null),
           material_id: selectedMaterial || null,
@@ -37,10 +38,12 @@ function PieceList() {
           date_to: dateTo || null,
         }),
         phasesAPI.getAll(),
+        locationsAPI.getAll(),
         materialsAPI.getAll(),
       ]);
       setPieces(piecesData);
-      setPhases(phasesData);
+      setPhases(phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+      setLocations(locationsData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
       setMaterials(materialsData);
     } catch (err) {
       setError(err.message);
@@ -55,6 +58,48 @@ function PieceList() {
     setSearchTerm('');
     setDateFrom('');
     setDateTo('');
+  };
+
+  const handlePhaseChange = async (pieceId, newPhaseId) => {
+    try {
+      await piecesAPI.updatePhase(pieceId, newPhaseId);
+      // Update local state
+      setPieces(prevPieces =>
+        prevPieces.map(piece =>
+          piece.id === pieceId
+            ? {
+                ...piece,
+                current_phase_id: newPhaseId,
+                phase_name: phases.find(p => p.id === newPhaseId)?.name || null
+              }
+            : piece
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update phase:', err);
+      setError('Failed to update phase: ' + err.message);
+    }
+  };
+
+  const handleLocationChange = async (pieceId, newLocationId) => {
+    try {
+      await piecesAPI.updateLocation(pieceId, newLocationId);
+      // Update local state
+      setPieces(prevPieces =>
+        prevPieces.map(piece =>
+          piece.id === pieceId
+            ? {
+                ...piece,
+                current_location_id: newLocationId,
+                location_name: locations.find(l => l.id === newLocationId)?.name || null
+              }
+            : piece
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update location:', err);
+      setError('Failed to update location: ' + err.message);
+    }
   };
 
   if (loading) {
@@ -191,37 +236,83 @@ function PieceList() {
                     </div>
                   )}
                 </div>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-lg line-clamp-2 flex-1">{piece.name}</h3>
-                    {piece.done === 1 && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-                        Done
-                      </span>
-                    )}
-                  </div>
-                  {piece.phase_name && (
-                    <span className="inline-block px-2 py-1 rounded-md text-xs font-medium bg-[var(--phase-color-1)] text-[var(--color-text-primary)] border border-[var(--color-border)] mb-2">
-                      {piece.phase_name}
-                    </span>
-                  )}
-                  {piece.description && (
-                    <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2 mt-2">
-                      {piece.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 mt-3 text-xs text-[var(--color-text-tertiary)]">
-                    <span className="flex items-center gap-1">
-                      <Package className="h-3 w-3" />
-                      {piece.material_count || 0}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ImageIcon className="h-3 w-3" />
-                      {piece.image_count || 0}
-                    </span>
-                  </div>
-                </CardContent>
               </Link>
+              <CardContent className="p-4">
+                <Link to={`/pieces/${piece.id}`} className="block">
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-1">{piece.name}</h3>
+                </Link>
+
+                {piece.done === 1 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white mr-2 mb-2">
+                    Done
+                  </span>
+                )}
+
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {/* Phase selector */}
+                  <div className="flex-1 min-w-[120px]" onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={piece.current_phase_id?.toString() || 'null'}
+                      onValueChange={(value) => handlePhaseChange(piece.id, value === 'null' ? null : parseInt(value))}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue>
+                          {piece.phase_name || 'No phase'}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="null">No phase</SelectItem>
+                        {phases.map(phase => (
+                          <SelectItem key={phase.id} value={phase.id.toString()}>
+                            {phase.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Location selector */}
+                  <div className="flex-1 min-w-[120px]" onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={piece.current_location_id?.toString() || 'null'}
+                      onValueChange={(value) => handleLocationChange(piece.id, value === 'null' ? null : parseInt(value))}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {piece.location_name || 'No location'}
+                          </span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="null">No location</SelectItem>
+                        {locations.map(location => (
+                          <SelectItem key={location.id} value={location.id.toString()}>
+                            {location.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {piece.description && (
+                  <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2 mt-2">
+                    {piece.description}
+                  </p>
+                )}
+                <div className="flex items-center gap-4 mt-3 text-xs text-[var(--color-text-tertiary)]">
+                  <span className="flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    {piece.material_count || 0}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    {piece.image_count || 0}
+                  </span>
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>

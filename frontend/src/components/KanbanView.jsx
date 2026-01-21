@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { piecesAPI, phasesAPI, locationsAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
@@ -19,7 +19,7 @@ function KanbanView() {
   const [touchTimer, setTouchTimer] = useState(null);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [collapsedLanes, setCollapsedLanes] = useState(new Set());
-  const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns per location: "locationId-phaseId"
+  const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns globally by phaseId
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,23 +84,48 @@ function KanbanView() {
     return collapsedLanes.has(key);
   };
 
-  const toggleColumnCollapse = (locationId, phaseId) => {
+  const toggleColumnCollapse = (phaseId) => {
     setCollapsedColumns(prev => {
       const newSet = new Set(prev);
-      const key = `${locationId === null ? 'no-location' : locationId}-${phaseId}`;
-      if (newSet.has(key)) {
-        newSet.delete(key);
+      if (newSet.has(phaseId)) {
+        newSet.delete(phaseId);
       } else {
-        newSet.add(key);
+        newSet.add(phaseId);
       }
       return newSet;
     });
   };
 
-  const isColumnCollapsed = (locationId, phaseId) => {
-    const key = `${locationId === null ? 'no-location' : locationId}-${phaseId}`;
-    return collapsedColumns.has(key);
+  const isColumnCollapsed = (phaseId) => {
+    return collapsedColumns.has(phaseId);
   };
+
+  // Scroll synchronization handler
+  const handleScrollSync = useCallback((e) => {
+    const scrollLeft = e.target.scrollLeft;
+    const isGlobalHeader = e.target.classList.contains('global-header');
+
+    if (isGlobalHeader) {
+      // Sync all swimlane contents with global header
+      document.querySelectorAll('.swimlane-content').forEach(content => {
+        if (content.scrollLeft !== scrollLeft) {
+          content.scrollLeft = scrollLeft;
+        }
+      });
+    } else {
+      // Sync global header with swimlane content
+      const globalHeader = document.querySelector('.global-header');
+      if (globalHeader && globalHeader.scrollLeft !== scrollLeft) {
+        globalHeader.scrollLeft = scrollLeft;
+      }
+      // Sync other swimlane contents
+      document.querySelectorAll('.swimlane-content').forEach(content => {
+        if (content !== e.target && content.scrollLeft !== scrollLeft) {
+          content.scrollLeft = scrollLeft;
+        }
+      });
+    }
+  }, []);
 
   const handleDragStart = (e, piece) => {
     if (e.target.closest('a') || e.target.tagName === 'IMG') {
@@ -436,10 +461,11 @@ function KanbanView() {
     const locationName = location ? location.name : 'No location';
     const isCollapsed = isLaneCollapsed(locationId);
     const pieceCount = getPiecesCountForLocation(locationId);
+    const laneKey = locationId === null ? 'no-location' : locationId;
 
     return (
       <div
-        key={locationId === null ? 'no-location' : locationId}
+        key={laneKey}
         className="border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] flex"
       >
         {/* Left Sidebar - Rotated Title */}
@@ -476,76 +502,45 @@ function KanbanView() {
           </span>
         </div>
 
-        {/* Right Content - Phase Columns with Headers */}
+        {/* Right Content - Phase Columns */}
         {!isCollapsed && (
-          <div className="flex-1 flex flex-col">
-            {/* Column Headers with Collapse Controls */}
-            <div className="flex gap-1 p-2 pb-1">
-              {phases.map(phase => {
-                const isColCollapsed = isColumnCollapsed(locationId, phase.id);
-                return (
-                  <div
-                    key={`header-${phase.id}`}
-                    className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
-                  >
-                    <div
-                      className="p-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
-                      onClick={() => toggleColumnCollapse(locationId, phase.id)}
-                      title={isColCollapsed ? 'Click to expand' : 'Click to collapse'}
+          <div className="flex-1 flex gap-1 overflow-x-auto p-2 swimlane-content" onScroll={handleScrollSync}>
+            {phases.map((phase) => {
+              const isColCollapsed = isColumnCollapsed(phase.id);
+              const cellPieces = getPiecesForCell(phase.id, locationId);
+              const cellId = `${phase.id}-${locationId}`;
+              const isHighlighted = isCellHighlighted(phase.id, locationId);
+
+              return (
+                <div
+                  key={phase.id}
+                  data-cell-id={cellId}
+                  className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
+                >
+                  {!isColCollapsed && (
+                    <div className={`bg-[var(--color-background)] rounded-md border border-[var(--color-border)] flex flex-col min-h-[150px] transition-all ${
+                      isHighlighted
+                        ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)] scale-102 ring-2 ring-[var(--color-primary)] ring-opacity-50'
+                        : ''
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, phase.id, locationId)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, phase.id, locationId)}
                     >
-                      {isColCollapsed ? (
-                        <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)] mx-auto" />
-                      ) : (
-                        <>
-                          <h4 className="font-medium text-xs truncate">{phase.name}</h4>
-                          <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Phase Columns Content */}
-            <div className="flex gap-1 overflow-x-auto p-2 pt-1">
-              {phases.map((phase) => {
-                const isColCollapsed = isColumnCollapsed(locationId, phase.id);
-                const cellPieces = getPiecesForCell(phase.id, locationId);
-                const cellId = `${phase.id}-${locationId}`;
-                const isHighlighted = isCellHighlighted(phase.id, locationId);
-
-                return (
-                  <div
-                    key={phase.id}
-                    data-cell-id={cellId}
-                    className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
-                  >
-                    {!isColCollapsed && (
-                      <div className={`bg-[var(--color-bg)] rounded-md border border-[var(--color-border)] flex flex-col min-h-[150px] transition-all ${
-                        isHighlighted
-                          ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)] scale-102 ring-2 ring-[var(--color-primary)] ring-opacity-50'
-                          : ''
-                      }`}
-                      onDragOver={(e) => handleDragOver(e, phase.id, locationId)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, phase.id, locationId)}
-                      >
-                        {/* Pieces */}
-                        <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto">
-                          {cellPieces.map(piece => renderPieceCard(piece))}
-                          {cellPieces.length === 0 && (
-                            <div className="text-center text-[var(--color-text-tertiary)] italic py-4 text-xs">
-                              Empty
-                            </div>
-                          )}
-                        </div>
+                      {/* Pieces */}
+                      <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto">
+                        {cellPieces.map(piece => renderPieceCard(piece))}
+                        {cellPieces.length === 0 && (
+                          <div className="text-center text-[var(--color-text-tertiary)] italic py-4 text-xs">
+                            Empty
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -579,6 +574,37 @@ function KanbanView() {
           {error}
         </div>
       )}
+
+      {/* Global Phase Column Headers */}
+      <div className="flex gap-1 mb-2">
+        <div className="flex-shrink-0 w-10" /> {/* Spacer for location sidebar */}
+        <div className="flex-1 flex gap-1 overflow-x-auto p-2 global-header" onScroll={handleScrollSync}>
+          {phases.map(phase => {
+            const isColCollapsed = isColumnCollapsed(phase.id);
+            return (
+              <div
+                key={`global-header-${phase.id}`}
+                className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
+              >
+                <div
+                  className="p-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
+                  onClick={() => toggleColumnCollapse(phase.id)}
+                  title={isColCollapsed ? 'Click to expand column' : 'Click to collapse column'}
+                >
+                  {isColCollapsed ? (
+                    <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)] mx-auto" />
+                  ) : (
+                    <>
+                      <h4 className="font-medium text-sm">{phase.name}</h4>
+                      <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Swim Lanes */}
       <div className="space-y-1">

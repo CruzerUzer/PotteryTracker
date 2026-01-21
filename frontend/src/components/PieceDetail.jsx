@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { piecesAPI, phasesAPI, materialsAPI, imagesAPI } from '../services/api';
+import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
 import ImageLightbox from './ImageLightbox';
 import { Button } from './ui/button';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus } from 'lucide-react';
+import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus, MapPin } from 'lucide-react';
 
 function PieceDetail() {
   const { id } = useParams();
@@ -17,8 +17,10 @@ function PieceDetail() {
 
   const [piece, setPiece] = useState(null);
   const [phases, setPhases] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [selectedPhase, setSelectedPhase] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
@@ -38,15 +40,18 @@ function PieceDetail() {
     try {
       setLoading(true);
       setError(null);
-      const [pieceData, phasesData, materialsData] = await Promise.all([
+      const [pieceData, phasesData, locationsData, materialsData] = await Promise.all([
         piecesAPI.getById(id),
         phasesAPI.getAll(),
+        locationsAPI.getAll(),
         materialsAPI.getAll(),
       ]);
       setPiece(pieceData);
-      setPhases(phasesData);
+      setPhases(phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+      setLocations(locationsData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
       setMaterials(materialsData);
       setSelectedPhase(pieceData.current_phase_id || '');
+      setSelectedLocation(pieceData.current_location_id || '');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -62,6 +67,19 @@ function PieceDetail() {
       await loadData();
     } catch (err) {
       alert('Error updating phase: ' + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleLocationChange = async (value) => {
+    setUpdating(true);
+    try {
+      await piecesAPI.updateLocation(id, value);
+      setSelectedLocation(value);
+      await loadData();
+    } catch (err) {
+      alert('Error updating location: ' + err.message);
     } finally {
       setUpdating(false);
     }
@@ -308,25 +326,54 @@ function PieceDetail() {
             )}
           </div>
 
-          {/* Phase */}
-          <div>
-            <Label htmlFor="phase-select">Current Phase</Label>
-            <div className="mt-2 max-w-xs">
-              <Select value={selectedPhase || undefined} onValueChange={(value) => handlePhaseChange(value || '')} disabled={updating}>
-                <SelectTrigger id="phase-select">
-                  <SelectValue placeholder="No phase" />
-                </SelectTrigger>
-                <SelectContent>
-                  {phases.map((phase) => (
-                    <SelectItem key={phase.id} value={phase.id.toString()}>
-                      {phase.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {updating && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Updating...</p>}
+          {/* Phase and Location */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phase-select">Current Phase</Label>
+              <div className="mt-2">
+                <Select value={selectedPhase?.toString() || 'null'} onValueChange={(value) => handlePhaseChange(value === 'null' ? null : value)} disabled={updating}>
+                  <SelectTrigger id="phase-select">
+                    <SelectValue>
+                      {piece.phase_name || 'No phase'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">No phase</SelectItem>
+                    {phases.map((phase) => (
+                      <SelectItem key={phase.id} value={phase.id.toString()}>
+                        {phase.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="location-select">Current Location</Label>
+              <div className="mt-2">
+                <Select value={selectedLocation?.toString() || 'null'} onValueChange={(value) => handleLocationChange(value === 'null' ? null : value)} disabled={updating}>
+                  <SelectTrigger id="location-select">
+                    <SelectValue>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {piece.location_name || 'No location'}
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">No location</SelectItem>
+                    {locations.map((location) => (
+                      <SelectItem key={location.id} value={location.id.toString()}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+          {updating && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Updating...</p>}
 
           {/* Materials */}
           <div>

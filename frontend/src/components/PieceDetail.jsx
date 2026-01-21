@@ -192,7 +192,7 @@ function PieceDetail() {
           <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm mb-4">
             {error || 'Piece not found'}
           </div>
-          <Button variant="secondary" onClick={() => navigate(-1)}>
+          <Button variant="secondary" onClick={() => navigate('/kanban')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
@@ -208,7 +208,7 @@ function PieceDetail() {
       {/* Header with actions */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/kanban')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           {editingField === 'name' ? (

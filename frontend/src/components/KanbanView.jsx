@@ -105,26 +105,29 @@ function KanbanView() {
     const scrollLeft = e.target.scrollLeft;
     const isGlobalHeader = e.target.classList.contains('global-header');
 
-    if (isGlobalHeader) {
-      // Sync all swimlane contents with global header
-      document.querySelectorAll('.swimlane-content').forEach(content => {
-        if (content.scrollLeft !== scrollLeft) {
-          content.scrollLeft = scrollLeft;
+    // Use requestAnimationFrame to prevent interrupting scroll momentum
+    requestAnimationFrame(() => {
+      if (isGlobalHeader) {
+        // Sync all swimlane contents with global header
+        document.querySelectorAll('.swimlane-content').forEach(content => {
+          if (Math.abs(content.scrollLeft - scrollLeft) > 1) {
+            content.scrollLeft = scrollLeft;
+          }
+        });
+      } else {
+        // Sync global header with swimlane content
+        const globalHeader = document.querySelector('.global-header');
+        if (globalHeader && Math.abs(globalHeader.scrollLeft - scrollLeft) > 1) {
+          globalHeader.scrollLeft = scrollLeft;
         }
-      });
-    } else {
-      // Sync global header with swimlane content
-      const globalHeader = document.querySelector('.global-header');
-      if (globalHeader && globalHeader.scrollLeft !== scrollLeft) {
-        globalHeader.scrollLeft = scrollLeft;
+        // Sync other swimlane contents
+        document.querySelectorAll('.swimlane-content').forEach(content => {
+          if (content !== e.target && Math.abs(content.scrollLeft - scrollLeft) > 1) {
+            content.scrollLeft = scrollLeft;
+          }
+        });
       }
-      // Sync other swimlane contents
-      document.querySelectorAll('.swimlane-content').forEach(content => {
-        if (content !== e.target && content.scrollLeft !== scrollLeft) {
-          content.scrollLeft = scrollLeft;
-        }
-      });
-    }
+    });
   }, []);
 
   const handleDragStart = (e, piece) => {
@@ -576,7 +579,7 @@ function KanbanView() {
       )}
 
       {/* Global Phase Column Headers */}
-      <div className="flex gap-1 mb-2">
+      <div className="flex gap-1 mb-1">
         <div className="flex-shrink-0 w-10" /> {/* Spacer for location sidebar */}
         <div className="flex-1 flex gap-1 overflow-x-auto p-2 global-header" onScroll={handleScrollSync}>
           {phases.map(phase => {

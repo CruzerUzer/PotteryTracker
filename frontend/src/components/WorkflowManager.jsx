@@ -171,19 +171,22 @@ function WorkflowManager() {
     const deltaX = Math.abs(touch.clientX - touchStart.x);
     const deltaY = Math.abs(touch.clientY - touchStart.y);
 
-    // If user moves finger before timer completes, cancel drag and allow scrolling
+    // If user moves finger significantly before timer completes, cancel drag and allow scrolling
     if (touchTimer && (deltaX > 10 || deltaY > 10)) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
       setTouchStart(null);
-      return;
+      return; // Don't preventDefault - allow scrolling
     }
 
-    // If dragging has started, prevent scrolling and update position
-    if (isDraggingRef.current) {
+    // Prevent scroll if timer is still active (waiting) OR if dragging has started
+    if (touchTimer || isDraggingRef.current) {
       e.preventDefault();
       e.stopPropagation();
+    }
 
+    // If dragging has started, update position
+    if (isDraggingRef.current) {
       setDragPosition({ x: touch.clientX, y: touch.clientY });
 
       const element = document.elementFromPoint(touch.clientX, touch.clientY);

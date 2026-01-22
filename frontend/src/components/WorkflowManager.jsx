@@ -22,8 +22,6 @@ function WorkflowManager() {
   const [touchStart, setTouchStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
-  const containerRef = useRef(null);
-  const itemRefs = useRef([]);
   const touchTimerRef = useRef(null);
   const touchStartRef = useRef(null);
 
@@ -31,93 +29,65 @@ function WorkflowManager() {
     loadData();
   }, []);
 
-  // Setup native touch event listeners with passive: false on each item
-  useEffect(() => {
-    const items = itemRefs.current;
-    const handlers = [];
-
-    currentItems.forEach((item, index) => {
-      const element = items[index];
-      if (!element) return;
-
-      const handleTouchStartNative = (e) => {
-        const touch = e.touches[0];
-        const startData = {
-          x: touch.clientX,
-          y: touch.clientY,
-          item: item,
-          index: index
-        };
-
-        touchStartRef.current = startData;
-        setTouchStart(startData);
-
-        const timer = setTimeout(() => {
-          isDraggingRef.current = true;
-          document.body.style.overflow = 'hidden';
-          setDraggedItem({ item, index });
-          setIsDragging(true);
-          setDragPosition({ x: touch.clientX, y: touch.clientY });
-        }, 300);
-
-        touchTimerRef.current = timer;
-        setTouchTimer(timer);
-      };
-
-      const handleTouchMoveNative = (e) => {
-        const startData = touchStartRef.current;
-        if (!startData) return;
-
-        const touch = e.touches[0];
-        const deltaX = Math.abs(touch.clientX - startData.x);
-        const deltaY = Math.abs(touch.clientY - startData.y);
-
-        // If user moves >10px before timer, cancel drag and allow scroll
-        if (touchTimerRef.current && (deltaX > 10 || deltaY > 10)) {
-          clearTimeout(touchTimerRef.current);
-          touchTimerRef.current = null;
-          touchStartRef.current = null;
-          setTouchTimer(null);
-          setTouchStart(null);
-          return; // Don't preventDefault - allow scroll
-        }
-
-        // If waiting or dragging, prevent scroll
-        if (touchTimerRef.current || isDraggingRef.current) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-
-        // Update drag position if dragging
-        if (isDraggingRef.current) {
-          setDragPosition({ x: touch.clientX, y: touch.clientY });
-
-          const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-          const itemElement = targetElement?.closest('[data-drag-index]');
-
-          if (itemElement) {
-            const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
-            const currentDragged = { item, index };
-            if (!isNaN(targetIndex) && targetIndex !== index) {
-              setDragOverIndex(targetIndex);
-            }
-          }
-        }
-      };
-
-      element.addEventListener('touchstart', handleTouchStartNative, { passive: true });
-      element.addEventListener('touchmove', handleTouchMoveNative, { passive: false });
-
-      handlers.push({ element, handleTouchStartNative, handleTouchMoveNative });
-    });
-
-    return () => {
-      handlers.forEach(({ element, handleTouchStartNative, handleTouchMoveNative }) => {
-        element.removeEventListener('touchstart', handleTouchStartNative);
-        element.removeEventListener('touchmove', handleTouchMoveNative);
-      });
+  // Touch event handlers for mobile support with delay
+  const handleTouchStart = (e, item, index) => {
+    const touch = e.touches[0];
+    const startData = {
+      x: touch.clientX,
+      y: touch.clientY,
+      item: item,
+      index: index
     };
-  }, [currentItems]);
+
+    touchStartRef.current = startData;
+    setTouchStart(startData);
+
+    const timer = setTimeout(() => {
+      isDraggingRef.current = true;
+      document.body.style.overflow = 'hidden';
+      setDraggedItem({ item, index });
+      setIsDragging(true);
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+    }, 300);
+
+    touchTimerRef.current = timer;
+    setTouchTimer(timer);
+  };
+
+  const handleTouchMove = (e) => {
+    const startData = touchStartRef.current;
+    if (!startData) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - startData.x);
+    const deltaY = Math.abs(touch.clientY - startData.y);
+
+    // If user moves >10px before timer, cancel drag and allow scroll
+    if (touchTimerRef.current && (deltaX > 10 || deltaY > 10)) {
+      clearTimeout(touchTimerRef.current);
+      touchTimerRef.current = null;
+      touchStartRef.current = null;
+      setTouchTimer(null);
+      setTouchStart(null);
+      return;
+    }
+
+    // If dragging, update position
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+      const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+      const itemElement = targetElement?.closest('[data-drag-index]');
+
+      if (itemElement) {
+        const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+        if (!isNaN(targetIndex) && targetIndex !== startData.index) {
+          setDragOverIndex(targetIndex);
+        }
+      }
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -458,7 +428,6 @@ function WorkflowManager() {
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}
-                  ref={(el) => itemRefs.current[index] = el}
                   data-drag-index={index}
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
                     draggedItem?.index === index ? 'opacity-30' : ''
@@ -474,6 +443,8 @@ function WorkflowManager() {
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, item, index)}
+                  onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
                   <div className="flex items-center gap-3 pointer-events-none">

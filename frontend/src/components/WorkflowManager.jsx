@@ -29,6 +29,25 @@ function WorkflowManager() {
     loadData();
   }, []);
 
+  // Register non-passive touchmove listener on container to enable preventDefault
+  useEffect(() => {
+    const container = document.querySelector('.workflow-items-container');
+    if (!container) return;
+
+    const handleContainerTouchMove = (e) => {
+      // Only preventDefault if we're actively dragging
+      if (isDraggingRef.current) {
+        e.preventDefault();
+      }
+    };
+
+    container.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
+
+    return () => {
+      container.removeEventListener('touchmove', handleContainerTouchMove);
+    };
+  }, []);
+
   // Touch event handlers for mobile support with delay
   const handleTouchStart = (e, item, index) => {
     const touch = e.touches[0];
@@ -424,7 +443,7 @@ function WorkflowManager() {
               No {activeTab} yet. Create your first {itemLabel.toLowerCase()} to get started!
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 workflow-items-container">
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}

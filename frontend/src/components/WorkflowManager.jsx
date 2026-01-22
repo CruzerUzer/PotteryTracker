@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { phasesAPI, locationsAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -21,6 +21,7 @@ function WorkflowManager() {
   const [touchTimer, setTouchTimer] = useState(null);
   const [touchStart, setTouchStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     loadData();
@@ -130,6 +131,7 @@ function WorkflowManager() {
 
     // Set a timer to start dragging after 300ms
     const timer = setTimeout(() => {
+      isDraggingRef.current = true;
       setDraggedItem({ item, index });
       setIsDragging(true);
       setDragPosition({ x: touch.clientX, y: touch.clientY });
@@ -154,7 +156,7 @@ function WorkflowManager() {
     }
 
     // If dragging has started, prevent scrolling and update position
-    if (isDragging && draggedItem) {
+    if (isDraggingRef.current) {
       e.preventDefault();
       e.stopPropagation();
 
@@ -165,7 +167,7 @@ function WorkflowManager() {
 
       if (itemElement) {
         const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
-        if (!isNaN(targetIndex) && targetIndex !== draggedItem.index) {
+        if (!isNaN(targetIndex) && draggedItem && targetIndex !== draggedItem.index) {
           setDragOverIndex(targetIndex);
         }
       }
@@ -184,7 +186,8 @@ function WorkflowManager() {
     setTouchStart(null);
 
     // If we're not dragging, don't preventDefault (allows buttons to work)
-    if (!isDragging || !draggedItem) {
+    if (!isDraggingRef.current || !draggedItem) {
+      isDraggingRef.current = false;
       setDraggedItem(null);
       setDragOverIndex(null);
       setDragPosition(null);
@@ -196,6 +199,7 @@ function WorkflowManager() {
     e.preventDefault();
 
     if (dragOverIndex === null) {
+      isDraggingRef.current = false;
       setDraggedItem(null);
       setDragOverIndex(null);
       setDragPosition(null);
@@ -207,6 +211,7 @@ function WorkflowManager() {
     setDragOverIndex(null);
 
     if (draggedItem.index === targetIndex) {
+      isDraggingRef.current = false;
       setDraggedItem(null);
       setDragPosition(null);
       setIsDragging(false);
@@ -229,11 +234,13 @@ function WorkflowManager() {
         )
       );
       setCurrentItems(updatedItems);
+      isDraggingRef.current = false;
       setDraggedItem(null);
       setDragPosition(null);
       setIsDragging(false);
     } catch (err) {
       setError(err.message);
+      isDraggingRef.current = false;
       setDraggedItem(null);
       setDragPosition(null);
       setIsDragging(false);

@@ -22,10 +22,23 @@ function WorkflowManager() {
   const [touchStart, setTouchStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Prevent body scroll when dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isDragging]);
 
   const loadData = async () => {
     try {
@@ -132,6 +145,7 @@ function WorkflowManager() {
     // Set a timer to start dragging after 300ms
     const timer = setTimeout(() => {
       isDraggingRef.current = true;
+      document.body.style.overflow = 'hidden';
       setDraggedItem({ item, index });
       setIsDragging(true);
       setDragPosition({ x: touch.clientX, y: touch.clientY });
@@ -188,6 +202,7 @@ function WorkflowManager() {
     // If we're not dragging, don't preventDefault (allows buttons to work)
     if (!isDraggingRef.current || !draggedItem) {
       isDraggingRef.current = false;
+      document.body.style.overflow = '';
       setDraggedItem(null);
       setDragOverIndex(null);
       setDragPosition(null);
@@ -200,6 +215,7 @@ function WorkflowManager() {
 
     if (dragOverIndex === null) {
       isDraggingRef.current = false;
+      document.body.style.overflow = '';
       setDraggedItem(null);
       setDragOverIndex(null);
       setDragPosition(null);
@@ -212,6 +228,7 @@ function WorkflowManager() {
 
     if (draggedItem.index === targetIndex) {
       isDraggingRef.current = false;
+      document.body.style.overflow = '';
       setDraggedItem(null);
       setDragPosition(null);
       setIsDragging(false);
@@ -235,12 +252,14 @@ function WorkflowManager() {
       );
       setCurrentItems(updatedItems);
       isDraggingRef.current = false;
+      document.body.style.overflow = '';
       setDraggedItem(null);
       setDragPosition(null);
       setIsDragging(false);
     } catch (err) {
       setError(err.message);
       isDraggingRef.current = false;
+      document.body.style.overflow = '';
       setDraggedItem(null);
       setDragPosition(null);
       setIsDragging(false);

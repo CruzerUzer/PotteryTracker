@@ -24,6 +24,8 @@ function WorkflowManager() {
   const isDraggingRef = useRef(false);
   const containerRef = useRef(null);
   const itemRefs = useRef([]);
+  const touchTimerRef = useRef(null);
+  const touchStartRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -40,12 +42,15 @@ function WorkflowManager() {
 
       const handleTouchStartNative = (e) => {
         const touch = e.touches[0];
-        setTouchStart({
+        const startData = {
           x: touch.clientX,
           y: touch.clientY,
           item: item,
           index: index
-        });
+        };
+
+        touchStartRef.current = startData;
+        setTouchStart(startData);
 
         const timer = setTimeout(() => {
           isDraggingRef.current = true;
@@ -55,26 +60,30 @@ function WorkflowManager() {
           setDragPosition({ x: touch.clientX, y: touch.clientY });
         }, 300);
 
+        touchTimerRef.current = timer;
         setTouchTimer(timer);
       };
 
       const handleTouchMoveNative = (e) => {
-        if (!touchStart) return;
+        const startData = touchStartRef.current;
+        if (!startData) return;
 
         const touch = e.touches[0];
-        const deltaX = Math.abs(touch.clientX - touchStart.x);
-        const deltaY = Math.abs(touch.clientY - touchStart.y);
+        const deltaX = Math.abs(touch.clientX - startData.x);
+        const deltaY = Math.abs(touch.clientY - startData.y);
 
         // If user moves >10px before timer, cancel drag and allow scroll
-        if (touchTimer && (deltaX > 10 || deltaY > 10)) {
-          clearTimeout(touchTimer);
+        if (touchTimerRef.current && (deltaX > 10 || deltaY > 10)) {
+          clearTimeout(touchTimerRef.current);
+          touchTimerRef.current = null;
+          touchStartRef.current = null;
           setTouchTimer(null);
           setTouchStart(null);
           return; // Don't preventDefault - allow scroll
         }
 
         // If waiting or dragging, prevent scroll
-        if (touchTimer || isDraggingRef.current) {
+        if (touchTimerRef.current || isDraggingRef.current) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -88,7 +97,8 @@ function WorkflowManager() {
 
           if (itemElement) {
             const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
-            if (!isNaN(targetIndex) && draggedItem && targetIndex !== draggedItem.index) {
+            const currentDragged = { item, index };
+            if (!isNaN(targetIndex) && targetIndex !== index) {
               setDragOverIndex(targetIndex);
             }
           }
@@ -107,7 +117,7 @@ function WorkflowManager() {
         element.removeEventListener('touchmove', handleTouchMoveNative);
       });
     };
-  }, [currentItems, touchStart, touchTimer, draggedItem]);
+  }, [currentItems]);
 
   const loadData = async () => {
     try {
@@ -200,75 +210,18 @@ function WorkflowManager() {
     setDragPosition(null);
   };
 
-  // Touch event handlers for mobile support with delay
-  const handleTouchStart = (e, item, index) => {
-    const touch = e.touches[0];
-
-    setTouchStart({
-      x: touch.clientX,
-      y: touch.clientY,
-      item: item,
-      index: index
-    });
-
-    // Set a timer to start dragging after 300ms
-    const timer = setTimeout(() => {
-      isDraggingRef.current = true;
-      document.body.style.overflow = 'hidden';
-      setDraggedItem({ item, index });
-      setIsDragging(true);
-      setDragPosition({ x: touch.clientX, y: touch.clientY });
-    }, 300);
-
-    setTouchTimer(timer);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!touchStart) return;
-
-    const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - touchStart.x);
-    const deltaY = Math.abs(touch.clientY - touchStart.y);
-
-    // If user moves finger significantly before timer completes, cancel drag and allow scrolling
-    if (touchTimer && (deltaX > 10 || deltaY > 10)) {
-      clearTimeout(touchTimer);
-      setTouchTimer(null);
-      setTouchStart(null);
-      return; // Don't preventDefault - allow scrolling
-    }
-
-    // Prevent scroll if timer is still active (waiting) OR if dragging has started
-    if (touchTimer || isDraggingRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    // If dragging has started, update position
-    if (isDraggingRef.current) {
-      setDragPosition({ x: touch.clientX, y: touch.clientY });
-
-      const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      const itemElement = element?.closest('[data-drag-index]');
-
-      if (itemElement) {
-        const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
-        if (!isNaN(targetIndex) && draggedItem && targetIndex !== draggedItem.index) {
-          setDragOverIndex(targetIndex);
-        }
-      }
-    }
-  };
-
   const handleTouchEnd = async (e) => {
     // Clear timer if it hasn't fired yet (user just tapped or started scrolling)
-    if (touchTimer) {
-      clearTimeout(touchTimer);
+    if (touchTimerRef.current) {
+      clearTimeout(touchTimerRef.current);
+      touchTimerRef.current = null;
+      touchStartRef.current = null;
       setTouchTimer(null);
       setTouchStart(null);
       return; // Don't preventDefault - allow normal tap behavior
     }
 
+    touchStartRef.current = null;
     setTouchStart(null);
 
     // If we're not dragging, don't preventDefault (allows buttons to work)

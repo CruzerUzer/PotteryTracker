@@ -23,32 +23,91 @@ function WorkflowManager() {
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const containerRef = useRef(null);
+  const itemRefs = useRef([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Prevent body scroll when dragging with native event listener
+  // Setup native touch event listeners with passive: false on each item
   useEffect(() => {
-    const preventScroll = (e) => {
-      if (isDraggingRef.current) {
-        e.preventDefault();
-      }
-    };
+    const items = itemRefs.current;
+    const handlers = [];
 
-    if (isDragging) {
-      document.body.style.overflow = 'hidden';
-      // Add native touchmove listener with passive: false to enable preventDefault
-      document.addEventListener('touchmove', preventScroll, { passive: false });
-    } else {
-      document.body.style.overflow = '';
-    }
+    currentItems.forEach((item, index) => {
+      const element = items[index];
+      if (!element) return;
+
+      const handleTouchStartNative = (e) => {
+        const touch = e.touches[0];
+        setTouchStart({
+          x: touch.clientX,
+          y: touch.clientY,
+          item: item,
+          index: index
+        });
+
+        const timer = setTimeout(() => {
+          isDraggingRef.current = true;
+          document.body.style.overflow = 'hidden';
+          setDraggedItem({ item, index });
+          setIsDragging(true);
+          setDragPosition({ x: touch.clientX, y: touch.clientY });
+        }, 300);
+
+        setTouchTimer(timer);
+      };
+
+      const handleTouchMoveNative = (e) => {
+        if (!touchStart) return;
+
+        const touch = e.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStart.x);
+        const deltaY = Math.abs(touch.clientY - touchStart.y);
+
+        // If user moves >10px before timer, cancel drag and allow scroll
+        if (touchTimer && (deltaX > 10 || deltaY > 10)) {
+          clearTimeout(touchTimer);
+          setTouchTimer(null);
+          setTouchStart(null);
+          return; // Don't preventDefault - allow scroll
+        }
+
+        // If waiting or dragging, prevent scroll
+        if (touchTimer || isDraggingRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // Update drag position if dragging
+        if (isDraggingRef.current) {
+          setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+          const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+          const itemElement = targetElement?.closest('[data-drag-index]');
+
+          if (itemElement) {
+            const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+            if (!isNaN(targetIndex) && draggedItem && targetIndex !== draggedItem.index) {
+              setDragOverIndex(targetIndex);
+            }
+          }
+        }
+      };
+
+      element.addEventListener('touchstart', handleTouchStartNative, { passive: true });
+      element.addEventListener('touchmove', handleTouchMoveNative, { passive: false });
+
+      handlers.push({ element, handleTouchStartNative, handleTouchMoveNative });
+    });
 
     return () => {
-      document.body.style.overflow = '';
-      document.removeEventListener('touchmove', preventScroll);
+      handlers.forEach(({ element, handleTouchStartNative, handleTouchMoveNative }) => {
+        element.removeEventListener('touchstart', handleTouchStartNative);
+        element.removeEventListener('touchmove', handleTouchMoveNative);
+      });
     };
-  }, [isDragging]);
+  }, [currentItems, touchStart, touchTimer, draggedItem]);
 
   const loadData = async () => {
     try {
@@ -446,14 +505,14 @@ function WorkflowManager() {
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}
+                  ref={(el) => itemRefs.current[index] = el}
                   data-drag-index={index}
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
                     draggedItem?.index === index ? 'opacity-30' : ''
                   } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
                   style={{
                     userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    touchAction: 'none'
+                    WebkitUserSelect: 'none'
                   }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
@@ -462,8 +521,6 @@ function WorkflowManager() {
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleTouchStart(e, item, index)}
-                  onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
                   <div className="flex items-center gap-3 pointer-events-none">

@@ -153,8 +153,11 @@ function WorkflowManager() {
       return;
     }
 
-    // If dragging has started, update position
+    // If dragging has started, prevent scrolling and update position
     if (isDragging && draggedItem) {
+      e.preventDefault();
+      e.stopPropagation();
+
       setDragPosition({ x: touch.clientX, y: touch.clientY });
 
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -170,19 +173,29 @@ function WorkflowManager() {
   };
 
   const handleTouchEnd = async (e) => {
-    e.preventDefault();
-
-    // Clear timer if it hasn't fired yet
+    // Clear timer if it hasn't fired yet (user just tapped or started scrolling)
     if (touchTimer) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
       setTouchStart(null);
-      return;
+      return; // Don't preventDefault - allow normal tap behavior
     }
 
     setTouchStart(null);
 
-    if (!isDragging || !draggedItem || dragOverIndex === null) {
+    // If we're not dragging, don't preventDefault (allows buttons to work)
+    if (!isDragging || !draggedItem) {
+      setDraggedItem(null);
+      setDragOverIndex(null);
+      setDragPosition(null);
+      setIsDragging(false);
+      return;
+    }
+
+    // We're dragging, so preventDefault and handle the drop
+    e.preventDefault();
+
+    if (dragOverIndex === null) {
       setDraggedItem(null);
       setDragOverIndex(null);
       setDragPosition(null);
@@ -398,7 +411,7 @@ function WorkflowManager() {
                   className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
                     draggedItem?.index === index ? 'opacity-30' : ''
                   } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
-                  style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
                   onDrag={handleDrag}

@@ -28,15 +28,25 @@ function WorkflowManager() {
     loadData();
   }, []);
 
-  // Prevent body scroll when dragging
+  // Prevent body scroll when dragging with native event listener
   useEffect(() => {
+    const preventScroll = (e) => {
+      if (isDraggingRef.current) {
+        e.preventDefault();
+      }
+    };
+
     if (isDragging) {
       document.body.style.overflow = 'hidden';
+      // Add native touchmove listener with passive: false to enable preventDefault
+      document.addEventListener('touchmove', preventScroll, { passive: false });
     } else {
       document.body.style.overflow = '';
     }
+
     return () => {
       document.body.style.overflow = '';
+      document.removeEventListener('touchmove', preventScroll);
     };
   }, [isDragging]);
 

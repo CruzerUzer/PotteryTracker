@@ -24,7 +24,7 @@ function Sidebar() {
     { path: '/', icon: LayoutDashboard, label: 'Kanban' },
     { path: '/list', icon: List, label: 'List' },
     { path: '/done', icon: CheckCircle, label: 'Done' },
-    { path: '/phases', icon: Settings, label: 'Workflow' },
+    { path: '/workflow', icon: Settings, label: 'Workflow' },
     { path: '/materials', icon: Database, label: 'Materials' },
     { path: '/export', icon: FileDown, label: 'Export' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { phasesAPI, locationsAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -17,10 +17,73 @@ function WorkflowManager() {
   const [showForm, setShowForm] = useState(false);
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [dragPosition, setDragPosition] = useState(null);
+  const [touchTimer, setTouchTimer] = useState(null);
+  const [touchStart, setTouchStart] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Touch event handlers for mobile support with delay
+  const handleTouchStart = (e, item, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const touch = e.touches[0];
+    const startData = {
+      x: touch.clientX,
+      y: touch.clientY,
+      item: item,
+      index: index
+    };
+
+    setTouchStart(startData);
+
+    const timer = setTimeout(() => {
+      isDraggingRef.current = true;
+      setDraggedItem({ item, index });
+      setIsDragging(true);
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+      setTouchTimer(null); // Clear timer after it fires!
+    }, 300);
+
+    setTouchTimer(timer);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStart) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+      setTouchStart(null);
+      return;
+    }
+
+    if (isDraggingRef.current && (deltaX > 10 || deltaY > 10)) {
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+      const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+      const itemElement = targetElement?.closest('[data-drag-index]');
+
+      if (itemElement) {
+        const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+        if (!isNaN(targetIndex) && targetIndex !== touchStart.index) {
+          setDragOverIndex(targetIndex);
+        }
+      }
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -48,7 +111,18 @@ function WorkflowManager() {
 
   const handleDragStart = (e, item, index) => {
     setDraggedItem({ item, index });
+    setDragPosition({ x: e.clientX, y: e.clientY });
     e.dataTransfer.effectAllowed = 'move';
+    // Make default drag image invisible
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  };
+
+  const handleDrag = (e) => {
+    if (e.clientX !== 0 && e.clientY !== 0) {
+      setDragPosition({ x: e.clientX, y: e.clientY });
+    }
   };
 
   const handleDragOver = (e, index) => {
@@ -78,13 +152,13 @@ function WorkflowManager() {
 
     const updatedItems = newItems.map((item, index) => ({
       ...item,
-      display_order: index
+      display_order: index + 1
     }));
 
     try {
       await Promise.all(
         updatedItems.map((item, index) =>
-          currentAPI.update(item.id, { ...item, display_order: index })
+          currentAPI.update(item.id, { ...item, display_order: index + 1 })
         )
       );
       setCurrentItems(updatedItems);
@@ -99,6 +173,71 @@ function WorkflowManager() {
   const handleDragEnd = () => {
     setDraggedItem(null);
     setDragOverIndex(null);
+    setDragPosition(null);
+  };
+
+  const handleTouchEnd = async (e) => {
+    if (!touchStart) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const wasDragging = deltaX > 10 || deltaY > 10;
+
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+      setTouchStart(null);
+      return;
+    }
+
+    if (!isDraggingRef.current) {
+      setTouchStart(null);
+      return;
+    }
+
+    if (wasDragging && isDraggingRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+      const itemElement = targetElement?.closest('[data-drag-index]');
+
+      if (itemElement && draggedItem) {
+        const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+
+        if (!isNaN(targetIndex) && draggedItem.index !== targetIndex) {
+          const newItems = [...currentItems];
+          const [removed] = newItems.splice(draggedItem.index, 1);
+          newItems.splice(targetIndex, 0, removed);
+
+          const updatedItems = newItems.map((item, index) => ({
+            ...item,
+            display_order: index + 1
+          }));
+
+          try {
+            await Promise.all(
+              updatedItems.map((item, index) =>
+                currentAPI.update(item.id, { ...item, display_order: index + 1 })
+              )
+            );
+            setCurrentItems(updatedItems);
+          } catch (err) {
+            setError(err.message);
+            loadData();
+          }
+        }
+      }
+    }
+
+    isDraggingRef.current = false;
+    setTouchStart(null);
+    setTouchTimer(null);
+    setDraggedItem(null);
+    setIsDragging(false);
+    setDragOverIndex(null);
+    setDragPosition(null);
   };
 
   const handleSubmit = async (e) => {
@@ -267,18 +406,29 @@ function WorkflowManager() {
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}
-                  className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors ${
-                    draggedItem?.index === index ? 'opacity-50' : ''
-                  } ${dragOverIndex === index ? 'border-[var(--color-primary)] bg-[var(--color-surface-hover)]' : ''} hover:bg-[var(--color-surface-hover)]`}
+                  data-drag-index={index}
+                  className={`flex items-center justify-between p-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-all cursor-move ${
+                    draggedItem?.index === index ? 'opacity-30' : ''
+                  } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
+                  style={{
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none'
+                  }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
+                  onDrag={handleDrag}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, item, index)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                 >
                   <div className="flex items-center gap-3">
-                    <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)] cursor-grab" />
+                    <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
                     <div>
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-[var(--color-text-tertiary)]">Position: {index + 1}</div>
@@ -288,18 +438,26 @@ function WorkflowManager() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleEdit(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(item);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -308,6 +466,28 @@ function WorkflowManager() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating drag preview */}
+      {draggedItem && dragPosition && (
+        <div
+          className="fixed pointer-events-none z-50 opacity-80"
+          style={{
+            left: dragPosition.x,
+            top: dragPosition.y,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div className="flex items-center justify-between p-4 rounded-md border-2 border-[var(--color-primary)] bg-[var(--color-surface)] shadow-2xl max-w-md">
+            <div className="flex items-center gap-3">
+              <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+              <div>
+                <div className="font-medium">{draggedItem.item.name}</div>
+                <div className="text-sm text-[var(--color-text-tertiary)]">Position: {draggedItem.index + 1}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

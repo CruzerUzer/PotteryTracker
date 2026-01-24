@@ -169,7 +169,6 @@ export const imagesAPI = {
     formData.append('phase_id', phaseId.toString());
 
     const url = `${API_BASE}/pieces/${pieceId}/images`;
-    console.log('Uploading to:', url, 'File:', file.name, 'Size:', file.size, 'Type:', file.type);
 
     try {
       const response = await fetch(url, {
@@ -178,32 +177,24 @@ export const imagesAPI = {
         body: formData,
       });
 
-      console.log('Upload response status:', response.status, response.statusText);
-      console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         // Handle specific HTTP status codes with user-friendly messages
         if (response.status === 413) {
           const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
           throw new Error(`File too large (${fileSizeMB} MB). Maximum file size is 10 MB.`);
         }
-        
+
         let errorData;
         try {
           errorData = await response.json();
-          console.error('Upload error response:', errorData);
         } catch (e) {
-          console.error('Failed to parse error response as JSON. Response text:', await response.text().catch(() => 'Could not read response'));
           errorData = { error: 'Upload failed' };
         }
         throw new Error(errorData.error || `Upload failed: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
-      console.log('Upload successful:', result);
-      return result;
+      return await response.json();
     } catch (error) {
-      console.error('Upload fetch error:', error);
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Network error: Could not connect to server');
       }

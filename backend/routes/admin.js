@@ -91,12 +91,14 @@ router.post('/users/:id/reset-password', async (req, res) => {
       
       await db.run('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?', [passwordHash, id]);
       
+      // Note: Password is only logged as "generated", never logged with actual value
       logger.info('Temporary password generated', { userId: id, username: user.username });
-      
+
       res.json({
         method: 'temporary',
-        password: tempPassword,
-        message: 'Temporary password generated'
+        temporaryPassword: tempPassword,
+        message: 'Temporary password generated. This password is displayed only once - share it securely with the user.',
+        mustChangePassword: true
       });
     } else if (method === 'link') {
       // Generate reset token

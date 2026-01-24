@@ -124,11 +124,12 @@ router.post('/login', async (req, res) => {
       logger.debug('Could not update last_login', { error: error.message, userId: user.id });
     }
 
-    // Set session data
+    // Set session data (including is_admin to avoid N+1 queries on admin routes)
     req.session.userId = user.id;
     req.session.username = user.username;
-    
-    logger.info('Login successful', { userId: user.id, username: user.username, sessionId: req.sessionID });
+    req.session.isAdmin = user.is_admin === 1;
+
+    logger.info('Login successful', { userId: user.id, username: user.username, isAdmin: req.session.isAdmin, sessionId: req.sessionID });
 
     res.json({
       id: user.id,

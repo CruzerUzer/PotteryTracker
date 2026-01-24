@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -38,6 +40,36 @@ app.use(cors({
   origin: corsOrigin,
   credentials: true
 }));
+
+// Security headers with Helmet
+app.use(helmet({
+  // Disable contentSecurityPolicy as it may interfere with frontend
+  contentSecurityPolicy: false,
+  // Allow cross-origin resource sharing
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
+// Rate limiting configuration
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs for auth endpoints
+  message: { error: 'Too many authentication attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip in test environment
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per minute
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test' // Skip in test environment
+});
+
+// Apply general API rate limiter to all /api routes
+app.use('/api', apiLimiter);
 
 // Session configuration
 // When behind Nginx with HTTPS, X-Forwarded-Proto header will be 'https'
@@ -129,6 +161,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Apply stricter rate limiting to auth endpoints (login, register)
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/phases', phasesRouter);

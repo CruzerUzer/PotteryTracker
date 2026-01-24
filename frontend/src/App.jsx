@@ -187,7 +187,7 @@ function AppContent() {
                 }
               />
               <Route
-                path="/phases"
+                path="/workflow"
                 element={
                   <ProtectedRoute>
                     <WorkflowManager />

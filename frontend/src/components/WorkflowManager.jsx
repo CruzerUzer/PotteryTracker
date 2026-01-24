@@ -22,34 +22,16 @@ function WorkflowManager() {
   const [touchStart, setTouchStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
-  const touchTimerRef = useRef(null);
-  const touchStartRef = useRef(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Register non-passive touchmove listener on container to enable preventDefault
-  useEffect(() => {
-    const container = document.querySelector('.workflow-items-container');
-    if (!container) return;
-
-    const handleContainerTouchMove = (e) => {
-      // Only preventDefault if we're actively dragging
-      if (isDraggingRef.current) {
-        e.preventDefault();
-      }
-    };
-
-    container.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchmove', handleContainerTouchMove);
-    };
-  }, []);
-
   // Touch event handlers for mobile support with delay
   const handleTouchStart = (e, item, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     const touch = e.touches[0];
     const startData = {
       x: touch.clientX,
@@ -58,42 +40,37 @@ function WorkflowManager() {
       index: index
     };
 
-    touchStartRef.current = startData;
     setTouchStart(startData);
 
     const timer = setTimeout(() => {
       isDraggingRef.current = true;
-      document.body.style.overflow = 'hidden';
       setDraggedItem({ item, index });
       setIsDragging(true);
       setDragPosition({ x: touch.clientX, y: touch.clientY });
+      setTouchTimer(null); // Clear timer after it fires!
     }, 300);
 
-    touchTimerRef.current = timer;
     setTouchTimer(timer);
   };
 
   const handleTouchMove = (e) => {
-    const startData = touchStartRef.current;
-    if (!startData) return;
+    if (!touchStart) return;
 
     const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - startData.x);
-    const deltaY = Math.abs(touch.clientY - startData.y);
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
 
-    // If user moves >10px before timer, cancel drag and allow scroll
-    if (touchTimerRef.current && (deltaX > 10 || deltaY > 10)) {
-      clearTimeout(touchTimerRef.current);
-      touchTimerRef.current = null;
-      touchStartRef.current = null;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (touchTimer) {
+      clearTimeout(touchTimer);
       setTouchTimer(null);
       setTouchStart(null);
       return;
     }
 
-    // If dragging, update position
-    if (isDraggingRef.current) {
-      e.preventDefault();
+    if (isDraggingRef.current && (deltaX > 10 || deltaY > 10)) {
       setDragPosition({ x: touch.clientX, y: touch.clientY });
 
       const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -101,7 +78,7 @@ function WorkflowManager() {
 
       if (itemElement) {
         const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
-        if (!isNaN(targetIndex) && targetIndex !== startData.index) {
+        if (!isNaN(targetIndex) && targetIndex !== touchStart.index) {
           setDragOverIndex(targetIndex);
         }
       }
@@ -200,85 +177,67 @@ function WorkflowManager() {
   };
 
   const handleTouchEnd = async (e) => {
-    // Clear timer if it hasn't fired yet (user just tapped or started scrolling)
-    if (touchTimerRef.current) {
-      clearTimeout(touchTimerRef.current);
-      touchTimerRef.current = null;
-      touchStartRef.current = null;
+    if (!touchStart) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const wasDragging = deltaX > 10 || deltaY > 10;
+
+    if (touchTimer) {
+      clearTimeout(touchTimer);
       setTouchTimer(null);
       setTouchStart(null);
-      return; // Don't preventDefault - allow normal tap behavior
+      return;
     }
 
-    touchStartRef.current = null;
+    if (!isDraggingRef.current) {
+      setTouchStart(null);
+      return;
+    }
+
+    if (wasDragging && isDraggingRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+      const itemElement = targetElement?.closest('[data-drag-index]');
+
+      if (itemElement && draggedItem) {
+        const targetIndex = parseInt(itemElement.getAttribute('data-drag-index'));
+
+        if (!isNaN(targetIndex) && draggedItem.index !== targetIndex) {
+          const newItems = [...currentItems];
+          const [removed] = newItems.splice(draggedItem.index, 1);
+          newItems.splice(targetIndex, 0, removed);
+
+          const updatedItems = newItems.map((item, index) => ({
+            ...item,
+            display_order: index + 1
+          }));
+
+          try {
+            await Promise.all(
+              updatedItems.map((item, index) =>
+                currentAPI.update(item.id, { ...item, display_order: index + 1 })
+              )
+            );
+            setCurrentItems(updatedItems);
+          } catch (err) {
+            setError(err.message);
+            loadData();
+          }
+        }
+      }
+    }
+
+    isDraggingRef.current = false;
     setTouchStart(null);
-
-    // If we're not dragging, don't preventDefault (allows buttons to work)
-    if (!isDraggingRef.current || !draggedItem) {
-      isDraggingRef.current = false;
-      document.body.style.overflow = '';
-      setDraggedItem(null);
-      setDragOverIndex(null);
-      setDragPosition(null);
-      setIsDragging(false);
-      return;
-    }
-
-    // We're dragging, so preventDefault and handle the drop
-    e.preventDefault();
-
-    if (dragOverIndex === null) {
-      isDraggingRef.current = false;
-      document.body.style.overflow = '';
-      setDraggedItem(null);
-      setDragOverIndex(null);
-      setDragPosition(null);
-      setIsDragging(false);
-      return;
-    }
-
-    const targetIndex = dragOverIndex;
+    setTouchTimer(null);
+    setDraggedItem(null);
+    setIsDragging(false);
     setDragOverIndex(null);
-
-    if (draggedItem.index === targetIndex) {
-      isDraggingRef.current = false;
-      document.body.style.overflow = '';
-      setDraggedItem(null);
-      setDragPosition(null);
-      setIsDragging(false);
-      return;
-    }
-
-    const newItems = [...currentItems];
-    const [removed] = newItems.splice(draggedItem.index, 1);
-    newItems.splice(targetIndex, 0, removed);
-
-    const updatedItems = newItems.map((item, index) => ({
-      ...item,
-      display_order: index + 1
-    }));
-
-    try {
-      await Promise.all(
-        updatedItems.map((item, index) =>
-          currentAPI.update(item.id, { ...item, display_order: index + 1 })
-        )
-      );
-      setCurrentItems(updatedItems);
-      isDraggingRef.current = false;
-      document.body.style.overflow = '';
-      setDraggedItem(null);
-      setDragPosition(null);
-      setIsDragging(false);
-    } catch (err) {
-      setError(err.message);
-      isDraggingRef.current = false;
-      document.body.style.overflow = '';
-      setDraggedItem(null);
-      setDragPosition(null);
-      setIsDragging(false);
-      loadData();
-    }
+    setDragPosition(null);
   };
 
   const handleSubmit = async (e) => {
@@ -443,7 +402,7 @@ function WorkflowManager() {
               No {activeTab} yet. Create your first {itemLabel.toLowerCase()} to get started!
             </p>
           ) : (
-            <div className="space-y-2 workflow-items-container">
+            <div className="space-y-2">
               {currentItems.map((item, index) => (
                 <div
                   key={item.id}
@@ -452,8 +411,10 @@ function WorkflowManager() {
                     draggedItem?.index === index ? 'opacity-30' : ''
                   } ${dragOverIndex === index ? 'border-2 border-[var(--color-primary)] bg-[var(--color-surface-hover)] scale-105' : ''} hover:bg-[var(--color-surface-hover)] hover:shadow-md`}
                   style={{
+                    touchAction: 'none',
                     userSelect: 'none',
-                    WebkitUserSelect: 'none'
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none'
                   }}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item, index)}
@@ -466,14 +427,14 @@ function WorkflowManager() {
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
-                  <div className="flex items-center gap-3 pointer-events-none">
+                  <div className="flex items-center gap-3">
                     <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
                     <div>
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-[var(--color-text-tertiary)]">Position: {index + 1}</div>
                     </div>
                   </div>
-                  <div className="flex gap-2 pointer-events-auto">
+                  <div className="flex gap-2">
                     <Button
                       variant="secondary"
                       size="sm"

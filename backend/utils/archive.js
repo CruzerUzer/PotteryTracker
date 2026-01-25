@@ -46,6 +46,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
     const pieces = await db.all('SELECT * FROM ceramic_pieces WHERE user_id = ? ORDER BY id', [userId]);
     const materials = await db.all('SELECT * FROM materials WHERE user_id = ? ORDER BY id', [userId]);
     const phases = await db.all('SELECT * FROM phases WHERE user_id = ? ORDER BY display_order, id', [userId]);
+    const locations = await db.all('SELECT * FROM locations WHERE user_id = ? ORDER BY display_order, id', [userId]);
     const pieceMaterials = await db.all(`
       SELECT pm.* FROM piece_materials pm
       INNER JOIN ceramic_pieces p ON pm.piece_id = p.id
@@ -118,6 +119,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       archive.append(JSON.stringify(pieces, null, 2), { name: 'data/pieces.json' });
       archive.append(JSON.stringify(materials, null, 2), { name: 'data/materials.json' });
       archive.append(JSON.stringify(phases, null, 2), { name: 'data/phases.json' });
+      archive.append(JSON.stringify(locations, null, 2), { name: 'data/locations.json' });
       archive.append(JSON.stringify(pieceMaterials, null, 2), { name: 'data/piece_materials.json' });
       archive.append(JSON.stringify(pieceImages, null, 2), { name: 'data/piece_images.json' });
 
@@ -254,18 +256,21 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     let pieces = [];
     let materials = [];
     let phases = [];
+    let locations = []; // Initialize as empty array for backward compatibility
     let pieceMaterials = [];
     let pieceImages = []; // Initialize as empty array for backward compatibility
-    
+
     for (const file of directory.files) {
       const content = await file.buffer();
-      
+
       if (file.path === 'data/pieces.json') {
         pieces = JSON.parse(content.toString());
       } else if (file.path === 'data/materials.json') {
         materials = JSON.parse(content.toString());
       } else if (file.path === 'data/phases.json') {
         phases = JSON.parse(content.toString());
+      } else if (file.path === 'data/locations.json') {
+        locations = JSON.parse(content.toString());
       } else if (file.path === 'data/piece_materials.json') {
         pieceMaterials = JSON.parse(content.toString());
       } else if (file.path === 'data/piece_images.json') {
@@ -273,8 +278,9 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
       }
     }
 
-    // Import data in order: phases, materials, pieces, relationships, images
+    // Import data in order: phases, locations, materials, pieces, relationships, images
     const phaseIdMap = {}; // old_id -> new_id
+    const locationIdMap = {}; // old_id -> new_id
     const materialIdMap = {}; // old_id -> new_id
     const pieceIdMap = {}; // old_id -> new_id
 
@@ -296,6 +302,27 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
           [targetUserId, phase.name, phase.display_order, phase.created_at]
         );
         phaseIdMap[phase.id] = result.lastID;
+      }
+    }
+
+    // Import locations - check if they already exist to avoid UNIQUE constraint errors
+    for (const location of locations) {
+      // Check if location already exists for this user
+      const existingLocation = await db.get(
+        'SELECT id FROM locations WHERE user_id = ? AND name = ?',
+        [targetUserId, location.name]
+      );
+
+      if (existingLocation) {
+        // Location already exists, use existing ID
+        locationIdMap[location.id] = existingLocation.id;
+      } else {
+        // Location doesn't exist, insert it
+        const result = await db.run(
+          'INSERT INTO locations (user_id, name, display_order, created_at) VALUES (?, ?, ?, ?)',
+          [targetUserId, location.name, location.display_order, location.created_at]
+        );
+        locationIdMap[location.id] = result.lastID;
       }
     }
 
@@ -323,9 +350,10 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     // Import pieces
     for (const piece of pieces) {
       const newPhaseId = piece.current_phase_id ? phaseIdMap[piece.current_phase_id] : null;
+      const newLocationId = piece.current_location_id ? locationIdMap[piece.current_location_id] : null;
       const result = await db.run(
-        'INSERT INTO ceramic_pieces (user_id, name, description, current_phase_id, done, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [targetUserId, piece.name, piece.description, newPhaseId, piece.done, piece.created_at, piece.updated_at]
+        'INSERT INTO ceramic_pieces (user_id, name, description, current_phase_id, current_location_id, done, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [targetUserId, piece.name, piece.description, newPhaseId, newLocationId, piece.done, piece.created_at, piece.updated_at]
       );
       pieceIdMap[piece.id] = result.lastID;
     }
@@ -396,6 +424,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
 
     return {
       phases: phases.length,
+      locations: locations.length,
       materials: materials.length,
       pieces: pieces.length,
       relationships: pieceMaterials.length,

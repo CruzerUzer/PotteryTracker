@@ -43,13 +43,13 @@ router.post('/', async (req, res) => {
     res.status(201).json({ id: result.lastID, name, display_order: display_order || 0 });
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
-      logger.warn('Phase creation failed: duplicate name', { name, userId: req.userId });
+      logger.warn('Phase creation failed: duplicate name', { name: req.body?.name, userId: req.userId });
       return res.status(409).json({ error: 'Phase with this name already exists' });
     }
     logger.error('Error creating phase', {
       error: error.message,
       stack: error.stack,
-      name,
+      name: req.body?.name,
       userId: req.userId
     });
     res.status(500).json({ error: 'Failed to create phase' });
@@ -82,13 +82,13 @@ router.put('/:id', async (req, res) => {
     res.json({ id: parseInt(id), name, display_order: display_order || 0 });
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
-      logger.warn('Phase update failed: duplicate name', { phaseId: id, name, userId: req.userId });
+      logger.warn('Phase update failed: duplicate name', { phaseId: req.params?.id, name: req.body?.name, userId: req.userId });
       return res.status(409).json({ error: 'Phase with this name already exists' });
     }
     logger.error('Error updating phase', {
       error: error.message,
       stack: error.stack,
-      phaseId: id,
+      phaseId: req.params?.id,
       userId: req.userId
     });
     res.status(500).json({ error: 'Failed to update phase' });
@@ -126,7 +126,7 @@ router.delete('/:id', async (req, res) => {
     logger.error('Error deleting phase', {
       error: error.message,
       stack: error.stack,
-      phaseId: id,
+      phaseId: req.params?.id,
       userId: req.userId
     });
     res.status(500).json({ error: 'Failed to delete phase' });

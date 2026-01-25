@@ -1,16 +1,10 @@
 import multer from 'multer';
 import sharp from 'sharp';
-import { join, dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { existsSync, unlinkSync } from 'fs';
 import logger from '../utils/logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { uploadsDir, thumbnailDir, ensureDirectoriesExist } from '../utils/paths.js';
 
 // Configuration from environment variables
-const uploadsDir = process.env.UPLOADS_DIR || join(__dirname, '..', 'uploads');
-const thumbnailDir = join(uploadsDir, 'thumbnails');
 const maxFileSize = parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024; // 10MB
 const imageMaxWidth = parseInt(process.env.IMAGE_MAX_WIDTH) || 2048;
 const imageMaxHeight = parseInt(process.env.IMAGE_MAX_HEIGHT) || 2048;
@@ -19,12 +13,7 @@ const thumbnailHeight = parseInt(process.env.THUMBNAIL_HEIGHT) || 400;
 const imageQuality = parseInt(process.env.IMAGE_QUALITY) || 85;
 
 // Ensure uploads and thumbnails directories exist
-if (!existsSync(uploadsDir)) {
-  mkdirSync(uploadsDir, { recursive: true });
-}
-if (!existsSync(thumbnailDir)) {
-  mkdirSync(thumbnailDir, { recursive: true });
-}
+ensureDirectoriesExist();
 
 // Configure storage
 const storage = multer.diskStorage({
@@ -106,7 +95,7 @@ export const optimizeImage = async (req, res, next) => {
       logger.info('Converted HEIC/HEIF to JPEG', { originalFilename: req.file.originalname, newFilename: filename });
     }
     
-    const thumbnailPath = resolve(thumbnailDir, filename);
+    const thumbnailPath = `${thumbnailDir}/${filename}`;
 
     // Get image metadata
     const metadata = await sharp(filePath).metadata();

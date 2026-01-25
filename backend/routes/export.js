@@ -3,18 +3,11 @@ import multer from 'multer';
 import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createUserArchive, importUserArchive } from '../utils/archive.js';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { existsSync, unlinkSync } from 'fs';
 import logger from '../utils/logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { uploadsDir, archivesDir, getArchivePath } from '../utils/paths.js';
 
 const router = express.Router();
-const uploadsDir = process.env.UPLOADS_DIR || resolve(__dirname, '..', 'uploads');
-const archivesDir = process.env.ARCHIVES_DIR || resolve(__dirname, '..', 'archives');
 
 // Configure multer for file upload
 const upload = multer({
@@ -203,7 +196,7 @@ router.get('/archive/download/:filename', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const archivePath = resolve(archivesDir, filename);
+    const archivePath = getArchivePath( filename);
     
     if (!existsSync(archivePath)) {
       return res.status(404).json({ error: 'Archive file not found' });

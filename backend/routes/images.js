@@ -1,18 +1,11 @@
 import express from 'express';
-import { resolve } from 'path';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { unlinkSync, existsSync } from 'fs';
 import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { getImagePath, getThumbnailPath } from '../utils/paths.js';
 
 const router = express.Router();
-const uploadsDir = process.env.UPLOADS_DIR || resolve(__dirname, '..', 'uploads');
-const thumbnailDir = resolve(uploadsDir, 'thumbnails');
 
 // All image routes require authentication
 router.use(requireAuth);
@@ -39,7 +32,7 @@ router.get('/:id/file', async (req, res) => {
     // Serve thumbnail if requested and available
     if (thumbnail === 'true') {
       const thumbnailFilename = image.filename.replace(/\.[^/.]+$/, '.jpg');
-      const thumbnailPath = resolve(thumbnailDir, thumbnailFilename);
+      const thumbnailPath = getThumbnailPath(thumbnailFilename);
       if (existsSync(thumbnailPath)) {
         return res.sendFile(thumbnailPath);
       }
@@ -47,7 +40,7 @@ router.get('/:id/file', async (req, res) => {
     }
 
     // Serve full-size image
-    const filePath = resolve(uploadsDir, image.filename);
+    const filePath = getImagePath(image.filename);
     if (!existsSync(filePath)) {
       return res.status(404).json({ error: 'Image file not found' });
     }
@@ -91,9 +84,9 @@ router.delete('/:id', async (req, res) => {
     `, [id, req.userId]);
 
     // Delete file and thumbnail
-    const filePath = resolve(uploadsDir, image.filename);
+    const filePath = getImagePath(image.filename);
     const thumbnailFilename = image.filename.replace(/\.[^/.]+$/, '.jpg');
-    const thumbnailPath = resolve(thumbnailDir, thumbnailFilename);
+    const thumbnailPath = getThumbnailPath(thumbnailFilename);
     
     if (existsSync(filePath)) {
       unlinkSync(filePath);

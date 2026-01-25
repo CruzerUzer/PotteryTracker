@@ -5,17 +5,11 @@ import multer from 'multer';
 import { getDb } from '../utils/db.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
 import { createUserArchive, importUserArchive } from '../utils/archive.js';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { existsSync, unlinkSync, readFileSync } from 'fs';
 import logger from '../utils/logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { uploadsDir, archivesDir, getArchivePath } from '../utils/paths.js';
 
 const router = express.Router();
-const uploadsDir = process.env.UPLOADS_DIR || resolve(__dirname, '..', 'uploads');
-const archivesDir = process.env.ARCHIVES_DIR || resolve(__dirname, '..', 'archives');
 
 // Configure multer for file upload
 const upload = multer({
@@ -224,7 +218,7 @@ router.post('/users/:id/archive', async (req, res) => {
 
     // If download or both, send the file
     if (storageOption === 'download' || storageOption === 'both') {
-      const archivePath = resolve(archivesDir, archiveResult.filename);
+      const archivePath = getArchivePath( archiveResult.filename);
       
       // Store archive record if storing on server (both or server only)
       if (storageOption === 'both') {
@@ -280,7 +274,7 @@ router.get('/archives', async (req, res) => {
     
     // Filter to only include archives that actually exist on the server
     const existingArchives = archives.filter(archive => {
-      const archivePath = resolve(archivesDir, archive.archive_filename);
+      const archivePath = getArchivePath( archive.archive_filename);
       return existsSync(archivePath);
     });
     
@@ -302,7 +296,7 @@ router.get('/archives/:id/download', async (req, res) => {
       return res.status(404).json({ error: 'Archive not found' });
     }
 
-    const archivePath = resolve(archivesDir, archive.archive_filename);
+    const archivePath = getArchivePath( archive.archive_filename);
     if (!existsSync(archivePath)) {
       return res.status(404).json({ error: 'Archive file not found' });
     }
@@ -325,7 +319,7 @@ router.post('/archives/:id/delete', async (req, res) => {
       return res.status(404).json({ error: 'Archive not found' });
     }
 
-    const archivePath = resolve(archivesDir, archive.archive_filename);
+    const archivePath = getArchivePath( archive.archive_filename);
     if (existsSync(archivePath)) {
       unlinkSync(archivePath);
     }
@@ -357,7 +351,7 @@ router.post('/import', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const archivePath = resolve(archivesDir, archive.archive_filename);
+    const archivePath = getArchivePath( archive.archive_filename);
     if (!existsSync(archivePath)) {
       return res.status(404).json({ error: 'Archive file not found' });
     }

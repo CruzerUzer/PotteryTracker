@@ -121,6 +121,7 @@ function ImageLightbox({
           maxScale={4}
           centerOnInit={true}
           doubleClick={{ mode: 'toggle', step: 2 }}
+          wheel={{ step: 2, smoothStep: 0.01 }}
           onTransformed={(ref, state) => {
             setIsZoomed(state.scale > 1.1);
           }}

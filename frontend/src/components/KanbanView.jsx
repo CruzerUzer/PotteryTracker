@@ -4,6 +4,7 @@ import { piecesAPI, phasesAPI, locationsAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Plus, Package, Image as ImageIcon, ChevronDown, ChevronUp, ChevronRight, MapPin } from 'lucide-react';
+import ImageLightbox from './ImageLightbox';
 
 function KanbanView() {
   const [pieces, setPieces] = useState([]);
@@ -20,6 +21,13 @@ function KanbanView() {
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [collapsedLanes, setCollapsedLanes] = useState(new Set());
   const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns globally by phaseId
+  const [lightboxState, setLightboxState] = useState({
+    isOpen: false,
+    images: [],
+    currentIndex: 0,
+    pieceName: '',
+    pieceId: null
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,6 +106,75 @@ function KanbanView() {
 
   const isColumnCollapsed = (phaseId) => {
     return collapsedColumns.has(phaseId);
+  };
+
+  // Open lightbox for a piece's images
+  const openLightbox = async (piece, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isDragging) return;
+
+    try {
+      const images = await imagesAPI.getByPiece(piece.id);
+      if (images.length > 0) {
+        setLightboxState({
+          isOpen: true,
+          images,
+          currentIndex: 0,
+          pieceName: piece.name,
+          pieceId: piece.id
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load images:', err);
+    }
+  };
+
+  // Close lightbox
+  const closeLightbox = () => {
+    setLightboxState({
+      isOpen: false,
+      images: [],
+      currentIndex: 0,
+      pieceName: '',
+      pieceId: null
+    });
+  };
+
+  // Handle image deletion from lightbox
+  const handleLightboxDelete = async (imageId) => {
+    try {
+      await imagesAPI.delete(imageId);
+
+      // Update lightbox images
+      const newImages = lightboxState.images.filter(img => img.id !== imageId);
+
+      if (newImages.length === 0) {
+        closeLightbox();
+      } else {
+        const newIndex = Math.min(lightboxState.currentIndex, newImages.length - 1);
+        setLightboxState(prev => ({
+          ...prev,
+          images: newImages,
+          currentIndex: newIndex
+        }));
+      }
+
+      // Reload data to update piece thumbnails/counts
+      loadData();
+    } catch (err) {
+      console.error('Failed to delete image:', err);
+      setError(err.message);
+    }
+  };
+
+  // Handle lightbox navigation
+  const handleLightboxNavigate = (newIndex) => {
+    setLightboxState(prev => ({
+      ...prev,
+      currentIndex: newIndex
+    }));
   };
 
   const handleDragStart = (e, piece) => {
@@ -198,11 +275,16 @@ function KanbanView() {
     const touch = e.touches[0];
     const startTime = Date.now();
 
+    // Check if touch started on image area
+    const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
+    const isImageArea = touchedElement?.closest('[data-image-area="true"]') !== null;
+
     setTouchStart({
       x: touch.clientX,
       y: touch.clientY,
       piece: piece,
-      time: startTime
+      time: startTime,
+      isImageArea: isImageArea
     });
     setTouchElement(e.currentTarget);
 
@@ -266,9 +348,14 @@ function KanbanView() {
       clearTimeout(touchTimer);
       setTouchTimer(null);
       if (!wasDragging) {
-        setTimeout(() => {
-          navigate(`/pieces/${touchStart.piece.id}`);
-        }, 50);
+        // Check if tap was on image area - open lightbox, otherwise navigate
+        if (touchStart.isImageArea && touchStart.piece.latest_image_id) {
+          openLightbox(touchStart.piece, { preventDefault: () => {}, stopPropagation: () => {} });
+        } else {
+          setTimeout(() => {
+            navigate(`/pieces/${touchStart.piece.id}`);
+          }, 50);
+        }
       }
       setTouchStart(null);
       setTouchElement(null);
@@ -379,6 +466,24 @@ function KanbanView() {
           borderRadius: isBeingDragged ? '0.5rem' : undefined
         }}
       >
+        {/* Image area - opens lightbox */}
+        {piece.latest_image_id && (
+          <div
+            className="w-full h-24 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)] cursor-pointer"
+            onClick={(e) => openLightbox(piece, e)}
+            style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
+            data-image-area="true"
+          >
+            <img
+              src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
+              alt={piece.name}
+              className="w-full h-full object-cover"
+              draggable="false"
+              data-image-area="true"
+            />
+          </div>
+        )}
+        {/* Info area - navigates to detail view */}
         <Link
           to={`/pieces/${piece.id}`}
           className="block text-decoration-none"
@@ -392,15 +497,6 @@ function KanbanView() {
             }
           }}
         >
-          {piece.latest_image_id && (
-            <div className="w-full h-24 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)]">
-              <img
-                src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
-                alt={piece.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
           <div className="p-2 space-y-1">
             <div className="flex items-center gap-1 flex-wrap">
               <h4 className="font-semibold text-xs m-0 line-clamp-1">
@@ -527,6 +623,19 @@ function KanbanView() {
           </Link>
         </Button>
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxState.isOpen && (
+        <ImageLightbox
+          images={lightboxState.images}
+          currentIndex={lightboxState.currentIndex}
+          onClose={closeLightbox}
+          onDelete={handleLightboxDelete}
+          onNavigate={handleLightboxNavigate}
+          pieceName={lightboxState.pieceName}
+          showDelete={true}
+        />
+      )}
 
       {error && (
         <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">

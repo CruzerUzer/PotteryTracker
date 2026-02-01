@@ -1,0 +1,373 @@
+# PotteryTracker Architecture Diagrams
+
+Visual diagrams of the system architecture and key user flows using Mermaid.
+
+## 1. System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (React + Vite) :3000"]
+        UI[UI Components]
+        CTX[Contexts<br/>Auth/Theme]
+        API[api.js Service]
+    end
+
+    subgraph Backend["Backend (Express) :3001"]
+        MW[Middleware<br/>Auth/Upload]
+        RT[Routes]
+        subgraph Routes
+            AUTH[/api/auth]
+            PIECES[/api/pieces]
+            PHASES[/api/phases]
+            LOCS[/api/locations]
+            MATS[/api/materials]
+            IMGS[/api/images]
+            EXP[/api/export]
+            ADM[/api/admin]
+        end
+    end
+
+    subgraph Storage
+        DB[(SQLite<br/>database.db)]
+        FILES[/uploads/<br/>images]
+    end
+
+    UI --> CTX
+    CTX --> API
+    API -->|HTTP + Session Cookie| MW
+    MW --> RT
+    RT --> DB
+    RT --> FILES
+```
+
+## 2. Database Entity Relationship
+
+```mermaid
+erDiagram
+    users ||--o{ phases : has
+    users ||--o{ locations : has
+    users ||--o{ materials : has
+    users ||--o{ ceramic_pieces : owns
+    users ||--o{ user_archives : has
+    users ||--o{ password_reset_tokens : has
+
+    ceramic_pieces }o--|| phases : "in phase"
+    ceramic_pieces }o--o| locations : "at location"
+    ceramic_pieces ||--o{ piece_images : has
+    ceramic_pieces ||--o{ piece_materials : has
+
+    piece_materials }o--|| materials : references
+    piece_images }o--|| phases : "taken at"
+
+    users {
+        int id PK
+        string username UK
+        string password_hash
+        bool is_admin
+        datetime last_login
+        bool must_change_password
+    }
+
+    phases {
+        int id PK
+        int user_id FK
+        string name
+        int display_order
+    }
+
+    locations {
+        int id PK
+        int user_id FK
+        string name
+        int display_order
+    }
+
+    materials {
+        int id PK
+        int user_id FK
+        string name
+        string type
+    }
+
+    ceramic_pieces {
+        int id PK
+        int user_id FK
+        string name
+        string description
+        int current_phase_id FK
+        int current_location_id FK
+        bool done
+    }
+
+    piece_images {
+        int id PK
+        int piece_id FK
+        int phase_id FK
+        string filename
+    }
+
+    piece_materials {
+        int id PK
+        int piece_id FK
+        int material_id FK
+    }
+```
+
+## 3. Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+
+    rect rgb(230, 245, 255)
+        note right of U: Registration
+        U->>F: Enter username/password
+        F->>B: POST /api/auth/register
+        B->>DB: Check registration enabled
+        B->>DB: Check username available
+        B->>DB: Create user (bcrypt hash)
+        B->>DB: Create 4 default phases
+        B-->>F: Set session cookie
+        F-->>U: Redirect to Kanban
+    end
+
+    rect rgb(255, 245, 230)
+        note right of U: Login
+        U->>F: Enter credentials
+        F->>B: POST /api/auth/login
+        B->>DB: Find user by username
+        B->>B: bcrypt.compare password
+        B->>DB: Update last_login
+        B-->>F: Set session cookie + user info
+        F->>F: AuthContext stores user
+        F-->>U: Redirect to Kanban
+    end
+
+    rect rgb(245, 255, 230)
+        note right of U: Protected Request
+        U->>F: Access /pieces
+        F->>B: GET /api/pieces (with cookie)
+        B->>B: requireAuth middleware
+        B->>DB: SELECT WHERE user_id = ?
+        B-->>F: User's pieces only
+        F-->>U: Display pieces
+    end
+```
+
+## 4. Create Piece Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant PF as PieceForm
+    participant API as api.js
+    participant B as Backend
+    participant DB as Database
+
+    U->>PF: Navigate to /pieces/new
+
+    par Load Form Data
+        PF->>API: phasesAPI.getAll()
+        API->>B: GET /api/phases
+        B->>DB: SELECT phases WHERE user_id
+        B-->>PF: phases[]
+    and
+        PF->>API: locationsAPI.getAll()
+        API->>B: GET /api/locations
+        B-->>PF: locations[]
+    and
+        PF->>API: materialsAPI.getAll()
+        API->>B: GET /api/materials
+        B-->>PF: materials[]
+    end
+
+    PF-->>U: Display form with options
+
+    U->>PF: Fill name, select phase/materials
+    U->>PF: Submit
+
+    PF->>API: piecesAPI.create(data)
+    API->>B: POST /api/pieces
+    B->>DB: Validate phase/location ownership
+    B->>DB: INSERT ceramic_pieces
+    B->>DB: INSERT piece_materials (each)
+    B-->>API: new piece
+    API-->>PF: success
+    PF-->>U: Redirect to /kanban
+```
+
+## 5. Image Upload Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant IU as ImageUpload
+    participant B as Backend
+    participant Sharp as Sharp
+    participant FS as File System
+    participant DB as Database
+
+    U->>IU: Select image file
+    U->>IU: Select phase
+    U->>IU: Click upload
+
+    IU->>B: POST /api/pieces/:id/images<br/>(FormData)
+
+    B->>B: Multer receives file
+    B->>Sharp: optimizeImage()
+    Sharp->>Sharp: Resize to max 1920px
+    Sharp->>Sharp: Create 200px thumbnail
+    Sharp->>FS: Save original + thumbnail
+
+    B->>DB: Validate piece belongs to user
+    B->>DB: INSERT piece_images
+    B-->>IU: { id, filename, thumbnail }
+
+    IU-->>U: Display new thumbnail
+```
+
+## 6. Kanban Drag & Drop Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant KV as KanbanView
+    participant API as api.js
+    participant B as Backend
+    participant DB as Database
+
+    U->>KV: Load /kanban
+
+    par Load Board Data
+        KV->>API: piecesAPI.getAll()
+        API-->>KV: pieces[]
+    and
+        KV->>API: phasesAPI.getAll()
+        API-->>KV: phases[]
+    and
+        KV->>API: locationsAPI.getAll()
+        API-->>KV: locations[]
+    end
+
+    KV->>KV: Render grid (phases x locations)
+    KV-->>U: Display Kanban board
+
+    U->>KV: Drag piece card
+    U->>KV: Drop on new cell
+
+    KV->>KV: Optimistic state update
+
+    alt Phase changed
+        KV->>API: piecesAPI.updatePhase(id, phaseId)
+        API->>B: PATCH /api/pieces/:id/phase
+        B->>DB: UPDATE ceramic_pieces
+        B->>DB: Check if final phase -> set done=1
+        B-->>KV: updated piece
+    end
+
+    alt Location changed
+        KV->>API: piecesAPI.updateLocation(id, locId)
+        API->>B: PATCH /api/pieces/:id/location
+        B->>DB: UPDATE ceramic_pieces
+        B-->>KV: updated piece
+    end
+
+    KV-->>U: Card in new position
+```
+
+## 7. Export/Import Archive Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant ED as ExportData
+    participant B as Backend
+    participant DB as Database
+    participant FS as File System
+
+    rect rgb(230, 245, 255)
+        note right of U: Export Archive
+        U->>ED: Click Export Archive
+        U->>ED: Choose encryption (optional)
+        ED->>B: POST /api/export/archive
+        B->>DB: Fetch all user data
+        B->>FS: Copy user images
+        B->>B: Create ZIP archive
+        alt Encrypted
+            B->>B: AES-256-GCM encrypt
+        end
+        B->>FS: Save archive
+        B-->>ED: { filename, downloadUrl }
+        ED-->>U: Download link
+    end
+
+    rect rgb(255, 245, 230)
+        note right of U: Import Archive
+        U->>ED: Select archive file
+        U->>ED: Enter password (if encrypted)
+        ED->>B: POST /api/export/import
+        B->>B: Extract/decrypt ZIP
+        B->>DB: Validate & insert phases
+        B->>DB: Validate & insert locations
+        B->>DB: Validate & insert materials
+        B->>DB: Insert pieces with mappings
+        B->>FS: Copy images
+        B-->>ED: { imported counts }
+        ED-->>U: Success summary
+    end
+```
+
+## 8. Component Architecture
+
+```mermaid
+flowchart TB
+    subgraph App
+        Router[React Router]
+        Auth[AuthContext]
+        Theme[ThemeContext]
+    end
+
+    subgraph Views
+        Login[LoginPage]
+        Kanban[KanbanView]
+        List[PieceList]
+        Detail[PieceDetail]
+        Settings[SettingsPage]
+        Admin[AdminPanel]
+    end
+
+    subgraph Components
+        PF[PieceForm]
+        PC[PieceCard]
+        IU[ImageUpload]
+        IG[ImageGallery]
+        WM[WorkflowManager]
+        MM[MaterialManager]
+        LM[LocationManager]
+        ED[ExportData]
+    end
+
+    subgraph Services
+        API[api.js]
+    end
+
+    Router --> Views
+    Auth --> Views
+    Theme --> Views
+
+    Kanban --> PC
+    Kanban --> IG
+    Detail --> PF
+    Detail --> IU
+    Detail --> IG
+    Settings --> WM
+    Settings --> MM
+    Settings --> LM
+    Settings --> ED
+
+    Views --> API
+    Components --> API
+```

@@ -8,28 +8,28 @@ Visual diagrams of the system architecture and key user flows using Mermaid.
 flowchart TB
     subgraph Frontend["Frontend (React + Vite) :3000"]
         UI[UI Components]
-        CTX[Contexts<br/>Auth/Theme]
+        CTX["Contexts: Auth/Theme"]
         API[api.js Service]
     end
 
     subgraph Backend["Backend (Express) :3001"]
-        MW[Middleware<br/>Auth/Upload]
+        MW["Middleware: Auth/Upload"]
         RT[Routes]
         subgraph Routes
-            AUTH[/api/auth]
-            PIECES[/api/pieces]
-            PHASES[/api/phases]
-            LOCS[/api/locations]
-            MATS[/api/materials]
-            IMGS[/api/images]
-            EXP[/api/export]
-            ADM[/api/admin]
+            AUTH["auth"]
+            PIECES["pieces"]
+            PHASES["phases"]
+            LOCS["locations"]
+            MATS["materials"]
+            IMGS["images"]
+            EXP["export"]
+            ADM["admin"]
         end
     end
 
     subgraph Storage
-        DB[(SQLite<br/>database.db)]
-        FILES[/uploads/<br/>images]
+        DB[("SQLite database.db")]
+        FILES["uploads/images"]
     end
 
     UI --> CTX
@@ -214,7 +214,7 @@ sequenceDiagram
     U->>IU: Select phase
     U->>IU: Click upload
 
-    IU->>B: POST /api/pieces/:id/images<br/>(FormData)
+    IU->>B: POST /api/pieces/:id/images (FormData)
 
     B->>B: Multer receives file
     B->>Sharp: optimizeImage()

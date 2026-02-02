@@ -77,6 +77,34 @@ PotteryTracker/
 - Push branch and let user test before merging to main
 - Never commit directly to main
 
+## GitHub Issues Workflow
+
+When working on GitHub Issues, follow this process:
+
+### 1. Read Issue
+```bash
+gh issue view <number> --json title,body,comments
+gh issue list  # To see all open issues
+```
+
+### 2. Plan & Implement
+- Create a feature branch: `git checkout -b feature/issue-<number>-<short-description>`
+- Implement the changes according to the issue requirements
+- Follow verification steps (tests + build)
+
+### 3. Report Progress on Issue
+```bash
+# Add comment with implementation details
+gh issue comment <number> --body "Implementation complete: <summary of changes>"
+
+# Close issue when merged to main
+gh issue close <number>
+```
+
+### 4. Sub-Issues
+- Check if the issue has related sub-issues that should be addressed together
+- Reference parent issue in commits: `Fixes #<number>` or `Part of #<parent-number>`
+
 ## Important Patterns
 
 - **API Proxy**: Frontend dev server proxies `/api` to `localhost:3001`

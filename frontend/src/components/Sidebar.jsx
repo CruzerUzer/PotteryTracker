@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  LayoutDashboard, 
-  List, 
-  CheckCircle, 
-  Settings, 
-  Database, 
-  FileDown, 
+import {
+  LayoutDashboard,
+  List,
+  CheckCircle,
+  Settings,
+  Database,
+  Archive,
   LogOut,
   Shield
 } from 'lucide-react';
@@ -26,7 +26,7 @@ function Sidebar() {
     { path: '/done', icon: CheckCircle, label: 'Done' },
     { path: '/workflow', icon: Settings, label: 'Workflow' },
     { path: '/materials', icon: Database, label: 'Materials' },
-    { path: '/export', icon: FileDown, label: 'Export' },
+    { path: '/backup', icon: Archive, label: 'Backup' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 

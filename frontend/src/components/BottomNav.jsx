@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, List, CheckCircle, Search, MoreVertical, Settings, Database, FileDown, Shield } from 'lucide-react';
+import { LayoutDashboard, List, CheckCircle, Search, MoreVertical, Settings, Database, Archive, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +27,7 @@ function BottomNav() {
   const subMenuItems = [
     { path: '/workflow', icon: Settings, label: 'Workflow' },
     { path: '/materials', icon: Database, label: 'Materials' },
-    { path: '/export', icon: FileDown, label: 'Export' },
+    { path: '/backup', icon: Archive, label: 'Backup' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 

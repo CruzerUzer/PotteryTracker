@@ -349,7 +349,7 @@ function KanbanView() {
       setTouchTimer(null);
       if (!wasDragging) {
         // Check if tap was on image area - open lightbox, otherwise navigate
-        if (touchStart.isImageArea && touchStart.piece.latest_image_id) {
+        if (touchStart.isImageArea && touchStart.piece.display_image_id) {
           openLightbox(touchStart.piece, { preventDefault: () => {}, stopPropagation: () => {} });
         } else {
           setTimeout(() => {
@@ -467,7 +467,7 @@ function KanbanView() {
         }}
       >
         {/* Image area - opens lightbox */}
-        {piece.latest_image_id && (
+        {piece.display_image_id && (
           <div
             className="w-full h-24 bg-[var(--color-surface-hover)] overflow-hidden border-b border-[var(--color-border)] cursor-pointer"
             onClick={(e) => openLightbox(piece, e)}
@@ -475,7 +475,7 @@ function KanbanView() {
             data-image-area="true"
           >
             <img
-              src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
+              src={imagesAPI.getFileUrl(piece.display_image_id, true)}
               alt={piece.name}
               className="w-full h-full object-cover"
               draggable="false"

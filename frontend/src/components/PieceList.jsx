@@ -222,10 +222,10 @@ function PieceList() {
                 className="block"
               >
                 <div className="relative">
-                  {piece.latest_image_id ? (
+                  {piece.display_image_id ? (
                     <div className="aspect-video overflow-hidden bg-[var(--color-surface-hover)]">
                       <img
-                        src={imagesAPI.getFileUrl(piece.latest_image_id, true)}
+                        src={imagesAPI.getFileUrl(piece.display_image_id, true)}
                         alt={piece.name}
                         className="w-full h-full object-cover"
                       />

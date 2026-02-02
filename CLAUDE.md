@@ -72,7 +72,7 @@ PotteryTracker/
 
 ## Git Workflow
 
-- **Always create a new branch** for new features: `git checkout -b feature/<feature-name>`
+- **Always create a new branch** for new features and bug fixes: `git checkout -b feature/<feature-name>`
 - Branch naming: `feature/<name>`, `fix/<name>`, `refactor/<name>`
 - Push branch and let user test before merging to main
 - Never commit directly to main

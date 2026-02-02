@@ -75,9 +75,12 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Image not found' });
     }
 
+    // Clear default_image_id if this image is set as default
+    await db.run('UPDATE ceramic_pieces SET default_image_id = NULL WHERE default_image_id = ?', [id]);
+
     // Delete from database (the JOIN ensures we can only delete images from user's pieces)
     await db.run(`
-      DELETE FROM piece_images 
+      DELETE FROM piece_images
       WHERE id = ? AND piece_id IN (
         SELECT id FROM ceramic_pieces WHERE user_id = ?
       )

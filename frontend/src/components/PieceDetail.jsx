@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus, MapPin } from 'lucide-react';
+import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus, MapPin, Star } from 'lucide-react';
 
 function PieceDetail() {
   const { id } = useParams();
@@ -112,6 +112,17 @@ function PieceDetail() {
       loadData();
     } catch (err) {
       alert('Error deleting image: ' + err.message);
+    }
+  };
+
+  const handleSetDefaultImage = async (imageId) => {
+    try {
+      // If clicking on current default, clear it (set to null)
+      const newDefaultId = piece.default_image_id === imageId ? null : imageId;
+      await piecesAPI.setDefaultImage(id, newDefaultId);
+      loadData();
+    } catch (err) {
+      alert('Error setting default image: ' + err.message);
     }
   };
 
@@ -472,37 +483,54 @@ function PieceDetail() {
           {piece.images && piece.images.length > 0 ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
-                {piece.images.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className="relative group cursor-pointer rounded-md overflow-hidden border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
-                    onClick={() => setLightboxIndex(index)}
-                  >
-                    <img
-                      src={imagesAPI.getFileUrl(image.id, true)}
-                      alt={image.original_filename || 'Piece image'}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-end p-2">
-                      <div className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div>{image.phase_name || 'Unknown phase'}</div>
-                        <div className="text-xs opacity-90">
-                          {new Date(image.created_at).toLocaleDateString()}
+                {piece.images.map((image, index) => {
+                  const isDefault = piece.default_image_id === image.id;
+                  return (
+                    <div
+                      key={image.id}
+                      className="relative group cursor-pointer rounded-md overflow-hidden border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
+                      onClick={() => setLightboxIndex(index)}
+                    >
+                      <img
+                        src={imagesAPI.getFileUrl(image.id, true)}
+                        alt={image.original_filename || 'Piece image'}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-end p-2">
+                        <div className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div>{image.phase_name || 'Unknown phase'}</div>
+                          <div className="text-xs opacity-90">
+                            {new Date(image.created_at).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
+                      <button
+                        className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                          isDefault
+                            ? 'bg-yellow-500 text-white opacity-100'
+                            : 'bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-yellow-500'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSetDefaultImage(image.id);
+                        }}
+                        title={isDefault ? 'Remove as default image' : 'Set as default image'}
+                      >
+                        <Star className={`h-4 w-4 ${isDefault ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleImageDelete(image.id);
+                        }}
+                        title="Delete image"
+                      >
+                        ×
+                      </button>
                     </div>
-                    <button
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleImageDelete(image.id);
-                      }}
-                      title="Delete image"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {lightboxIndex !== null && (
                 <ImageLightbox

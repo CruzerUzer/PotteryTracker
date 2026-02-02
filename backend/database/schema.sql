@@ -49,12 +49,14 @@ CREATE TABLE IF NOT EXISTS ceramic_pieces (
     description TEXT,
     current_phase_id INTEGER,
     current_location_id INTEGER,
+    default_image_id INTEGER,
     done INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (current_phase_id) REFERENCES phases(id),
-    FOREIGN KEY (current_location_id) REFERENCES locations(id)
+    FOREIGN KEY (current_location_id) REFERENCES locations(id),
+    FOREIGN KEY (default_image_id) REFERENCES piece_images(id) ON DELETE SET NULL
 );
 
 -- Junction table for piece-materials relationship

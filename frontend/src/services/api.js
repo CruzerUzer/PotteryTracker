@@ -159,6 +159,10 @@ export const piecesAPI = {
     method: 'PATCH',
     body: JSON.stringify({ location_id: locationId }),
   }),
+  setDefaultImage: (pieceId, imageId) => apiCall(`/pieces/${pieceId}/default-image`, {
+    method: 'PATCH',
+    body: JSON.stringify({ image_id: imageId }),
+  }),
 };
 
 // Images API

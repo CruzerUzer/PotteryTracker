@@ -53,7 +53,14 @@ router.get('/', async (req, res) => {
           WHERE pi2.piece_id = p.id
           ORDER BY pi2.created_at DESC
           LIMIT 1
-        ) as latest_image_id
+        ) as latest_image_id,
+        COALESCE(p.default_image_id, (
+          SELECT pi3.id
+          FROM piece_images pi3
+          WHERE pi3.piece_id = p.id
+          ORDER BY pi3.created_at DESC
+          LIMIT 1
+        )) as display_image_id
       FROM ceramic_pieces p
       LEFT JOIN phases ph ON p.current_phase_id = ph.id AND ph.user_id = p.user_id
       LEFT JOIN locations loc ON p.current_location_id = loc.id AND loc.user_id = p.user_id
@@ -438,6 +445,53 @@ router.patch('/:id/location', async (req, res) => {
       userId: req.userId
     });
     res.status(500).json({ error: 'Failed to update piece location' });
+  }
+});
+
+// PATCH /api/pieces/:id/default-image - Set or clear default image for a piece
+router.patch('/:id/default-image', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { image_id } = req.body;
+
+    const db = await getDb();
+
+    // Verify piece belongs to user
+    const piece = await db.get('SELECT id FROM ceramic_pieces WHERE id = ? AND user_id = ?', [id, req.userId]);
+    if (!piece) {
+      return res.status(404).json({ error: 'Piece not found' });
+    }
+
+    // If image_id is provided, validate it belongs to this piece
+    if (image_id !== null && image_id !== undefined) {
+      const image = await db.get('SELECT id FROM piece_images WHERE id = ? AND piece_id = ?', [image_id, id]);
+      if (!image) {
+        return res.status(400).json({ error: 'Invalid image_id - image does not belong to this piece' });
+      }
+    }
+
+    // Update default_image_id
+    await db.run(
+      'UPDATE ceramic_pieces SET default_image_id = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?',
+      [image_id || null, id, req.userId]
+    );
+
+    logger.info('Piece default image updated', {
+      pieceId: id,
+      imageId: image_id,
+      userId: req.userId
+    });
+
+    res.json({ id: parseInt(id), default_image_id: image_id || null });
+  } catch (error) {
+    logger.error('Error updating piece default image', {
+      error: error.message,
+      stack: error.stack,
+      pieceId: req.params.id,
+      imageId: req.body.image_id,
+      userId: req.userId
+    });
+    res.status(500).json({ error: 'Failed to update piece default image' });
   }
 });
 

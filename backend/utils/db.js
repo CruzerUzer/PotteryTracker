@@ -13,6 +13,22 @@ let dbInstance = null;
 let dbPromise = null;
 
 /**
+ * Run database migrations on startup
+ * Adds new columns to existing tables if they don't exist
+ */
+async function runMigrations(db) {
+  // Check if default_image_id column exists in ceramic_pieces
+  const tableInfo = await db.all('PRAGMA table_info(ceramic_pieces)');
+  const hasDefaultImageId = tableInfo.some(col => col.name === 'default_image_id');
+
+  if (!hasDefaultImageId) {
+    logger.info('Running migration: Adding default_image_id column to ceramic_pieces');
+    await db.run('ALTER TABLE ceramic_pieces ADD COLUMN default_image_id INTEGER REFERENCES piece_images(id) ON DELETE SET NULL');
+    logger.info('Migration complete: default_image_id column added');
+  }
+}
+
+/**
  * Get database connection (singleton pattern)
  * Returns a promise that resolves to the database instance
  */
@@ -31,7 +47,7 @@ export async function getDb() {
   dbPromise = open({
     filename: dbPath,
     driver: sqlite3.Database
-  }).then(db => {
+  }).then(async (db) => {
     // Configure database
     db.on('trace', (sql) => {
       // Only log SQL in debug mode
@@ -39,6 +55,9 @@ export async function getDb() {
         logger.debug('SQL Query', { sql });
       }
     });
+
+    // Run migrations
+    await runMigrations(db);
 
     dbInstance = db;
     logger.info('Database connection established', { dbPath });

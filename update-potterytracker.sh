@@ -18,6 +18,20 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # ============================================================================
+# STEP 0: SAFETY CHECKS
+# ============================================================================
+
+# Kör INTE som root/sudo — det skapar root-ägda filer (uploads, databas,
+# node_modules) som gör att appen inte kan skriva, och PM2 körs per användare.
+if [ "$(id -u)" -eq 0 ]; then
+    echo -e "${RED}Fel: Kör inte det här scriptet som root eller med sudo.${NC}"
+    echo -e "${YELLOW}Det skapar root-ägda filer (uploads, databas, node_modules) som gör att appen inte kan skriva,${NC}"
+    echo -e "${YELLOW}och PM2 körs per användare. Kör som den vanliga app-användaren (t.ex. ubuntu).${NC}"
+    echo -e "${YELLOW}Scriptet frågar själv efter sudo på de få rader som verkligen behöver det (Nginx).${NC}"
+    exit 1
+fi
+
+# ============================================================================
 # STEP 1: GET INSTALLATION DIRECTORY
 # ============================================================================
 
@@ -38,6 +52,27 @@ if [ ! -d "$INSTALL_DIR/.git" ]; then
     fi
 fi
 
+# Varna vid blandat ägande — en klassisk orsak till "permission denied".
+# Kollar bara nyckelkataloger (snabbt, undviker att skanna hela node_modules).
+CURRENT_USER="$(id -un)"
+MIXED=""
+for d in "$INSTALL_DIR" "$INSTALL_DIR/backend" "$INSTALL_DIR/backend/node_modules" \
+         "$INSTALL_DIR/backend/database" "$INSTALL_DIR/backend/uploads" \
+         "$INSTALL_DIR/frontend" "$INSTALL_DIR/frontend/node_modules" "$INSTALL_DIR/frontend/dist"; do
+    if [ -e "$d" ] && [ "$(stat -c '%U' "$d" 2>/dev/null)" != "$CURRENT_USER" ]; then
+        MIXED="$MIXED\n  $d ($(stat -c '%U' "$d" 2>/dev/null))"
+    fi
+done
+if [ -n "$MIXED" ]; then
+    echo -e "${YELLOW}Varning: dessa kataloger ägs inte av $CURRENT_USER:${NC}$(echo -e "$MIXED")"
+    echo -e "${YELLOW}Det ger sannolikt 'permission denied' under uppdateringen. Fixa en gång med:${NC}"
+    echo -e "${YELLOW}  sudo chown -R $CURRENT_USER:$(id -gn) $INSTALL_DIR${NC}"
+    read -p "Fortsätt ändå? (y/n): " CONT_OWN
+    if [ "$CONT_OWN" != "y" ] && [ "$CONT_OWN" != "Y" ]; then
+        exit 0
+    fi
+fi
+
 echo ""
 
 # ============================================================================
@@ -45,7 +80,11 @@ echo ""
 # ============================================================================
 
 echo -e "${YELLOW}Step 1: Creating backup...${NC}"
-BACKUP_DIR="${INSTALL_DIR}_backup_$(date +%Y%m%d_%H%M%S)"
+# Backuper hamnar i en dedikerad, användarägd katalog — INTE i föräldern till
+# installationen (ofta /srv, ägd av annan användare → permission denied).
+# Går att styra med miljövariabeln BACKUP_ROOT.
+BACKUP_ROOT="${BACKUP_ROOT:-/srv/potterytracker-backups}"
+BACKUP_DIR="${BACKUP_ROOT}/$(basename "$INSTALL_DIR")_backup_$(date +%Y%m%d_%H%M%S)"
 echo -e "${YELLOW}Backing up to: $BACKUP_DIR${NC}"
 
 # Get PM2 process name if possible
@@ -64,16 +103,24 @@ read -p "Create backup before updating? (y/n, default: y): " CREATE_BACKUP
 CREATE_BACKUP="${CREATE_BACKUP:-y}"
 
 if [ "$CREATE_BACKUP" = "y" ]; then
-    # Create backup (exclude node_modules and dist for speed, but preserve archives and uploads)
-    PARENT_DIR=$(dirname "$INSTALL_DIR")
-    cd "$PARENT_DIR"
-    rsync -a --exclude 'node_modules' --exclude 'dist' --exclude '.git' "$INSTALL_DIR" "$BACKUP_DIR" 2>/dev/null || {
-        echo -e "${YELLOW}Warning: rsync not available, using cp (slower)...${NC}"
-        cp -r "$INSTALL_DIR" "$BACKUP_DIR"
-        rm -rf "$BACKUP_DIR/node_modules" "$BACKUP_DIR/dist" 2>/dev/null || true
-    }
-    echo -e "${GREEN}Backup created at: $BACKUP_DIR${NC}"
-    echo -e "${YELLOW}Note: Archives and uploads directories are preserved in the installation${NC}"
+    # Se till att backup-roten finns och är skrivbar för den som kör
+    if ! mkdir -p "$BACKUP_ROOT" 2>/dev/null || [ ! -w "$BACKUP_ROOT" ]; then
+        echo -e "${YELLOW}Warning: kan inte skriva till $BACKUP_ROOT (behörighet?).${NC}"
+        echo -e "${YELLOW}Skapa den en gång med:${NC}"
+        echo -e "${YELLOW}  sudo mkdir -p $BACKUP_ROOT && sudo chown $(id -un):$(id -gn) $BACKUP_ROOT${NC}"
+        echo -e "${YELLOW}Hoppar över backup den här gången.${NC}"
+        BACKUP_DIR=""
+    else
+        # exkludera node_modules/dist/.git för snabbhet; uploads/archives/db bevaras
+        rsync -a --exclude 'node_modules' --exclude 'dist' --exclude '.git' "$INSTALL_DIR/" "$BACKUP_DIR/" 2>/dev/null || {
+            echo -e "${YELLOW}Warning: rsync not available, using cp (slower)...${NC}"
+            mkdir -p "$BACKUP_DIR"
+            cp -r "$INSTALL_DIR/." "$BACKUP_DIR/"
+            rm -rf "$BACKUP_DIR/node_modules" "$BACKUP_DIR/dist" "$BACKUP_DIR/.git" 2>/dev/null || true
+        }
+        echo -e "${GREEN}Backup created at: $BACKUP_DIR${NC}"
+        echo -e "${YELLOW}Note: Archives and uploads directories are preserved in the installation${NC}"
+    fi
 else
     BACKUP_DIR=""
 fi

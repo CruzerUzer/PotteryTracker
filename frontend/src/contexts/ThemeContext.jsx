@@ -11,7 +11,7 @@ export const useTheme = () => {
 };
 
 const defaultSettings = {
-  theme: 'dark', // 'light', 'dark', 'auto' — galleri noir är mörkt som standard
+  theme: 'light', // 'light', 'dark', 'auto' — ljust läge som standard för nya användare
   fontSize: 100, // percentage
   layoutDensity: 'comfortable', // 'compact', 'comfortable', 'spacious'
   defaultView: 'kanban', // 'kanban', 'list', 'grid'
@@ -31,7 +31,7 @@ export const ThemeProvider = ({ children }) => {
     return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
   });
 
-  const [actualTheme, setActualTheme] = useState('dark');
+  const [actualTheme, setActualTheme] = useState('light');
 
   useEffect(() => {
     // Determine actual theme based on setting

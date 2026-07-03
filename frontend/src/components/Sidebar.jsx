@@ -26,7 +26,7 @@ function Sidebar() {
     { path: '/list', icon: List, label: 'Lista' },
     { path: '/done', icon: CheckCircle, label: 'Färdiga' },
     { path: '/stats', icon: BarChart2, label: 'Statistik' },
-    { path: '/workflow', icon: Settings, label: 'Faser' },
+    { path: '/workflow', icon: Settings, label: 'Arbetsflöde' },
     { path: '/materials', icon: Database, label: 'Material' },
     { path: '/export', icon: FileDown, label: 'Export' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),

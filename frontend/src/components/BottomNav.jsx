@@ -25,7 +25,7 @@ function BottomNav() {
   ];
 
   const subMenuItems = [
-    { path: '/workflow', icon: Settings, label: 'Faser' },
+    { path: '/workflow', icon: Settings, label: 'Arbetsflöde' },
     { path: '/materials', icon: Database, label: 'Material' },
     { path: '/export', icon: FileDown, label: 'Export' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),

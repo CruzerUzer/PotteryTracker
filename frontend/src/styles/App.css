@@ -86,7 +86,7 @@
   --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── Mörkt läge (galleri noir — standard) ── */
+/* ── Mörkt läge (galleri noir) ── */
 [data-theme="dark"] {
   --color-primary: #C9A961;    /* brass */
   --color-primary-hover: #DBBE7C;

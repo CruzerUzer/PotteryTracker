@@ -516,7 +516,7 @@ function KanbanView() {
               </h4>
               {piece.done === 1 && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-                  Done
+                  Färdig
                 </span>
               )}
             </div>
@@ -539,7 +539,7 @@ function KanbanView() {
   // Render a swim lane for a location
   const renderSwimLane = (location) => {
     const locationId = location ? location.id : null;
-    const locationName = location ? location.name : 'No location';
+    const locationName = location ? location.name : 'Ingen plats';
     const isCollapsed = isLaneCollapsed(locationId);
     const pieceCount = getPiecesCountForLocation(locationId);
     const laneKey = locationId === null ? 'no-location' : locationId;
@@ -553,7 +553,7 @@ function KanbanView() {
         <div
           className="p-3 bg-[var(--color-surface)] border-b border-[var(--color-border)] cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
           onClick={() => toggleLaneCollapse(locationId)}
-          title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
+          title={isCollapsed ? 'Klicka för att visa' : 'Klicka för att fälla ihop'}
         >
           <div className="flex items-center gap-2">
             {isCollapsed ? (
@@ -656,7 +656,7 @@ function KanbanView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 style={{ fontFamily: 'var(--font-family-display)', fontSize: '1.8rem', fontWeight: 600, letterSpacing: '0.01em', color: 'var(--color-text-primary)' }}>
+        <h2 className="page-title">
           Kanban
         </h2>
         <Button asChild>
@@ -706,7 +706,7 @@ function KanbanView() {
                     boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                   }}
                   onClick={() => toggleColumnCollapse(phase.id)}
-                  title={isColCollapsed ? 'Expandera kolumn' : 'Kollapsa kolumn'}
+                  title={isColCollapsed ? 'Visa kolumn' : 'Fäll ihop kolumn'}
                 >
                   {isColCollapsed ? (
                     <ChevronRight className="h-4 w-4 mx-auto" style={{ color: phaseColor.accent }} />

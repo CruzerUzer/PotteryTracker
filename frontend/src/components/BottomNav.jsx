@@ -64,7 +64,7 @@ function BottomNav() {
         <DropdownMenuTrigger asChild>
           <button className={`nav-item ${subMenuItems.some(item => isActive(item.path)) ? 'active' : ''}`}>
             <MoreVertical className="nav-icon" size={20} />
-            <span>More</span>
+            <span>Mer</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" className="mb-2">

@@ -136,7 +136,7 @@ function PieceForm() {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">Laddar…</div>
         </CardContent>
       </Card>
     );
@@ -146,7 +146,7 @@ function PieceForm() {
     <div className="space-y-6">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>{isEdit ? 'Edit Piece' : 'Create New Piece'}</CardTitle>
+          <CardTitle>{isEdit ? 'Redigera pjäs' : 'Ny pjäs'}</CardTitle>
         </CardHeader>
         <CardContent>
           {error && (
@@ -157,7 +157,7 @@ function PieceForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">Namn *</Label>
               <Input
                 id="name"
                 name="name"
@@ -169,7 +169,7 @@ function PieceForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Beskrivning</Label>
               <Textarea
                 id="description"
                 name="description"
@@ -180,10 +180,10 @@ function PieceForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="current_phase_id">Current Phase</Label>
+              <Label htmlFor="current_phase_id">Fas</Label>
               <Select value={formData.current_phase_id || undefined} onValueChange={(value) => handlePhaseChange(value || '')}>
                 <SelectTrigger id="current_phase_id">
-                  <SelectValue placeholder="No phase" />
+                  <SelectValue placeholder="Ingen fas" />
                 </SelectTrigger>
                 <SelectContent>
                   {phases.map((phase) => (
@@ -196,10 +196,10 @@ function PieceForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="current_location_id">Location</Label>
+              <Label htmlFor="current_location_id">Plats</Label>
               <Select value={formData.current_location_id || undefined} onValueChange={(value) => handleLocationChange(value || '')}>
                 <SelectTrigger id="current_location_id">
-                  <SelectValue placeholder="No location" />
+                  <SelectValue placeholder="Ingen plats" />
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map((location) => (
@@ -212,10 +212,10 @@ function PieceForm() {
             </div>
 
             <div className="space-y-2">
-              <Label>Materials</Label>
+              <Label>Material</Label>
               {materials.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-tertiary)] italic">
-                  No materials available. Create materials first.
+                  Inga material upplagda ännu. Lägg till leror och glasyrer under Material.
                 </p>
               ) : (
                 <div className="space-y-2 border border-[var(--color-border)] rounded-md p-4 bg-[var(--color-surface)]">
@@ -241,11 +241,11 @@ function PieceForm() {
 
             <div className="flex gap-2 pt-4">
               <Button type="submit" disabled={saving} className="flex-1">
-                {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+                {saving ? 'Sparar…' : isEdit ? 'Spara ändringar' : 'Skapa pjäs'}
               </Button>
               {createdPieceId && !isEdit && (
                 <Button type="button" variant="secondary" asChild>
-                  <Link to={`/pieces/${createdPieceId}`}>View Piece</Link>
+                  <Link to={`/pieces/${createdPieceId}`}>Visa pjäsen</Link>
                 </Button>
               )}
               <Button
@@ -254,7 +254,7 @@ function PieceForm() {
                 onClick={() => navigate('/kanban')}
                 disabled={saving}
               >
-                {createdPieceId ? 'Back to Kanban' : 'Cancel'}
+                {createdPieceId ? 'Tillbaka till tavlan' : 'Avbryt'}
               </Button>
             </div>
           </form>
@@ -265,7 +265,7 @@ function PieceForm() {
       {(isEdit || createdPieceId) && (
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Images</CardTitle>
+            <CardTitle>Bilder</CardTitle>
           </CardHeader>
           <CardContent>
             <ImageUpload 
@@ -275,7 +275,7 @@ function PieceForm() {
               defaultPhaseId={formData.current_phase_id || null}
             />
             <p className="text-sm text-[var(--color-text-tertiary)] mt-4">
-              {isEdit ? 'Add more images to this piece.' : 'You can now add images to your newly created piece.'}
+              {isEdit ? 'Lägg till fler bilder på pjäsen.' : 'Pjäsen är skapad – lägg gärna till en bild redan nu, det gör den lättare att känna igen på tavlan.'}
             </p>
           </CardContent>
         </Card>

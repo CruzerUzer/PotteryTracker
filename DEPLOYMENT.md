@@ -339,7 +339,7 @@ Set `VITE_API_BASE` during frontend build if needed.
 - **`CORS_ORIGIN` is REQUIRED in production** — the server refuses to start without it. Set it to your domain, e.g. `CORS_ORIGIN=https://potterytracker.example.com`
 - **`SESSION_SECRET` is REQUIRED in production** — the server refuses to start without it
 - Content Security Policy (CSP) headers are enabled via Helmet
-- Rate limiting is enabled (10 req/15 min on auth endpoints, 100 req/min on API)
+- Rate limiting is enabled (10 req/15 min on auth endpoints, 300 req/min on API — configurable via `RATE_LIMIT_MAX`; image file serving is exempt since each thumbnail is one request)
 - Passwords require a minimum of 8 characters
 - **Secure cookies**: When HTTPS is enabled, backend automatically uses secure cookies
 

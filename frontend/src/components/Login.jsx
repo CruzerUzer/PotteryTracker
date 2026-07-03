@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import Logo from './Logo';
 
 function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -27,7 +28,7 @@ function Login() {
       await login(formData.username, formData.password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Inloggningen misslyckades. Kontrollera användarnamn och lösenord.');
     } finally {
       setLoading(false);
     }
@@ -37,8 +38,19 @@ function Login() {
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to access PotteryTracker</CardDescription>
+          <div className="flex items-center gap-3 mb-2">
+            <Logo size={34} />
+            <span style={{
+              fontFamily: 'var(--font-family-display)',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              fontSize: '1.5rem',
+            }}>
+              Pottery<span className="wordmark-accent">Tracker</span>
+            </span>
+          </div>
+          <CardTitle>Välkommen tillbaka</CardTitle>
+          <CardDescription>Logga in för att fortsätta till din verkstad</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -48,7 +60,7 @@ function Login() {
           )}
           <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Användarnamn</Label>
               <Input
                 id="username"
                 name="username"
@@ -62,7 +74,7 @@ function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Lösenord</Label>
               <Input
                 id="password"
                 name="password"
@@ -75,10 +87,10 @@ function Login() {
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? 'Logging in...' : 'Login'}
+                {loading ? 'Loggar in…' : 'Logga in'}
               </Button>
               <Button type="button" variant="secondary" asChild>
-                <Link to="/register">Register</Link>
+                <Link to="/register">Skapa konto</Link>
               </Button>
             </div>
           </form>

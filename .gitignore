@@ -49,3 +49,9 @@ backend/archives/
 
 # Claude Code session files
 .claude/scheduled_tasks.lock
+
+# Local database backups
+backend/database/*.local-backup-*
+
+# Design concept mockups (working artifacts)
+frontend/public/design-concepts/

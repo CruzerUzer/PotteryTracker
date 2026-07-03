@@ -17,6 +17,8 @@ import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Settings from './components/Settings';
+import ThemeToggle from './components/ThemeToggle';
+import Logo from './components/Logo';
 import AdminPanel from './components/AdminPanel';
 import ResetPassword from './components/ResetPassword';
 const StatsDashboard = lazy(() => import('./components/StatsDashboard'));
@@ -34,7 +36,7 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="card loading">Loading...</div>;
+    return <div className="card loading">Laddar…</div>;
   }
 
   if (!user) {
@@ -48,7 +50,7 @@ function AdminRoute({ children }) {
   const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
-    return <div className="card loading">Loading...</div>;
+    return <div className="card loading">Laddar…</div>;
   }
 
   if (!user) {
@@ -68,7 +70,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="container">
-        <div className="card loading">Loading...</div>
+        <div className="card loading">Laddar…</div>
       </div>
     );
   }
@@ -80,18 +82,15 @@ function AppContent() {
         {user && (
           <header>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h1 style={{
-                  margin: 0,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-family-display)',
-                  fontWeight: 600,
-                  letterSpacing: '0.02em',
-                }}>
-                  PotteryTracker
+              <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Logo size={26} />
+                <h1 style={{ margin: 0, cursor: 'pointer' }}>
+                  Pottery<span className="wordmark-accent">Tracker</span>
                 </h1>
               </Link>
               {user && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ThemeToggle />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -123,7 +122,7 @@ function AppContent() {
                     <DropdownMenuItem asChild>
                       <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
                         <SettingsIcon size={16} />
-                        <span>Settings</span>
+                        <span>Inställningar</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -134,10 +133,11 @@ function AppContent() {
                       style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
                     >
                       <LogOut size={16} />
-                      <span>Logout</span>
+                      <span>Logga ut</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               )}
             </div>
           </header>
@@ -192,7 +192,7 @@ function AppContent() {
                 path="/stats"
                 element={
                   <ProtectedRoute>
-                    <Suspense fallback={<div className="card loading">Laddar statistik...</div>}>
+                    <Suspense fallback={<div className="card loading">Laddar statistik…</div>}>
                       <StatsDashboard />
                     </Suspense>
                   </ProtectedRoute>

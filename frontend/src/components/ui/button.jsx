@@ -10,11 +10,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: [
-          "bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)]",
-          "text-white",
-          "shadow-[0_1px_3px_rgba(139,69,19,0.25),0_1px_2px_rgba(139,69,19,0.15)]",
-          "hover:brightness-105 hover:-translate-y-px hover:shadow-[0_4px_8px_rgba(139,69,19,0.3)]",
-          "active:brightness-95 active:translate-y-0 active:shadow-sm",
+          "bg-[var(--color-primary)]",
+          "text-[var(--color-background)]",
+          "shadow-[var(--shadow-sm)]",
+          "hover:bg-[var(--color-primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-md)]",
+          "active:bg-[var(--color-primary-active)] active:translate-y-0 active:shadow-sm",
         ].join(" "),
         destructive:
           "bg-[var(--color-error)] text-white shadow-sm hover:brightness-105 hover:-translate-y-px hover:shadow-md active:brightness-95",

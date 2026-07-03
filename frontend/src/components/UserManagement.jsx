@@ -44,7 +44,7 @@ function UserManagement() {
       setUsers(data);
       setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to load users');
+      setError(err.message || 'Kunde inte hämta användarna');
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ function UserManagement() {
       await adminAPI.toggleAdmin(userId);
       await loadUsers();
     } catch (err) {
-      setError(err.message || 'Failed to toggle admin status');
+      setError(err.message || 'Kunde inte ändra adminstatus');
     }
   };
 
@@ -74,7 +74,7 @@ function UserManagement() {
       setDeleteServerCopy(false);
       await loadUsers();
     } catch (err) {
-      setError(err.message || 'Failed to delete/archive user');
+      setError(err.message || 'Kunde inte ta bort eller arkivera användaren');
     }
   };
 
@@ -95,7 +95,7 @@ function UserManagement() {
       setArchiveStorageOption('server');
       await loadUsers();
     } catch (err) {
-      setError(err.message || 'Failed to create archive');
+      setError(err.message || 'Kunde inte skapa arkivet');
     } finally {
       setCreatingArchive(false);
     }
@@ -106,7 +106,7 @@ function UserManagement() {
   );
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Never';
+    if (!dateString) return 'Aldrig';
     try {
       return new Date(dateString).toLocaleDateString();
     } catch {
@@ -115,7 +115,7 @@ function UserManagement() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading users...</div>;
+    return <div className="text-center py-8">Hämtar användare…</div>;
   }
 
   return (
@@ -131,7 +131,7 @@ function UserManagement() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)]" />
           <Input
             type="text"
-            placeholder="Search users..."
+            placeholder="Sök användare…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -139,26 +139,26 @@ function UserManagement() {
         </div>
         <Button onClick={loadUsers} variant="outline">
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
+          Uppdatera
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Users ({filteredUsers.length})</CardTitle>
+          <CardTitle>Användare ({filteredUsers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--color-border)]">
-                  <th className="text-left p-2">Username</th>
+                  <th className="text-left p-2">Användarnamn</th>
                   <th className="text-left p-2">Admin</th>
-                  <th className="text-left p-2">Last Login</th>
-                  <th className="text-left p-2">Pieces</th>
-                  <th className="text-left p-2">Materials</th>
-                  <th className="text-left p-2">Created</th>
-                  <th className="text-right p-2">Actions</th>
+                  <th className="text-left p-2">Senast inloggad</th>
+                  <th className="text-left p-2">Pjäser</th>
+                  <th className="text-left p-2">Material</th>
+                  <th className="text-left p-2">Skapad</th>
+                  <th className="text-right p-2">Åtgärder</th>
                 </tr>
               </thead>
               <tbody>
@@ -167,9 +167,9 @@ function UserManagement() {
                     <td className="p-2 font-medium">{user.username}</td>
                     <td className="p-2">
                       {user.is_admin === 1 ? (
-                        <span className="text-green-600 dark:text-green-400">Yes</span>
+                        <span className="text-green-600 dark:text-green-400">Ja</span>
                       ) : (
-                        <span className="text-[var(--color-text-secondary)]">No</span>
+                        <span className="text-[var(--color-text-secondary)]">Nej</span>
                       )}
                     </td>
                     <td className="p-2 text-sm text-[var(--color-text-secondary)]">{formatDate(user.last_login)}</td>
@@ -182,7 +182,7 @@ function UserManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => setResetPasswordUser(user)}
-                          title="Reset Password"
+                          title="Återställ lösenord"
                         >
                           <Key className="h-4 w-4" />
                         </Button>
@@ -190,7 +190,7 @@ function UserManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleToggleAdmin(user.id)}
-                          title={user.is_admin === 1 ? 'Remove Admin' : 'Make Admin'}
+                          title={user.is_admin === 1 ? 'Ta bort adminbehörighet' : 'Gör till admin'}
                         >
                           {user.is_admin === 1 ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                         </Button>
@@ -198,7 +198,7 @@ function UserManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => setArchiveUser(user)}
-                          title="Export Archive"
+                          title="Exportera arkiv"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -209,7 +209,7 @@ function UserManagement() {
                             setDeleteUser(user);
                             setDeleteAction('delete');
                           }}
-                          title="Delete User"
+                          title="Ta bort användare"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -221,7 +221,7 @@ function UserManagement() {
             </table>
             {filteredUsers.length === 0 && (
               <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                {searchTerm ? 'No users found' : 'No users'}
+                {searchTerm ? 'Inga användare matchade sökningen' : 'Inga användare'}
               </div>
             )}
           </div>
@@ -240,22 +240,22 @@ function UserManagement() {
       <Dialog open={!!archiveUser} onOpenChange={(open) => !open && setArchiveUser(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Export Archive for {archiveUser?.username}</DialogTitle>
+            <DialogTitle>Exportera arkiv för {archiveUser?.username}</DialogTitle>
             <DialogDescription>
-              Create an archive of all data for {archiveUser?.username}. You can store it on the server, download it, or both.
+              Skapa ett arkiv med all data för {archiveUser?.username}. Det kan sparas på servern, laddas ner, eller både och.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="storage-option">Storage Option</Label>
+              <Label htmlFor="storage-option">Lagring</Label>
               <Select value={archiveStorageOption} onValueChange={setArchiveStorageOption}>
                 <SelectTrigger id="storage-option">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="server">Store on Server</SelectItem>
-                  <SelectItem value="download">Download Only</SelectItem>
-                  <SelectItem value="both">Store and Download</SelectItem>
+                  <SelectItem value="server">Spara på servern</SelectItem>
+                  <SelectItem value="download">Endast nedladdning</SelectItem>
+                  <SelectItem value="both">Spara och ladda ner</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -266,28 +266,28 @@ function UserManagement() {
                   checked={encryptArchiveExport}
                   onChange={(e) => setEncryptArchiveExport(e.target.checked)}
                 />
-                <span>Encrypt archive with password</span>
+                <span>Kryptera arkivet med lösenord</span>
               </label>
             </div>
             {encryptArchiveExport && (
               <div className="space-y-2">
-                <Label htmlFor="archive-password-export">Archive Password</Label>
+                <Label htmlFor="archive-password-export">Lösenord för arkivet</Label>
                 <Input
                   id="archive-password-export"
                   type="password"
                   value={archivePasswordExport}
                   onChange={(e) => setArchivePasswordExport(e.target.value)}
-                  placeholder="Enter password for encryption"
+                  placeholder="Välj ett lösenord"
                 />
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setArchiveUser(null)}>
-              Cancel
+              Avbryt
             </Button>
             <Button onClick={handleCreateArchive} disabled={creatingArchive}>
-              {creatingArchive ? 'Creating...' : 'Create Archive'}
+              {creatingArchive ? 'Skapar…' : 'Skapa arkiv'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -298,12 +298,12 @@ function UserManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {deleteAction === 'archive' ? 'Archive User' : 'Delete User'}
+              {deleteAction === 'archive' ? 'Arkivera användare' : 'Ta bort användare'}
             </DialogTitle>
             <DialogDescription>
               {deleteAction === 'archive'
-                ? `Archive data for ${deleteUser?.username}? The data will be saved and can be restored later.`
-                : `Are you sure you want to delete ${deleteUser?.username}? This action cannot be undone.`}
+                ? `Arkivera all data för ${deleteUser?.username}? Datan sparas och kan återställas senare.`
+                : `Vill du ta bort ${deleteUser?.username}? Det här går inte att ångra.`}
             </DialogDescription>
           </DialogHeader>
           {deleteAction === 'archive' && (
@@ -315,18 +315,18 @@ function UserManagement() {
                     checked={encryptArchive}
                     onChange={(e) => setEncryptArchive(e.target.checked)}
                   />
-                  <span>Encrypt archive with password</span>
+                  <span>Kryptera arkivet med lösenord</span>
                 </label>
               </div>
               {encryptArchive && (
                 <div className="space-y-2">
-                  <Label htmlFor="archive-password">Archive Password</Label>
+                  <Label htmlFor="archive-password">Lösenord för arkivet</Label>
                   <Input
                     id="archive-password"
                     type="password"
                     value={archivePassword}
                     onChange={(e) => setArchivePassword(e.target.value)}
-                    placeholder="Enter password for encryption"
+                    placeholder="Välj ett lösenord"
                   />
                 </div>
               )}
@@ -337,7 +337,7 @@ function UserManagement() {
                     checked={deleteServerCopy}
                     onChange={(e) => setDeleteServerCopy(e.target.checked)}
                   />
-                  <span>Delete user account after archiving</span>
+                  <span>Ta bort kontot efter arkivering</span>
                 </label>
               </div>
               <div className="flex gap-2">
@@ -345,7 +345,7 @@ function UserManagement() {
                   variant="outline"
                   onClick={() => setDeleteAction('delete')}
                 >
-                  Switch to Delete
+                  Byt till borttagning
                 </Button>
               </div>
             </div>
@@ -357,17 +357,17 @@ function UserManagement() {
                   variant="outline"
                   onClick={() => setDeleteAction('archive')}
                 >
-                  Switch to Archive
+                  Byt till arkivering
                 </Button>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteUser(null)}>
-              Cancel
+              Avbryt
             </Button>
             <Button variant="destructive" onClick={handleDeleteUser}>
-              {deleteAction === 'archive' ? 'Archive' : 'Delete'}
+              {deleteAction === 'archive' ? 'Arkivera' : 'Ta bort'}
             </Button>
           </DialogFooter>
         </DialogContent>

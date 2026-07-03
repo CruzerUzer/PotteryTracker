@@ -75,11 +75,15 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // Limit each IP to 100 requests per minute
+  max: Number(process.env.RATE_LIMIT_MAX) || 300, // Limit each IP per minute (configurable)
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'test' // Skip in test environment
+  // Skip in test environment, and for image file serving (GET only) —
+  // a single page load fetches one thumbnail per piece, which would
+  // otherwise exhaust the limit for users with many pieces.
+  skip: (req) => process.env.NODE_ENV === 'test' ||
+    (req.method === 'GET' && /^\/images\/\d+\/file/.test(req.path))
 });
 
 // Apply general API rate limiter to all /api routes

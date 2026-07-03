@@ -66,7 +66,7 @@ function PieceDetail() {
       setSelectedPhase(value);
       await loadData();
     } catch (err) {
-      alert('Error updating phase: ' + err.message);
+      alert('Kunde inte byta fas: ' + err.message);
     } finally {
       setUpdating(false);
     }
@@ -79,14 +79,14 @@ function PieceDetail() {
       setSelectedLocation(value);
       await loadData();
     } catch (err) {
-      alert('Error updating location: ' + err.message);
+      alert('Kunde inte byta plats: ' + err.message);
     } finally {
       setUpdating(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this piece? All images will be deleted too.')) {
+    if (!window.confirm('Vill du ta bort den här pjäsen? Alla bilder följer med och kan inte återskapas.')) {
       return;
     }
 
@@ -94,7 +94,7 @@ function PieceDetail() {
       await piecesAPI.delete(id);
       navigate('/kanban');
     } catch (err) {
-      alert('Error deleting piece: ' + err.message);
+      alert('Kunde inte ta bort pjäsen: ' + err.message);
     }
   };
 
@@ -103,7 +103,7 @@ function PieceDetail() {
   };
 
   const handleImageDelete = async (imageId) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) {
+    if (!window.confirm('Vill du ta bort den här bilden?')) {
       return;
     }
 
@@ -111,7 +111,7 @@ function PieceDetail() {
       await imagesAPI.delete(imageId);
       loadData();
     } catch (err) {
-      alert('Error deleting image: ' + err.message);
+      alert('Kunde inte ta bort bilden: ' + err.message);
     }
   };
 
@@ -122,7 +122,7 @@ function PieceDetail() {
       await piecesAPI.setDefaultImage(id, newDefaultId);
       loadData();
     } catch (err) {
-      alert('Error setting default image: ' + err.message);
+      alert('Kunde inte välja omslagsbild: ' + err.message);
     }
   };
 
@@ -155,7 +155,7 @@ function PieceDetail() {
       
       if (editingField === 'name') {
         if (!editValue.trim()) {
-          alert('Name cannot be empty');
+          alert('Pjäsen behöver ett namn');
           setSaving(false);
           return;
         }
@@ -172,7 +172,7 @@ function PieceDetail() {
       setEditValue('');
       setEditMaterials([]);
     } catch (err) {
-      alert('Error saving: ' + err.message);
+      alert('Kunde inte spara: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -190,7 +190,7 @@ function PieceDetail() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">Laddar…</div>
         </CardContent>
       </Card>
     );
@@ -201,11 +201,11 @@ function PieceDetail() {
       <Card>
         <CardContent className="pt-6">
           <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm mb-4">
-            {error || 'Piece not found'}
+            {error || 'Pjäsen hittades inte'}
           </div>
           <Button variant="secondary" onClick={() => navigate('/kanban')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            Tillbaka
           </Button>
         </CardContent>
       </Card>
@@ -258,7 +258,7 @@ function PieceDetail() {
             <h1
               className="text-3xl font-bold cursor-pointer hover:text-[var(--color-primary)] transition-colors flex items-center gap-2 group"
               onClick={() => startEditing('name')}
-              title="Click to edit"
+              title="Klicka för att ändra"
             >
               {piece.name}
               <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
@@ -266,14 +266,14 @@ function PieceDetail() {
           )}
           {piece.done === 1 && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-              Done
+              Färdig
             </span>
           )}
         </div>
         <div className="flex gap-2">
           <Button variant="destructive" onClick={handleDelete}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            Ta bort
           </Button>
         </div>
       </div>
@@ -284,7 +284,7 @@ function PieceDetail() {
           {/* Description */}
           <div>
             <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-              Description
+              Beskrivning
             </h3>
             {editingField === 'description' ? (
               <div className="space-y-2">
@@ -303,7 +303,7 @@ function PieceDetail() {
                     disabled={saving}
                   >
                     <Check className="mr-2 h-4 w-4" />
-                    Save
+                    Spara
                   </Button>
                   <Button
                     variant="secondary"
@@ -312,7 +312,7 @@ function PieceDetail() {
                     disabled={saving}
                   >
                     <X className="mr-2 h-4 w-4" />
-                    Cancel
+                    Avbryt
                   </Button>
                 </div>
               </div>
@@ -320,7 +320,7 @@ function PieceDetail() {
               <div
                 className="whitespace-pre-wrap text-[var(--color-text-primary)] p-3 rounded-md border border-transparent hover:border-[var(--color-border)] cursor-pointer group transition-colors min-h-[3rem]"
                 onClick={() => startEditing('description')}
-                title="Click to edit"
+                title="Klicka för att ändra"
               >
                 {piece.description ? (
                   <p className="flex items-start gap-2">
@@ -329,7 +329,7 @@ function PieceDetail() {
                   </p>
                 ) : (
                   <p className="text-[var(--color-text-tertiary)] italic flex items-center gap-2">
-                    <span>No description. Click to add one.</span>
+                    <span>Ingen beskrivning ännu. Klicka för att skriva en.</span>
                     <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
                   </p>
                 )}
@@ -340,16 +340,16 @@ function PieceDetail() {
           {/* Phase and Location */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="phase-select">Current Phase</Label>
+              <Label htmlFor="phase-select">Fas</Label>
               <div className="mt-2">
                 <Select value={selectedPhase?.toString() || 'null'} onValueChange={(value) => handlePhaseChange(value === 'null' ? null : value)} disabled={updating}>
                   <SelectTrigger id="phase-select">
                     <SelectValue>
-                      {piece.phase_name || 'No phase'}
+                      {piece.phase_name || 'Ingen fas'}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="null">No phase</SelectItem>
+                    <SelectItem value="null">Ingen fas</SelectItem>
                     {phases.map((phase) => (
                       <SelectItem key={phase.id} value={phase.id.toString()}>
                         {phase.name}
@@ -361,19 +361,19 @@ function PieceDetail() {
             </div>
 
             <div>
-              <Label htmlFor="location-select">Current Location</Label>
+              <Label htmlFor="location-select">Plats</Label>
               <div className="mt-2">
                 <Select value={selectedLocation?.toString() || 'null'} onValueChange={(value) => handleLocationChange(value === 'null' ? null : value)} disabled={updating}>
                   <SelectTrigger id="location-select">
                     <SelectValue>
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {piece.location_name || 'No location'}
+                        {piece.location_name || 'Ingen plats'}
                       </span>
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="null">No location</SelectItem>
+                    <SelectItem value="null">Ingen plats</SelectItem>
                     {locations.map((location) => (
                       <SelectItem key={location.id} value={location.id.toString()}>
                         {location.name}
@@ -384,19 +384,19 @@ function PieceDetail() {
               </div>
             </div>
           </div>
-          {updating && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Updating...</p>}
+          {updating && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Sparar…</p>}
 
           {/* Materials */}
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Materials
+              Material
             </h3>
             {editingField === 'materials' ? (
               <div className="space-y-3">
                 {materials.length === 0 ? (
                   <p className="text-sm text-[var(--color-text-tertiary)] italic">
-                    No materials available. Create materials first.
+                    Inga material upplagda ännu. Lägg till leror och glasyrer under Material.
                   </p>
                 ) : (
                   <div className="space-y-2 border border-[var(--color-border)] rounded-md p-4 bg-[var(--color-surface)]">
@@ -426,7 +426,7 @@ function PieceDetail() {
                     disabled={saving}
                   >
                     <Check className="mr-2 h-4 w-4" />
-                    Save
+                    Spara
                   </Button>
                   <Button
                     variant="secondary"
@@ -435,7 +435,7 @@ function PieceDetail() {
                     disabled={saving}
                   >
                     <X className="mr-2 h-4 w-4" />
-                    Cancel
+                    Avbryt
                   </Button>
                 </div>
               </div>
@@ -443,7 +443,7 @@ function PieceDetail() {
               <div
                 className="p-3 rounded-md border border-transparent hover:border-[var(--color-border)] cursor-pointer group transition-colors"
                 onClick={() => startEditing('materials')}
-                title="Click to edit"
+                title="Klicka för att ändra"
               >
                 {piece.materials && piece.materials.length > 0 ? (
                   <div className="flex flex-wrap gap-2 items-center">
@@ -459,7 +459,7 @@ function PieceDetail() {
                   </div>
                 ) : (
                   <p className="text-[var(--color-text-tertiary)] italic flex items-center gap-2">
-                    <span>No materials. Click to add.</span>
+                    <span>Inga material angivna. Klicka för att lägga till.</span>
                     <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
                   </p>
                 )}
@@ -474,7 +474,7 @@ function PieceDetail() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
-            Images
+            Bilder
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -493,12 +493,12 @@ function PieceDetail() {
                     >
                       <img
                         src={imagesAPI.getFileUrl(image.id, true)}
-                        alt={image.original_filename || 'Piece image'}
+                        alt={image.original_filename || 'Bild på pjäs'}
                         className="w-full h-48 object-cover"
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-end p-2">
                         <div className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div>{image.phase_name || 'Unknown phase'}</div>
+                          <div>{image.phase_name || 'Okänd fas'}</div>
                           <div className="text-xs opacity-90">
                             {new Date(image.created_at).toLocaleDateString()}
                           </div>
@@ -514,7 +514,7 @@ function PieceDetail() {
                           e.stopPropagation();
                           handleSetDefaultImage(image.id);
                         }}
-                        title={isDefault ? 'Remove as default image' : 'Set as default image'}
+                        title={isDefault ? 'Ta bort som omslagsbild' : 'Använd som omslagsbild'}
                       >
                         <Star className={`h-4 w-4 ${isDefault ? 'fill-current' : ''}`} />
                       </button>
@@ -524,7 +524,7 @@ function PieceDetail() {
                           e.stopPropagation();
                           handleImageDelete(image.id);
                         }}
-                        title="Delete image"
+                        title="Ta bort bild"
                       >
                         ×
                       </button>
@@ -550,7 +550,7 @@ function PieceDetail() {
             </>
           ) : (
             <p className="text-center text-[var(--color-text-tertiary)] italic mt-6">
-              No images yet. Upload your first image above.
+              Inga bilder ännu. Ladda upp den första här ovanför – ett foto per fas gör det lätt att följa pjäsens resa.
             </p>
           )}
         </CardContent>

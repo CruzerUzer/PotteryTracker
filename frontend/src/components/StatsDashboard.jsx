@@ -131,13 +131,7 @@ function StatsDashboard() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <h2 style={{
-        fontFamily: 'var(--font-family-display)',
-        fontSize: '1.8rem',
-        fontWeight: 600,
-        letterSpacing: '0.01em',
-        color: 'var(--color-text-primary)',
-      }}>
+      <h2 className="page-title">
         Statistik
       </h2>
 

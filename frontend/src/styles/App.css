@@ -3,70 +3,71 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════
-   POTTERYTRACKER — LUXURY DESIGN SYSTEM
+   POTTERYTRACKER — GALLERI NOIR DESIGN SYSTEM
+   Dark gallery + brass accent, classic serif, soft radii
    ═══════════════════════════════════════════════════ */
 
 :root {
-  /* ── Luxury Light Palette ── */
-  --color-primary: #8B4513;
-  --color-primary-hover: #6B3410;
-  --color-primary-active: #5A2A0E;
-  --color-primary-light: rgba(139, 69, 19, 0.08);
-  --color-secondary: #B87333;  /* copper */
-  --color-accent: #B8860B;     /* dark goldenrod */
-  --color-success: #2D6A4F;
-  --color-warning: #C57B1A;
-  --color-error: #C0392B;
+  /* ── Ljust läge: elfenben + mörk mässing ── */
+  --color-primary: #9A7B2E;    /* dark brass */
+  --color-primary-hover: #7E651F;
+  --color-primary-active: #6A5417;
+  --color-primary-light: rgba(154, 123, 46, 0.09);
+  --color-secondary: #B8964A;
+  --color-accent: #9A7B2E;
+  --color-success: #3E7A52;
+  --color-warning: #A5772E;
+  --color-error: #A83C3C;
 
-  --color-background: #F7F4EE;  /* warm parchment */
-  --color-background-alt: #F0EBE3;
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #FAF7F3;
-  --color-surface-glass: rgba(255, 255, 255, 0.80);
-  --color-text-primary: #1C1410;
-  --color-text-secondary: #6B5E52;
-  --color-text-tertiary: #A09285;
-  --color-border: rgba(139, 69, 19, 0.12);
-  --color-border-hover: rgba(139, 69, 19, 0.24);
-  --color-border-focus: rgba(139, 69, 19, 0.5);
+  --color-background: #F4F1EA;  /* ivory */
+  --color-background-alt: #ECE8DE;
+  --color-surface: #FDFCF9;
+  --color-surface-hover: #F6F3EC;
+  --color-surface-glass: rgba(253, 252, 249, 0.88);
+  --color-text-primary: #1C1A16;
+  --color-text-secondary: #6E675C;
+  --color-text-tertiary: #A29A8C;
+  --color-border: rgba(154, 123, 46, 0.20);
+  --color-border-hover: rgba(154, 123, 46, 0.38);
+  --color-border-focus: rgba(154, 123, 46, 0.55);
 
-  /* ── Phase Column Colors (jewel-toned) ── */
-  --phase-color-1: #EDF4FF;      /* sapphire mist */
-  --phase-color-1-border: #B8D4F8;
-  --phase-color-1-accent: #3B82F6;
-  --phase-color-2: #FFF6E8;      /* amber glow */
-  --phase-color-2-border: #F5D48A;
-  --phase-color-2-accent: #D97706;
-  --phase-color-3: #F5F0FF;      /* amethyst haze */
-  --phase-color-3-border: #D8B4FE;
-  --phase-color-3-accent: #9333EA;
-  --phase-color-4: #EDFAF5;      /* emerald mist */
-  --phase-color-4-border: #86EFAC;
-  --phase-color-4-accent: #16A34A;
-  --phase-color-5: #FFF1F2;      /* rose quartz */
-  --phase-color-5-border: #FDA4AF;
-  --phase-color-5-accent: #E11D48;
+  /* ── Fasfärger (dova juveltoner) ── */
+  --phase-color-1: #EAEFF6;      /* dusty sapphire */
+  --phase-color-1-border: #B9C9DE;
+  --phase-color-1-accent: #4A6FA5;
+  --phase-color-2: #F5EEDF;      /* ochre */
+  --phase-color-2-border: #DCC79A;
+  --phase-color-2-accent: #A5772E;
+  --phase-color-3: #EFEAF3;      /* dusty plum */
+  --phase-color-3-border: #CBB8D9;
+  --phase-color-3-accent: #7A5A96;
+  --phase-color-4: #E9F1EC;      /* sage */
+  --phase-color-4-border: #B4CFBE;
+  --phase-color-4-accent: #4E7A5A;
+  --phase-color-5: #F5EAEA;      /* burgundy mist */
+  --phase-color-5-border: #D9B4B4;
+  --phase-color-5-accent: #9A4A4A;
 
-  /* ── Typography ── */
+  /* ── Typografi (galleri-serif) ── */
   --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-display: 'Playfair Display', 'Georgia', serif;
+  --font-family-display: 'Cormorant Garamond', 'Georgia', serif;
   --font-size-base: 15px;
   --line-height-base: 1.6;
 
-  /* ── Luxury Shadows ── */
-  --shadow-xs: 0 1px 2px rgba(28, 20, 16, 0.04);
-  --shadow-sm: 0 1px 3px rgba(28, 20, 16, 0.06), 0 1px 2px rgba(28, 20, 16, 0.04);
-  --shadow-md: 0 4px 6px rgba(28, 20, 16, 0.07), 0 2px 4px rgba(28, 20, 16, 0.05);
-  --shadow-lg: 0 10px 15px rgba(28, 20, 16, 0.08), 0 4px 6px rgba(28, 20, 16, 0.05);
-  --shadow-xl: 0 20px 25px rgba(28, 20, 16, 0.10), 0 10px 10px rgba(28, 20, 16, 0.06);
-  --shadow-glow: 0 0 0 3px rgba(139, 69, 19, 0.12);
-  --shadow-card-hover: 0 12px 24px rgba(28, 20, 16, 0.12), 0 4px 8px rgba(28, 20, 16, 0.06);
+  /* ── Mjuka skuggor ── */
+  --shadow-xs: 0 1px 2px rgba(28, 26, 22, 0.05);
+  --shadow-sm: 0 2px 5px rgba(28, 26, 22, 0.07), 0 1px 2px rgba(28, 26, 22, 0.05);
+  --shadow-md: 0 4px 12px rgba(28, 26, 22, 0.09), 0 2px 4px rgba(28, 26, 22, 0.05);
+  --shadow-lg: 0 10px 24px rgba(28, 26, 22, 0.10), 0 4px 8px rgba(28, 26, 22, 0.06);
+  --shadow-xl: 0 18px 40px rgba(28, 26, 22, 0.13), 0 8px 14px rgba(28, 26, 22, 0.07);
+  --shadow-glow: 0 0 0 3px rgba(154, 123, 46, 0.16);
+  --shadow-card-hover: 0 12px 28px rgba(28, 26, 22, 0.13), 0 4px 10px rgba(28, 26, 22, 0.07);
 
-  /* ── Border Radius ── */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  /* ── Rundade hörn (mjuka, à la Sencha) ── */
+  --radius-sm: 8px;
+  --radius-md: 11px;
   --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-xl: 18px;
   --radius-full: 9999px;
 
   /* ── Spacing ── */
@@ -85,53 +86,53 @@
   --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── Dark Theme ── */
+/* ── Mörkt läge (galleri noir — standard) ── */
 [data-theme="dark"] {
-  --color-primary: #D4A574;
-  --color-primary-hover: #E8BC8C;
-  --color-primary-active: #C49564;
-  --color-primary-light: rgba(212, 165, 116, 0.12);
-  --color-secondary: #C8956A;
-  --color-accent: #D4AF70;
-  --color-success: #4ADE80;
-  --color-warning: #FBBF24;
-  --color-error: #F87171;
+  --color-primary: #C9A961;    /* brass */
+  --color-primary-hover: #DBBE7C;
+  --color-primary-active: #B3934D;
+  --color-primary-light: rgba(201, 169, 97, 0.10);
+  --color-secondary: #A98D4B;
+  --color-accent: #C9A961;
+  --color-success: #7FB98F;
+  --color-warning: #D9A94A;
+  --color-error: #D97C7C;
 
-  --color-background: #141210;   /* deep charcoal */
-  --color-background-alt: #1C1916;
-  --color-surface: #221E1B;
-  --color-surface-hover: #2D2824;
-  --color-surface-glass: rgba(34, 30, 27, 0.85);
-  --color-text-primary: #F5F0EB;
-  --color-text-secondary: #B0A090;
-  --color-text-tertiary: #7A6C60;
-  --color-border: rgba(212, 165, 116, 0.14);
-  --color-border-hover: rgba(212, 165, 116, 0.28);
-  --color-border-focus: rgba(212, 165, 116, 0.55);
+  --color-background: #111013;   /* deep charcoal black */
+  --color-background-alt: #17161A;
+  --color-surface: #1A181D;
+  --color-surface-hover: #232128;
+  --color-surface-glass: rgba(26, 24, 29, 0.88);
+  --color-text-primary: #F2EFE9;
+  --color-text-secondary: #9B948A;
+  --color-text-tertiary: #6B655C;
+  --color-border: rgba(201, 169, 97, 0.18);
+  --color-border-hover: rgba(201, 169, 97, 0.36);
+  --color-border-focus: rgba(201, 169, 97, 0.55);
 
-  --phase-color-1: #1E2D42;
-  --phase-color-1-border: #2D4A6E;
-  --phase-color-1-accent: #60A5FA;
-  --phase-color-2: #2E2010;
-  --phase-color-2-border: #5A3E1A;
-  --phase-color-2-accent: #FBB040;
-  --phase-color-3: #241535;
-  --phase-color-3-border: #4C2D6E;
-  --phase-color-3-accent: #C084FC;
-  --phase-color-4: #0F2E1F;
-  --phase-color-4-border: #1A5C3A;
-  --phase-color-4-accent: #4ADE80;
-  --phase-color-5: #2E1019;
-  --phase-color-5-border: #5C2034;
-  --phase-color-5-accent: #FB7185;
+  --phase-color-1: #1B2330;
+  --phase-color-1-border: #33465E;
+  --phase-color-1-accent: #7C9CC7;
+  --phase-color-2: #2B2213;
+  --phase-color-2-border: #54421F;
+  --phase-color-2-accent: #C9A961;
+  --phase-color-3: #241D2C;
+  --phase-color-3-border: #453357;
+  --phase-color-3-accent: #A98BC7;
+  --phase-color-4: #17251C;
+  --phase-color-4-border: #2E4A38;
+  --phase-color-4-accent: #7FB98F;
+  --phase-color-5: #2B191B;
+  --phase-color-5-border: #543034;
+  --phase-color-5-accent: #C77C84;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.45), 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.55), 0 10px 10px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 0 3px rgba(212, 165, 116, 0.2);
-  --shadow-card-hover: 0 12px 24px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 3px rgba(201, 169, 97, 0.22);
+  --shadow-card-hover: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Layout Density ── */
@@ -167,12 +168,6 @@ body {
   transition: background-color var(--transition-base), color var(--transition-base);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  /* Subtle parchment texture */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
-}
-
-[data-theme="dark"] body {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 #root {
@@ -195,11 +190,10 @@ body {
 
 header {
   background: var(--color-surface-glass);
-  backdrop-filter: blur(16px) saturate(1.8);
-  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--color-text-primary);
   padding: var(--spacing-md) 0;
-  box-shadow: var(--shadow-sm), 0 1px 0 rgba(139, 69, 19, 0.08);
   border-bottom: 1px solid var(--color-border);
   transition: background-color var(--transition-base), box-shadow var(--transition-base);
   position: sticky;
@@ -218,12 +212,14 @@ header h1 {
   font-family: var(--font-family-display);
   font-size: 1.6rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  color: var(--color-text-primary);
+}
+
+/* Brass accent in the wordmark */
+header h1 .wordmark-accent,
+.wordmark-accent {
   color: var(--color-primary);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 @media (max-width: 768px) {
@@ -334,11 +330,11 @@ header h1 {
 }
 
 .nav-item.active .nav-icon {
-  filter: drop-shadow(0 2px 4px rgba(139, 69, 19, 0.3));
+  filter: drop-shadow(0 2px 4px rgba(154, 123, 46, 0.3));
 }
 
 [data-theme="dark"] .nav-item.active .nav-icon {
-  filter: drop-shadow(0 2px 4px rgba(212, 165, 116, 0.35));
+  filter: drop-shadow(0 2px 4px rgba(201, 169, 97, 0.35));
 }
 
 .nav-icon { transition: transform var(--transition-spring); }
@@ -380,15 +376,15 @@ main {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  color: white;
-  box-shadow: var(--shadow-sm), 0 1px 2px rgba(139, 69, 19, 0.25);
+  background: var(--color-primary);
+  color: var(--color-background);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
-  box-shadow: var(--shadow-md), 0 2px 6px rgba(139, 69, 19, 0.3);
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
   transform: translateY(-1px);
-  filter: brightness(1.05);
 }
 
 .btn-primary:active {
@@ -506,10 +502,10 @@ main {
   color: var(--color-text-primary);
   font-family: var(--font-family-display);
   font-weight: 600;
-  font-size: 1.6rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--spacing-md);
-  letter-spacing: 0.01em;
+  font-size: 1.7rem;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--color-primary);
+  padding-bottom: var(--spacing-sm);
 }
 
 .card h3 {
@@ -876,13 +872,28 @@ main {
   gap: var(--spacing-md);
 }
 
-.actions-row h2 {
+.actions-row h2,
+.page-title {
   font-family: var(--font-family-display);
   font-weight: 600;
   color: var(--color-text-primary);
-  font-size: 1.7rem;
-  letter-spacing: 0.01em;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
   margin: 0;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+/* Thin brass rule under page titles — gallery marker */
+.actions-row h2::before,
+.page-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 44px;
+  height: 1px;
+  background: var(--color-primary);
 }
 
 .btn-group {

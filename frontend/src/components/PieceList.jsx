@@ -77,7 +77,7 @@ function PieceList() {
       );
     } catch (err) {
       console.error('Failed to update phase:', err);
-      setError('Failed to update phase: ' + err.message);
+      setError('Kunde inte byta fas: ' + err.message);
     }
   };
 
@@ -98,7 +98,7 @@ function PieceList() {
       );
     } catch (err) {
       console.error('Failed to update location:', err);
-      setError('Failed to update location: ' + err.message);
+      setError('Kunde inte byta plats: ' + err.message);
     }
   };
 
@@ -106,7 +106,7 @@ function PieceList() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">Laddar…</div>
         </CardContent>
       </Card>
     );
@@ -115,11 +115,11 @@ function PieceList() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Ceramic Pieces</h2>
+        <h2 className="page-title">Alla pjäser</h2>
         <Button asChild>
           <Link to="/pieces/new">
             <Plus className="mr-2 h-4 w-4" />
-            Add New Piece
+            Ny pjäs
           </Link>
         </Button>
       </div>
@@ -132,28 +132,28 @@ function PieceList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle>Filtrera</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Search</Label>
+              <Label>Sök</Label>
               <Input
                 type="text"
-                placeholder="Search by name or description..."
+                placeholder="Sök på namn eller beskrivning…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Phase</Label>
+              <Label>Fas</Label>
               <Select value={selectedPhase || undefined} onValueChange={(value) => setSelectedPhase(value || '')}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Phases" />
+                  <SelectValue placeholder="Alla faser" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no-phase">No Phase</SelectItem>
+                  <SelectItem value="no-phase">Utan fas</SelectItem>
                   {phases.map((phase) => (
                     <SelectItem key={phase.id} value={phase.id.toString()}>
                       {phase.name}
@@ -167,7 +167,7 @@ function PieceList() {
               <Label>Material</Label>
               <Select value={selectedMaterial || undefined} onValueChange={(value) => setSelectedMaterial(value || '')}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Materials" />
+                  <SelectValue placeholder="Alla material" />
                 </SelectTrigger>
                 <SelectContent>
                   {materials.map((material) => (
@@ -180,7 +180,7 @@ function PieceList() {
             </div>
 
             <div className="space-y-2">
-              <Label>Date From</Label>
+              <Label>Från datum</Label>
               <Input
                 type="date"
                 value={dateFrom}
@@ -189,7 +189,7 @@ function PieceList() {
             </div>
 
             <div className="space-y-2">
-              <Label>Date To</Label>
+              <Label>Till datum</Label>
               <Input
                 type="date"
                 value={dateTo}
@@ -200,7 +200,7 @@ function PieceList() {
             <div className="space-y-2 flex items-end">
               <Button variant="outline" onClick={clearFilters} className="w-full">
                 <X className="mr-2 h-4 w-4" />
-                Clear Filters
+                Rensa filter
               </Button>
             </div>
           </div>
@@ -210,7 +210,7 @@ function PieceList() {
       {pieces.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-[var(--color-text-tertiary)]">No pieces found. Create your first piece to get started!</p>
+            <p className="text-center text-[var(--color-text-tertiary)]">Inga pjäser att visa. Skapa en ny pjäs – eller rensa filtren om du letar efter något som borde finnas här.</p>
           </CardContent>
         </Card>
       ) : (
@@ -244,7 +244,7 @@ function PieceList() {
 
                 {piece.done === 1 && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white mr-2 mb-2">
-                    Done
+                    Färdig
                   </span>
                 )}
 
@@ -257,11 +257,11 @@ function PieceList() {
                     >
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue>
-                          {piece.phase_name || 'No phase'}
+                          {piece.phase_name || 'Ingen fas'}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="null">No phase</SelectItem>
+                        <SelectItem value="null">Ingen fas</SelectItem>
                         {phases.map(phase => (
                           <SelectItem key={phase.id} value={phase.id.toString()}>
                             {phase.name}
@@ -281,12 +281,12 @@ function PieceList() {
                         <SelectValue>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {piece.location_name || 'No location'}
+                            {piece.location_name || 'Ingen plats'}
                           </span>
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="null">No location</SelectItem>
+                        <SelectItem value="null">Ingen plats</SelectItem>
                         {locations.map(location => (
                           <SelectItem key={location.id} value={location.id.toString()}>
                             {location.name}

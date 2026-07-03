@@ -25,7 +25,7 @@ function PasswordResetDialog({ user, onClose }) {
       const data = await adminAPI.resetPassword(user.id, method);
       setResult(data);
     } catch (error) {
-      setResult({ error: error.message || 'Failed to reset password' });
+      setResult({ error: error.message || 'Kunde inte återställa lösenordet' });
     } finally {
       setLoading(false);
     }
@@ -53,9 +53,9 @@ function PasswordResetDialog({ user, onClose }) {
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Reset Password for {user.username}</DialogTitle>
+          <DialogTitle>Återställ lösenord för {user.username}</DialogTitle>
           <DialogDescription>
-            Choose how to reset the password for this user.
+            Välj hur lösenordet ska återställas.
           </DialogDescription>
         </DialogHeader>
 
@@ -63,7 +63,7 @@ function PasswordResetDialog({ user, onClose }) {
           <>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Reset Method</Label>
+                <Label>Metod</Label>
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -73,7 +73,7 @@ function PasswordResetDialog({ user, onClose }) {
                       checked={method === 'temporary'}
                       onChange={(e) => setMethod(e.target.value)}
                     />
-                    <span>Generate Temporary Password</span>
+                    <span>Skapa tillfälligt lösenord</span>
                   </label>
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -83,7 +83,7 @@ function PasswordResetDialog({ user, onClose }) {
                       checked={method === 'link'}
                       onChange={(e) => setMethod(e.target.value)}
                     />
-                    <span>Generate Reset Link</span>
+                    <span>Skapa återställningslänk</span>
                   </label>
                 </div>
               </div>
@@ -91,10 +91,10 @@ function PasswordResetDialog({ user, onClose }) {
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>
-                Cancel
+                Avbryt
               </Button>
               <Button onClick={handleReset} disabled={loading}>
-                {loading ? 'Generating...' : 'Generate'}
+                {loading ? 'Skapar…' : 'Skapa'}
               </Button>
             </DialogFooter>
           </>
@@ -110,7 +110,7 @@ function PasswordResetDialog({ user, onClose }) {
               <div className="space-y-4 py-4">
                 {method === 'temporary' && result.password && (
                   <div className="space-y-2">
-                    <Label>Temporary Password</Label>
+                    <Label>Tillfälligt lösenord</Label>
                     <div className="flex gap-2">
                       <Input
                         value={result.password}
@@ -126,14 +126,14 @@ function PasswordResetDialog({ user, onClose }) {
                       </Button>
                     </div>
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                      User must change this password on next login.
+                      Användaren måste byta lösenord vid nästa inloggning.
                     </p>
                   </div>
                 )}
 
                 {method === 'link' && result.link && (
                   <div className="space-y-2">
-                    <Label>Reset Link</Label>
+                    <Label>Återställningslänk</Label>
                     <div className="flex gap-2">
                       <Input
                         value={result.link}
@@ -149,7 +149,7 @@ function PasswordResetDialog({ user, onClose }) {
                       </Button>
                     </div>
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                      Link expires: {new Date(result.expiresAt).toLocaleString()}
+                      Länken gäller till: {new Date(result.expiresAt).toLocaleString()}
                     </p>
                   </div>
                 )}
@@ -158,7 +158,7 @@ function PasswordResetDialog({ user, onClose }) {
 
             <DialogFooter>
               <Button onClick={onClose}>
-                Close
+                Stäng
               </Button>
             </DialogFooter>
           </>

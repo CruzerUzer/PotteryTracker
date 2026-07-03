@@ -56,12 +56,12 @@ function Settings() {
     setPasswordSuccess(false);
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError('Lösenorden stämmer inte överens');
       return;
     }
 
-    if (passwordForm.newPassword.length < 3) {
-      setPasswordError('New password must be at least 3 characters');
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('Det nya lösenordet måste vara minst 8 tecken');
       return;
     }
 
@@ -75,7 +75,7 @@ function Settings() {
       await checkAuth(); // Refresh user data
       setTimeout(() => setPasswordSuccess(false), 3000);
     } catch (err) {
-      setPasswordError(err.message || 'Failed to change password');
+      setPasswordError(err.message || 'Kunde inte byta lösenord');
     } finally {
       setChangingPassword(false);
     }
@@ -84,16 +84,16 @@ function Settings() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Settings</h2>
+        <h2 className="page-title">Inställningar</h2>
         <Button variant="secondary" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Tillbaka
         </Button>
       </div>
 
       {saved && (
         <div className="p-3 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 text-sm">
-          Settings saved!
+          Inställningarna är sparade
         </div>
       )}
 
@@ -102,13 +102,13 @@ function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5" />
-            Change Password
+            Byt lösenord
           </CardTitle>
         </CardHeader>
         <CardContent>
           {mustChangePassword && (
             <div className="mb-4 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 text-sm">
-              You must change your password before continuing.
+              Du behöver byta lösenord innan du kan fortsätta.
             </div>
           )}
           {passwordError && (
@@ -118,13 +118,13 @@ function Settings() {
           )}
           {passwordSuccess && (
             <div className="mb-4 p-3 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 text-sm">
-              Password changed successfully!
+              Lösenordet är bytt
             </div>
           )}
           <form onSubmit={handlePasswordChange} className="space-y-4">
             {!mustChangePassword && (
               <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
+                <Label htmlFor="current-password">Nuvarande lösenord</Label>
                 <Input
                   id="current-password"
                   type="password"
@@ -135,7 +135,7 @@ function Settings() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">Nytt lösenord (minst 8 tecken)</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -146,7 +146,7 @@ function Settings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+              <Label htmlFor="confirm-new-password">Bekräfta nytt lösenord</Label>
               <Input
                 id="confirm-new-password"
                 type="password"
@@ -157,7 +157,7 @@ function Settings() {
               />
             </div>
             <Button type="submit" disabled={changingPassword}>
-              {changingPassword ? 'Changing...' : 'Change Password'}
+              {changingPassword ? 'Byter…' : 'Byt lösenord'}
             </Button>
           </form>
         </CardContent>
@@ -165,30 +165,34 @@ function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
+          <CardTitle>Utseende</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-3">
-            <Label>Theme</Label>
+            <Label>Tema</Label>
             <div className="flex gap-4">
-              {['light', 'dark', 'auto'].map((theme) => (
-                <label key={theme} className="flex items-center space-x-2 cursor-pointer">
+              {[
+                { value: 'light', label: 'Ljust' },
+                { value: 'dark', label: 'Mörkt' },
+                { value: 'auto', label: 'Följ systemet' },
+              ].map(({ value, label }) => (
+                <label key={value} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="radio"
                     name="theme"
-                    value={theme}
-                    checked={localSettings.theme === theme}
+                    value={value}
+                    checked={localSettings.theme === value}
                     onChange={(e) => handleChange('theme', e.target.value)}
                     className="w-4 h-4"
                   />
-                  <span className="capitalize">{theme}</span>
+                  <span>{label}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Font Size: {localSettings.fontSize}%</Label>
+            <Label>Textstorlek: {localSettings.fontSize}%</Label>
             <input
               type="range"
               min="75"
@@ -200,19 +204,23 @@ function Settings() {
           </div>
 
           <div className="space-y-3">
-            <Label>Layout Density</Label>
+            <Label>Täthet</Label>
             <div className="flex gap-4">
-              {['compact', 'comfortable', 'spacious'].map((density) => (
-                <label key={density} className="flex items-center space-x-2 cursor-pointer">
+              {[
+                { value: 'compact', label: 'Kompakt' },
+                { value: 'comfortable', label: 'Bekväm' },
+                { value: 'spacious', label: 'Luftig' },
+              ].map(({ value, label }) => (
+                <label key={value} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="radio"
                     name="density"
-                    value={density}
-                    checked={localSettings.layoutDensity === density}
+                    value={value}
+                    checked={localSettings.layoutDensity === value}
                     onChange={(e) => handleChange('layoutDensity', e.target.value)}
                     className="w-4 h-4"
                   />
-                  <span className="capitalize">{density}</span>
+                  <span>{label}</span>
                 </label>
               ))}
             </div>
@@ -222,11 +230,11 @@ function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>View Preferences</CardTitle>
+          <CardTitle>Visning</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="default-view">Default View</Label>
+            <Label htmlFor="default-view">Standardvy</Label>
             <Select
               value={localSettings.defaultView}
               onValueChange={(value) => handleChange('defaultView', value)}
@@ -236,15 +244,15 @@ function Settings() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="kanban">Kanban</SelectItem>
-                <SelectItem value="list">List</SelectItem>
-                <SelectItem value="grid">Grid</SelectItem>
+                <SelectItem value="list">Lista</SelectItem>
+                <SelectItem value="grid">Rutnät</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-4">
             <label className="flex items-center justify-between cursor-pointer">
-              <span>Show Images in Cards</span>
+              <span>Visa bilder på korten</span>
               <input
                 type="checkbox"
                 checked={localSettings.showImagesInCards}
@@ -254,7 +262,7 @@ function Settings() {
             </label>
 
             <label className="flex items-center justify-between cursor-pointer">
-              <span>Show Descriptions</span>
+              <span>Visa beskrivningar</span>
               <input
                 type="checkbox"
                 checked={localSettings.showDescriptions}
@@ -270,7 +278,7 @@ function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            Phase Colors
+            Fasfärger
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -299,10 +307,10 @@ function Settings() {
         <CardFooter className="gap-2">
           <Button onClick={handleSave} className="flex-1">
             <Save className="mr-2 h-4 w-4" />
-            Save Preferences
+            Spara inställningar
           </Button>
           <Button variant="secondary" onClick={() => navigate(-1)}>
-            Cancel
+            Avbryt
           </Button>
         </CardFooter>
       </Card>

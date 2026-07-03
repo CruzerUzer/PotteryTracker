@@ -25,6 +25,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
+    // Tillåt åtkomst via Tailscale (t.ex. hemmalinux.taila35f69.ts.net)
+    allowedHosts: ['.ts.net'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

@@ -39,12 +39,12 @@ function Register() {
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Lösenorden stämmer inte överens');
       return;
     }
 
-    if (formData.password.length < 3) {
-      setError('Password must be at least 3 characters');
+    if (formData.password.length < 8) {
+      setError('Lösenordet måste vara minst 8 tecken');
       return;
     }
 
@@ -54,7 +54,7 @@ function Register() {
       await register(formData.username, formData.password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Registration failed');
+      setError(err.message || 'Registreringen misslyckades');
     } finally {
       setLoading(false);
     }
@@ -64,17 +64,17 @@ function Register() {
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Register</CardTitle>
+          <CardTitle>Skapa konto</CardTitle>
           <CardDescription>
-            {registrationEnabled 
-              ? 'Create a new account to start tracking your pottery'
-              : (registrationMessage || 'Registration is currently closed by administrator')}
+            {registrationEnabled
+              ? 'Kom igång och håll koll på dina pjäser från drejskiva till färdig bränning'
+              : (registrationMessage || 'Registreringen är stängd för tillfället')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!registrationEnabled && (
             <div className="mb-4 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 text-sm">
-              {registrationMessage || 'Registration is currently closed by administrator'}
+              {registrationMessage || 'Registreringen är stängd för tillfället'}
             </div>
           )}
           {error && (
@@ -84,7 +84,7 @@ function Register() {
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Användarnamn</Label>
               <Input
                 id="username"
                 name="username"
@@ -97,7 +97,7 @@ function Register() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Lösenord (minst 8 tecken)</Label>
               <Input
                 id="password"
                 name="password"
@@ -110,7 +110,7 @@ function Register() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Bekräfta lösenord</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -124,10 +124,10 @@ function Register() {
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={loading || !registrationEnabled} className="flex-1">
-                {loading ? 'Registering...' : 'Register'}
+                {loading ? 'Skapar konto…' : 'Skapa konto'}
               </Button>
               <Button type="button" variant="secondary" asChild>
-                <Link to="/login">Login</Link>
+                <Link to="/login">Logga in</Link>
               </Button>
             </div>
           </form>

@@ -215,13 +215,6 @@ export const imagesAPI = {
 
 // Export API
 export const exportAPI = {
-  exportPieces: (format = 'json') => {
-    // This will be handled by the component for file download
-    return fetch(`${API_BASE}/export/pieces?format=${format}`, {
-      credentials: 'include',
-    });
-  },
-  getStats: () => apiCall('/export/stats'),
   exportArchive: async (password) => {
     return apiCall('/export/archive', {
       method: 'POST',

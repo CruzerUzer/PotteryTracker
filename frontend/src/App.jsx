@@ -215,7 +215,7 @@ function AppContent() {
                 }
               />
               <Route
-                path="/export"
+                path="/backup"
                 element={
                   <ProtectedRoute>
                     <ExportData />

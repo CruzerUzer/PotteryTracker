@@ -7,7 +7,7 @@ import {
   CheckCircle,
   Settings,
   Database,
-  FileDown,
+  Archive,
   LogOut,
   Shield,
   BarChart2
@@ -28,7 +28,7 @@ function Sidebar() {
     { path: '/stats', icon: BarChart2, label: 'Statistik' },
     { path: '/workflow', icon: Settings, label: 'Arbetsflöde' },
     { path: '/materials', icon: Database, label: 'Material' },
-    { path: '/export', icon: FileDown, label: 'Export' },
+    { path: '/backup', icon: Archive, label: 'Säkerhetskopia' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 

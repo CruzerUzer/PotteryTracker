@@ -31,12 +31,12 @@ function ResetPassword() {
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Lösenorden stämmer inte överens');
       return;
     }
 
-    if (formData.password.length < 3) {
-      setError('Password must be at least 3 characters');
+    if (formData.password.length < 8) {
+      setError('Lösenordet måste vara minst 8 tecken');
       return;
     }
 
@@ -44,9 +44,9 @@ function ResetPassword() {
 
     try {
       await authAPI.resetPasswordWithToken(token, formData.password);
-      navigate('/login', { state: { message: 'Password reset successfully. Please login with your new password.' } });
+      navigate('/login', { state: { message: 'Lösenordet är återställt. Logga in med ditt nya lösenord.' } });
     } catch (err) {
-      setError(err.message || 'Password reset failed');
+      setError(err.message || 'Återställningen misslyckades');
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ function ResetPassword() {
       <div className="flex items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <div className="text-center">Validating token...</div>
+            <div className="text-center">Kontrollerar länken…</div>
           </CardContent>
         </Card>
       </div>
@@ -69,12 +69,12 @@ function ResetPassword() {
       <div className="flex items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Invalid Token</CardTitle>
-            <CardDescription>The password reset token is invalid or has expired.</CardDescription>
+            <CardTitle>Ogiltig länk</CardTitle>
+            <CardDescription>Återställningslänken är ogiltig eller har gått ut. Be om en ny.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/login">Go to Login</Link>
+              <Link to="/login">Till inloggningen</Link>
             </Button>
           </CardContent>
         </Card>
@@ -86,8 +86,8 @@ function ResetPassword() {
     <div className="flex items-center justify-center min-h-screen p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
-          <CardDescription>Enter your new password</CardDescription>
+          <CardTitle>Välj nytt lösenord</CardTitle>
+          <CardDescription>Skriv in ett nytt lösenord för ditt konto</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -97,7 +97,7 @@ function ResetPassword() {
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">Nytt lösenord (minst 8 tecken)</Label>
               <Input
                 id="password"
                 name="password"
@@ -109,7 +109,7 @@ function ResetPassword() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">Bekräfta nytt lösenord</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -122,10 +122,10 @@ function ResetPassword() {
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? 'Resetting...' : 'Reset Password'}
+                {loading ? 'Sparar…' : 'Spara nytt lösenord'}
               </Button>
               <Button type="button" variant="secondary" asChild>
-                <Link to="/login">Cancel</Link>
+                <Link to="/login">Avbryt</Link>
               </Button>
             </div>
           </form>

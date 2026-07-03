@@ -1,15 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  LayoutDashboard, 
-  List, 
-  CheckCircle, 
-  Settings, 
-  Database, 
-  FileDown, 
+import {
+  LayoutDashboard,
+  List,
+  CheckCircle,
+  Settings,
+  Database,
+  FileDown,
   LogOut,
-  Shield
+  Shield,
+  BarChart2
 } from 'lucide-react';
 
 function Sidebar() {
@@ -22,10 +23,11 @@ function Sidebar() {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Kanban' },
-    { path: '/list', icon: List, label: 'List' },
-    { path: '/done', icon: CheckCircle, label: 'Done' },
-    { path: '/workflow', icon: Settings, label: 'Workflow' },
-    { path: '/materials', icon: Database, label: 'Materials' },
+    { path: '/list', icon: List, label: 'Lista' },
+    { path: '/done', icon: CheckCircle, label: 'Färdiga' },
+    { path: '/stats', icon: BarChart2, label: 'Statistik' },
+    { path: '/workflow', icon: Settings, label: 'Arbetsflöde' },
+    { path: '/materials', icon: Database, label: 'Material' },
     { path: '/export', icon: FileDown, label: 'Export' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];

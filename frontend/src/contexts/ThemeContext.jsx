@@ -11,7 +11,7 @@ export const useTheme = () => {
 };
 
 const defaultSettings = {
-  theme: 'light', // 'light', 'dark', 'auto'
+  theme: 'light', // 'light', 'dark', 'auto' — ljust läge som standard för nya användare
   fontSize: 100, // percentage
   layoutDensity: 'comfortable', // 'compact', 'comfortable', 'spacious'
   defaultView: 'kanban', // 'kanban', 'list', 'grid'

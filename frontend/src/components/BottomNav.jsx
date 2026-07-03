@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, List, CheckCircle, Search, MoreVertical, Settings, Database, FileDown, Shield } from 'lucide-react';
+import { LayoutDashboard, List, CheckCircle, BarChart2, MoreVertical, Settings, Database, FileDown, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,14 +19,14 @@ function BottomNav() {
 
   const mainNavItems = [
     { path: '/', icon: LayoutDashboard, label: 'Kanban' },
-    { path: '/list', icon: List, label: 'List' },
-    { path: '/done', icon: CheckCircle, label: 'Done' },
-    { path: '/list', icon: Search, label: 'Search' }, // Search goes to list with filters
+    { path: '/list', icon: List, label: 'Lista' },
+    { path: '/done', icon: CheckCircle, label: 'Färdiga' },
+    { path: '/stats', icon: BarChart2, label: 'Statistik' },
   ];
 
   const subMenuItems = [
-    { path: '/workflow', icon: Settings, label: 'Workflow' },
-    { path: '/materials', icon: Database, label: 'Materials' },
+    { path: '/workflow', icon: Settings, label: 'Arbetsflöde' },
+    { path: '/materials', icon: Database, label: 'Material' },
     { path: '/export', icon: FileDown, label: 'Export' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
@@ -64,7 +64,7 @@ function BottomNav() {
         <DropdownMenuTrigger asChild>
           <button className={`nav-item ${subMenuItems.some(item => isActive(item.path)) ? 'active' : ''}`}>
             <MoreVertical className="nav-icon" size={20} />
-            <span>More</span>
+            <span>Mer</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" className="mb-2">

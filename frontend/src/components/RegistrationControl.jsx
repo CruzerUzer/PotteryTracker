@@ -26,7 +26,7 @@ function RegistrationControl() {
       setMessage(data.message || '');
       setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to load registration status');
+      setError(err.message || 'Kunde inte hämta registreringsinställningarna');
     } finally {
       setLoading(false);
     }
@@ -40,14 +40,14 @@ function RegistrationControl() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      setError(err.message || 'Failed to update registration status');
+      setError(err.message || 'Kunde inte spara registreringsinställningarna');
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="text-center py-8">Laddar…</div>;
   }
 
   return (
@@ -60,23 +60,23 @@ function RegistrationControl() {
 
       {saved && (
         <div className="p-3 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 text-sm">
-          Registration settings saved!
+          Inställningarna är sparade
         </div>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Registration Control</CardTitle>
+          <CardTitle>Registrering</CardTitle>
           <CardDescription>
-            Control whether new users can register accounts.
+            Styr om nya användare kan skapa konton.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="registration-enabled">Allow Registration</Label>
+              <Label htmlFor="registration-enabled">Tillåt registrering</Label>
               <p className="text-sm text-[var(--color-text-secondary)]">
-                When disabled, new users cannot create accounts.
+                När det är avstängt kan inga nya konton skapas.
               </p>
             </div>
             <label className="flex items-center">
@@ -92,23 +92,23 @@ function RegistrationControl() {
 
           {!enabled && (
             <div className="space-y-2">
-              <Label htmlFor="registration-message">Registration Closed Message</Label>
+              <Label htmlFor="registration-message">Meddelande vid stängd registrering</Label>
               <Textarea
                 id="registration-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Enter a message to display when registration is closed (optional)"
+                placeholder="Skriv ett meddelande som visas när registreringen är stängd (valfritt)"
                 rows={4}
               />
               <p className="text-sm text-[var(--color-text-secondary)]">
-                This message will be shown to users when they try to register. If left empty, a default message will be displayed.
+                Meddelandet visas för den som försöker registrera sig. Lämnas det tomt visas ett standardmeddelande.
               </p>
             </div>
           )}
 
           <Button onClick={handleSave} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? 'Sparar…' : 'Spara inställningar'}
           </Button>
         </CardContent>
       </Card>

@@ -43,7 +43,7 @@ function ArchiveManagement() {
       setArchives(data);
       setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to load archives');
+      setError(err.message || 'Kunde inte hämta arkiven');
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ function ArchiveManagement() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      setError(err.message || 'Failed to download archive');
+      setError(err.message || 'Kunde inte hämta arkivet');
     }
   };
 
@@ -87,7 +87,7 @@ function ArchiveManagement() {
       setDeleteArchive(null);
       await loadArchives();
     } catch (err) {
-      setError(err.message || 'Failed to delete archive');
+      setError(err.message || 'Kunde inte ta bort arkivet');
     }
   };
 
@@ -103,7 +103,7 @@ function ArchiveManagement() {
       await loadArchives();
       await loadUsers();
     } catch (err) {
-      setError(err.message || 'Failed to import archive');
+      setError(err.message || 'Kunde inte importera arkivet');
     } finally {
       setImporting(false);
     }
@@ -123,14 +123,14 @@ function ArchiveManagement() {
       await loadArchives();
       await loadUsers();
     } catch (err) {
-      setError(err.message || 'Failed to import archive');
+      setError(err.message || 'Kunde inte importera arkivet');
     } finally {
       setUploadImporting(false);
     }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown';
+    if (!dateString) return 'Okänt';
     try {
       return new Date(dateString).toLocaleString();
     } catch {
@@ -139,7 +139,7 @@ function ArchiveManagement() {
   };
 
   const formatSize = (bytes) => {
-    if (!bytes) return 'Unknown';
+    if (!bytes) return 'Okänd';
     const mb = bytes / (1024 * 1024);
     if (mb < 1) {
       return `${(bytes / 1024).toFixed(2)} KB`;
@@ -148,7 +148,7 @@ function ArchiveManagement() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading archives...</div>;
+    return <div className="text-center py-8">Laddar arkiv…</div>;
   }
 
   return (
@@ -162,28 +162,28 @@ function ArchiveManagement() {
       <div className="flex justify-between items-center">
         <Button onClick={() => setUploadImportOpen(true)} variant="default">
           <Upload className="mr-2 h-4 w-4" />
-          Upload & Import Archive
+          Ladda upp och importera arkiv
         </Button>
         <Button onClick={loadArchives} variant="outline">
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
+          Uppdatera
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Archives ({archives.length})</CardTitle>
+          <CardTitle>Arkiv ({archives.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--color-border)]">
-                  <th className="text-left p-2">Username</th>
-                  <th className="text-left p-2">Encrypted</th>
-                  <th className="text-left p-2">Size</th>
-                  <th className="text-left p-2">Created</th>
-                  <th className="text-right p-2">Actions</th>
+                  <th className="text-left p-2">Användarnamn</th>
+                  <th className="text-left p-2">Krypterat</th>
+                  <th className="text-left p-2">Storlek</th>
+                  <th className="text-left p-2">Skapat</th>
+                  <th className="text-right p-2">Åtgärder</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,9 +192,9 @@ function ArchiveManagement() {
                     <td className="p-2 font-medium">{archive.username}</td>
                     <td className="p-2">
                       {archive.is_encrypted === 1 ? (
-                        <span className="text-green-600 dark:text-green-400">Yes</span>
+                        <span className="text-green-600 dark:text-green-400">Ja</span>
                       ) : (
-                        <span className="text-[var(--color-text-secondary)]">No</span>
+                        <span className="text-[var(--color-text-secondary)]">Nej</span>
                       )}
                     </td>
                     <td className="p-2 text-sm">{formatSize(archive.file_size)}</td>
@@ -205,7 +205,7 @@ function ArchiveManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDownload(archive.id)}
-                          title="Download"
+                          title="Ladda ner"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -213,7 +213,7 @@ function ArchiveManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => setImportArchive(archive)}
-                          title="Import"
+                          title="Importera"
                         >
                           <Upload className="h-4 w-4" />
                         </Button>
@@ -221,7 +221,7 @@ function ArchiveManagement() {
                           size="sm"
                           variant="destructive"
                           onClick={() => setDeleteArchive(archive)}
-                          title="Delete"
+                          title="Ta bort"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -233,7 +233,7 @@ function ArchiveManagement() {
             </table>
             {archives.length === 0 && (
               <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                No archives
+                Inga arkiv ännu. När du arkiverar en användare eller exporterar ett arkiv hamnar det här.
               </div>
             )}
           </div>
@@ -244,17 +244,17 @@ function ArchiveManagement() {
       <Dialog open={!!importArchive} onOpenChange={(open) => !open && setImportArchive(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Import Archive</DialogTitle>
+            <DialogTitle>Importera arkiv</DialogTitle>
             <DialogDescription>
-              Import archive for {importArchive?.username} to a user account.
+              Importera arkivet för {importArchive?.username} till ett användarkonto.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="import-user">Target User</Label>
+              <Label htmlFor="import-user">Importera till användare</Label>
               <Select value={importUserId} onValueChange={setImportUserId}>
                 <SelectTrigger id="import-user">
-                  <SelectValue placeholder="Select user" />
+                  <SelectValue placeholder="Välj användare" />
                 </SelectTrigger>
                 <SelectContent>
                   {users.map((user) => (
@@ -267,13 +267,13 @@ function ArchiveManagement() {
             </div>
             {importArchive?.is_encrypted === 1 && (
               <div className="space-y-2">
-                <Label htmlFor="import-password">Archive Password</Label>
+                <Label htmlFor="import-password">Arkivets lösenord</Label>
                 <Input
                   id="import-password"
                   type="password"
                   value={importPassword}
                   onChange={(e) => setImportPassword(e.target.value)}
-                  placeholder="Enter password to decrypt archive"
+                  placeholder="Lösenordet som arkivet krypterades med"
                   required
                 />
               </div>
@@ -281,13 +281,13 @@ function ArchiveManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportArchive(null)}>
-              Cancel
+              Avbryt
             </Button>
             <Button
               onClick={handleImport}
               disabled={!importUserId || (importArchive?.is_encrypted === 1 && !importPassword) || importing}
             >
-              {importing ? 'Importing...' : 'Import'}
+              {importing ? 'Importerar…' : 'Importera'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -297,14 +297,14 @@ function ArchiveManagement() {
       <Dialog open={uploadImportOpen} onOpenChange={setUploadImportOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upload and Import Archive</DialogTitle>
+            <DialogTitle>Ladda upp och importera arkiv</DialogTitle>
             <DialogDescription>
-              Upload an archive file and import it to a user account.
+              Ladda upp en arkivfil och importera innehållet till ett användarkonto.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="upload-file">Archive File (.zip or .encrypted.zip)</Label>
+              <Label htmlFor="upload-file">Arkivfil (.zip eller .encrypted.zip)</Label>
               <Input
                 id="upload-file"
                 type="file"
@@ -313,10 +313,10 @@ function ArchiveManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="upload-import-user">Target User</Label>
+              <Label htmlFor="upload-import-user">Importera till användare</Label>
               <Select value={uploadImportUserId} onValueChange={setUploadImportUserId}>
                 <SelectTrigger id="upload-import-user">
-                  <SelectValue placeholder="Select user" />
+                  <SelectValue placeholder="Välj användare" />
                 </SelectTrigger>
                 <SelectContent>
                   {users.map((user) => (
@@ -329,13 +329,13 @@ function ArchiveManagement() {
             </div>
             {uploadFile && uploadFile.name.endsWith('.encrypted.zip') && (
               <div className="space-y-2">
-                <Label htmlFor="upload-import-password">Archive Password</Label>
+                <Label htmlFor="upload-import-password">Arkivets lösenord</Label>
                 <Input
                   id="upload-import-password"
                   type="password"
                   value={uploadImportPassword}
                   onChange={(e) => setUploadImportPassword(e.target.value)}
-                  placeholder="Enter password to decrypt archive"
+                  placeholder="Lösenordet som arkivet krypterades med"
                   required
                 />
               </div>
@@ -343,13 +343,13 @@ function ArchiveManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadImportOpen(false)}>
-              Cancel
+              Avbryt
             </Button>
             <Button
               onClick={handleUploadImport}
               disabled={!uploadFile || !uploadImportUserId || (uploadFile?.name.endsWith('.encrypted.zip') && !uploadImportPassword) || uploadImporting}
             >
-              {uploadImporting ? 'Importing...' : 'Import'}
+              {uploadImporting ? 'Importerar…' : 'Importera'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -359,17 +359,17 @@ function ArchiveManagement() {
       <Dialog open={!!deleteArchive} onOpenChange={(open) => !open && setDeleteArchive(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Archive</DialogTitle>
+            <DialogTitle>Ta bort arkiv</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the archive for {deleteArchive?.username}? This action cannot be undone.
+              Vill du ta bort arkivet för {deleteArchive?.username}? Det här går inte att ångra.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteArchive(null)}>
-              Cancel
+              Avbryt
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              Ta bort
             </Button>
           </DialogFooter>
         </DialogContent>

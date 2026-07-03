@@ -19,8 +19,18 @@ function KanbanView() {
   const [touchElement, setTouchElement] = useState(null);
   const [touchTimer, setTouchTimer] = useState(null);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-  const [collapsedLanes, setCollapsedLanes] = useState(new Set());
-  const [collapsedColumns, setCollapsedColumns] = useState(new Set()); // Track collapsed columns globally by phaseId
+  const [collapsedLanes, setCollapsedLanes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kanban-collapsed-lanes');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [collapsedColumns, setCollapsedColumns] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kanban-collapsed-columns');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [lightboxState, setLightboxState] = useState({
     isOpen: false,
     images: [],
@@ -83,6 +93,7 @@ function KanbanView() {
       } else {
         newSet.add(key);
       }
+      try { localStorage.setItem('kanban-collapsed-lanes', JSON.stringify([...newSet])); } catch {}
       return newSet;
     });
   };
@@ -100,6 +111,7 @@ function KanbanView() {
       } else {
         newSet.add(phaseId);
       }
+      try { localStorage.setItem('kanban-collapsed-columns', JSON.stringify([...newSet])); } catch {}
       return newSet;
     });
   };
@@ -504,7 +516,7 @@ function KanbanView() {
               </h4>
               {piece.done === 1 && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-                  Done
+                  Färdig
                 </span>
               )}
             </div>
@@ -527,7 +539,7 @@ function KanbanView() {
   // Render a swim lane for a location
   const renderSwimLane = (location) => {
     const locationId = location ? location.id : null;
-    const locationName = location ? location.name : 'No location';
+    const locationName = location ? location.name : 'Ingen plats';
     const isCollapsed = isLaneCollapsed(locationId);
     const pieceCount = getPiecesCountForLocation(locationId);
     const laneKey = locationId === null ? 'no-location' : locationId;
@@ -541,7 +553,7 @@ function KanbanView() {
         <div
           className="p-3 bg-[var(--color-surface)] border-b border-[var(--color-border)] cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
           onClick={() => toggleLaneCollapse(locationId)}
-          title={isCollapsed ? 'Click to expand' : 'Click to collapse'}
+          title={isCollapsed ? 'Klicka för att visa' : 'Klicka för att fälla ihop'}
         >
           <div className="flex items-center gap-2">
             {isCollapsed ? (
@@ -565,29 +577,38 @@ function KanbanView() {
               const cellPieces = getPiecesForCell(phase.id, locationId);
               const cellId = `${phase.id}-${locationId}`;
               const isHighlighted = isCellHighlighted(phase.id, locationId);
+              const phaseColor = getPhaseColor(phase.id);
 
               return (
                 <div
                   key={phase.id}
                   data-cell-id={cellId}
-                  className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
+                  className={`flex-shrink-0 transition-all duration-200 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'}`}
                 >
                   {!isColCollapsed && (
-                    <div className={`bg-[var(--color-background)] rounded-md border border-[var(--color-border)] flex flex-col min-h-[150px] transition-all ${
-                      isHighlighted
-                        ? 'border-[var(--color-primary)] border-2 shadow-lg bg-[var(--color-surface-hover)] scale-102 ring-2 ring-[var(--color-primary)] ring-opacity-50'
-                        : ''
-                    }`}
-                    onDragOver={(e) => handleDragOver(e, phase.id, locationId)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, phase.id, locationId)}
+                    <div
+                      className="flex flex-col min-h-[150px] transition-all duration-150"
+                      style={{
+                        background: isHighlighted ? phaseColor.bg : 'var(--color-background)',
+                        borderRadius: '10px',
+                        border: isHighlighted
+                          ? `2px solid ${phaseColor.accent}`
+                          : `1px solid var(--color-border)`,
+                        boxShadow: isHighlighted
+                          ? `0 0 0 3px ${phaseColor.accent}22, var(--shadow-md)`
+                          : 'none',
+                        transform: isHighlighted ? 'scale(1.01)' : 'scale(1)',
+                      }}
+                      onDragOver={(e) => handleDragOver(e, phase.id, locationId)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, phase.id, locationId)}
                     >
                       {/* Pieces */}
                       <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto">
                         {cellPieces.map(piece => renderPieceCard(piece))}
                         {cellPieces.length === 0 && (
-                          <div className="text-center text-[var(--color-text-tertiary)] italic py-4 text-xs">
-                            Empty
+                          <div className="text-center italic py-4 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+                            Tom
                           </div>
                         )}
                       </div>
@@ -602,24 +623,46 @@ function KanbanView() {
     );
   };
 
+  // Map phase index to CSS variable for column coloring
+  const phaseColorVars = [
+    { bg: 'var(--phase-color-1)', border: 'var(--phase-color-1-border)', accent: 'var(--phase-color-1-accent)' },
+    { bg: 'var(--phase-color-2)', border: 'var(--phase-color-2-border)', accent: 'var(--phase-color-2-accent)' },
+    { bg: 'var(--phase-color-3)', border: 'var(--phase-color-3-border)', accent: 'var(--phase-color-3-accent)' },
+    { bg: 'var(--phase-color-4)', border: 'var(--phase-color-4-border)', accent: 'var(--phase-color-4-accent)' },
+    { bg: 'var(--phase-color-5)', border: 'var(--phase-color-5-border)', accent: 'var(--phase-color-5-accent)' },
+  ];
+
+  const getPhaseColor = (phaseId) => {
+    const idx = phases.findIndex(p => p.id === phaseId);
+    return phaseColorVars[idx % phaseColorVars.length] || phaseColorVars[0];
+  };
+
   if (loading) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="skeleton h-8 w-32" />
+          <div className="skeleton h-9 w-28" />
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="skeleton h-20 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Kanban Board</h2>
+        <h2 className="page-title">
+          Kanban
+        </h2>
         <Button asChild>
           <Link to="/pieces/new">
             <Plus className="mr-2 h-4 w-4" />
-            Add New Piece
+            Ny pjäs
           </Link>
         </Button>
       </div>
@@ -649,22 +692,30 @@ function KanbanView() {
         <div className="sticky top-0 z-10 flex gap-1 p-2 mb-1 min-w-min bg-[var(--color-background)]">
           {phases.map(phase => {
             const isColCollapsed = isColumnCollapsed(phase.id);
+            const phaseColor = getPhaseColor(phase.id);
             return (
               <div
                 key={`global-header-${phase.id}`}
-                className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all`}
+                className={`flex-shrink-0 ${isColCollapsed ? 'w-10' : 'w-[160px] md:w-48'} transition-all duration-200`}
               >
                 <div
-                  className="p-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors flex items-center justify-between"
+                  className="p-2 rounded-lg cursor-pointer transition-all flex items-center justify-between"
+                  style={{
+                    background: phaseColor.bg,
+                    border: `1px solid ${phaseColor.border}`,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                  }}
                   onClick={() => toggleColumnCollapse(phase.id)}
-                  title={isColCollapsed ? 'Click to expand column' : 'Click to collapse column'}
+                  title={isColCollapsed ? 'Visa kolumn' : 'Fäll ihop kolumn'}
                 >
                   {isColCollapsed ? (
-                    <ChevronRight className="h-4 w-4 text-[var(--color-text-secondary)] mx-auto" />
+                    <ChevronRight className="h-4 w-4 mx-auto" style={{ color: phaseColor.accent }} />
                   ) : (
                     <>
-                      <h4 className="font-medium text-sm">{phase.name}</h4>
-                      <ChevronDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                      <h4 className="font-semibold text-xs truncate" style={{ color: phaseColor.accent }}>
+                        {phase.name}
+                      </h4>
+                      <ChevronDown className="h-3 w-3 flex-shrink-0 ml-1" style={{ color: phaseColor.accent, opacity: 0.7 }} />
                     </>
                   )}
                 </div>

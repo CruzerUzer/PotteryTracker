@@ -16,8 +16,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    if (username.trim().length === 0 || password.length === 0) {
-      return res.status(400).json({ error: 'Username and password cannot be empty' });
+    if (username.trim().length === 0) {
+      return res.status(400).json({ error: 'Username cannot be empty' });
+    }
+
+    if (username.trim().length > 64) {
+      return res.status(400).json({ error: 'Username cannot exceed 64 characters' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    if (password.length > 128) {
+      return res.status(400).json({ error: 'Password cannot exceed 128 characters' });
     }
 
     const db = await getDb();
@@ -253,6 +265,14 @@ router.post('/change-password', requireAuth, async (req, res) => {
 
     if (!newPassword || newPassword.length === 0) {
       return res.status(400).json({ error: 'New password is required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    if (newPassword.length > 128) {
+      return res.status(400).json({ error: 'Password cannot exceed 128 characters' });
     }
 
     const db = await getDb();

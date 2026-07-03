@@ -1,10 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" fill="#8B4513" rx="8"/>
-  <path d="M32 12 C24 12, 18 18, 18 26 L18 42 C18 50, 24 56, 32 56 C40 56, 46 50, 46 42 L46 26 C46 18, 40 12, 32 12 Z" fill="#D4A574" stroke="#6B3410" stroke-width="2"/>
-  <ellipse cx="32" cy="26" rx="12" ry="4" fill="#F4A460" opacity="0.6"/>
-  <path d="M26 26 L26 38 M32 26 L32 38 M38 26 L38 38" stroke="#8B4513" stroke-width="2" stroke-linecap="round"/>
+  <!-- Soft studio jug — smooth curves, cobalt -->
+  <path d="M25 7
+    C 24.2 7, 23.5 7.8, 23.5 9
+    C 23.5 13.5, 26.5 15.5, 26.5 20
+    C 26.5 24.5, 17 27.5, 15 36
+    C 12.8 45.5, 20.5 56, 32 56
+    C 43.5 56, 51.2 45.5, 49 36
+    C 47 27.5, 37.5 24.5, 37.5 20
+    C 37.5 15.5, 40.5 13.5, 40.5 9
+    C 40.5 7.8, 39.8 7, 39 7
+    Z"
+    fill="#C9A961"/>
+  <!-- Gentle highlight -->
+  <path d="M22 38 C 22 44 25 49 30 50.5"
+    stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.5"/>
 </svg>
-
-
-
-

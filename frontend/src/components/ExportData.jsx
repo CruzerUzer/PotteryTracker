@@ -23,7 +23,7 @@ function ExportData() {
       });
 
       if (!response.ok) {
-        throw new Error('Export failed');
+        throw new Error('Exporten misslyckades');
       }
 
       const blob = await response.blob();
@@ -82,7 +82,7 @@ function ExportData() {
       // Download the archive file
       const response = await exportAPI.downloadArchive(result.filename);
       if (!response.ok) {
-        throw new Error('Failed to download archive');
+        throw new Error('Kunde inte hämta arkivet');
       }
       
       const blob = await response.blob();
@@ -99,7 +99,7 @@ function ExportData() {
       setArchivePassword('');
       setEncryptArchive(false);
     } catch (err) {
-      setError(err.message || 'Failed to export archive');
+      setError(err.message || 'Kunde inte skapa arkivet');
     } finally {
       setCreatingArchive(false);
     }
@@ -107,7 +107,7 @@ function ExportData() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Export Data</h2>
+      <h2 className="page-title">Exportera</h2>
 
       {error && (
         <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
@@ -117,9 +117,9 @@ function ExportData() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Export Pieces</CardTitle>
+          <CardTitle>Pjäser</CardTitle>
           <CardDescription>
-            Export all your pieces as CSV or JSON format.
+            Ladda ner alla dina pjäser som CSV (för kalkylblad) eller JSON.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,7 +130,7 @@ function ExportData() {
               variant="outline"
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {exporting ? 'Exporting...' : 'Export as CSV'}
+              {exporting ? 'Exporterar…' : 'Exportera som CSV'}
             </Button>
             <Button
               onClick={() => handleExport('json')}
@@ -138,7 +138,7 @@ function ExportData() {
               variant="outline"
             >
               <FileJson className="mr-2 h-4 w-4" />
-              {exporting ? 'Exporting...' : 'Export as JSON'}
+              {exporting ? 'Exporterar…' : 'Exportera som JSON'}
             </Button>
           </div>
         </CardContent>
@@ -146,9 +146,9 @@ function ExportData() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Export Statistics</CardTitle>
+          <CardTitle>Statistik</CardTitle>
           <CardDescription>
-            Get a detailed report with statistics about your pieces.
+            Hämta en sammanställning med statistik över dina pjäser.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,16 +158,16 @@ function ExportData() {
             variant="outline"
           >
             <BarChart3 className="mr-2 h-4 w-4" />
-            {exporting ? 'Generating...' : 'Export Statistics'}
+            {exporting ? 'Skapar…' : 'Exportera statistik'}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Export Complete Archive</CardTitle>
+          <CardTitle>Komplett arkiv</CardTitle>
           <CardDescription>
-            Export all your data (pieces, materials, phases, images) as a ZIP archive. Includes a PDF report. Optionally encrypt with a password.
+            Ladda ner allt – pjäser, material, faser och bilder – som ett ZIP-arkiv med PDF-rapport. Bra som säkerhetskopia. Kan krypteras med lösenord.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -178,18 +178,18 @@ function ExportData() {
                 checked={encryptArchive}
                 onChange={(e) => setEncryptArchive(e.target.checked)}
               />
-              <span>Encrypt archive with password</span>
+              <span>Kryptera arkivet med lösenord</span>
             </label>
           </div>
           {encryptArchive && (
             <div className="space-y-2">
-              <Label htmlFor="archive-password">Archive Password</Label>
+              <Label htmlFor="archive-password">Lösenord för arkivet</Label>
               <Input
                 id="archive-password"
                 type="password"
                 value={archivePassword}
                 onChange={(e) => setArchivePassword(e.target.value)}
-                placeholder="Enter password for encryption"
+                placeholder="Välj ett lösenord"
               />
             </div>
           )}
@@ -199,7 +199,7 @@ function ExportData() {
             variant="outline"
           >
             <Archive className="mr-2 h-4 w-4" />
-            {creatingArchive ? 'Creating Archive...' : 'Export Archive'}
+            {creatingArchive ? 'Skapar arkiv…' : 'Exportera arkiv'}
           </Button>
         </CardContent>
       </Card>

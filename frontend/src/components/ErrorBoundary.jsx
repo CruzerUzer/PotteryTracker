@@ -56,14 +56,14 @@ class ErrorBoundary extends React.Component {
               marginBottom: '16px',
               color: 'var(--color-text-primary, #333)'
             }}>
-              Something went wrong
+              Något gick sönder
             </h1>
             <p style={{
               marginBottom: '24px',
               color: 'var(--color-text-secondary, #666)',
               lineHeight: '1.6'
             }}>
-              An unexpected error occurred. Please try reloading the page or going back to the home page.
+              Ett oväntat fel inträffade. Prova att ladda om sidan eller gå tillbaka till startsidan – dina pjäser är kvar.
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -80,7 +80,7 @@ class ErrorBoundary extends React.Component {
                   fontWeight: 'bold',
                   color: 'var(--color-error, #c00)'
                 }}>
-                  Error Details
+                  Felinformation
                 </summary>
                 <pre style={{
                   marginTop: '12px',
@@ -109,7 +109,7 @@ class ErrorBoundary extends React.Component {
                   fontWeight: '500'
                 }}
               >
-                Reload Page
+                Ladda om sidan
               </button>
               <button
                 onClick={this.handleGoHome}
@@ -124,7 +124,7 @@ class ErrorBoundary extends React.Component {
                   fontWeight: '500'
                 }}
               >
-                Go to Home
+                Till startsidan
               </button>
             </div>
           </div>

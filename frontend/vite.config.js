@@ -23,8 +23,10 @@ export default defineConfig({
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
   },
   server: {
-    host: true, // or use '0.0.0.0' to listen on all network interfaces
+    host: true,
     port: 3000,
+    // Tillåt åtkomst via Tailscale (t.ex. hemmalinux.taila35f69.ts.net)
+    allowedHosts: ['.ts.net'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
@@ -33,7 +35,15 @@ export default defineConfig({
         cookiePathRewrite: '/',
       }
     }
-  }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.js'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+    },
+  },
 })
 
 

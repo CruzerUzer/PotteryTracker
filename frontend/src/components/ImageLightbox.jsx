@@ -139,7 +139,7 @@ function ImageLightbox({
               >
                 <img
                   src={imagesAPI.getFileUrl(currentImage.id)}
-                  alt={currentImage.original_filename || 'Piece image'}
+                  alt={currentImage.original_filename || 'Bild på pjäs'}
                   className="max-w-full max-h-[70vh] object-contain select-none"
                   draggable={false}
                 />
@@ -152,7 +152,7 @@ function ImageLightbox({
                   variant="ghost"
                   size="icon"
                   className="text-white hover:bg-white/20"
-                  title="Zoom in"
+                  title="Zooma in"
                 >
                   <ZoomIn className="h-5 w-5" />
                 </Button>
@@ -161,7 +161,7 @@ function ImageLightbox({
                   variant="ghost"
                   size="icon"
                   className="text-white hover:bg-white/20"
-                  title="Zoom out"
+                  title="Zooma ut"
                 >
                   <ZoomOut className="h-5 w-5" />
                 </Button>
@@ -170,7 +170,7 @@ function ImageLightbox({
                   variant="ghost"
                   size="icon"
                   className="text-white hover:bg-white/20"
-                  title="Reset zoom"
+                  title="Återställ zoom"
                 >
                   <RotateCcw className="h-5 w-5" />
                 </Button>
@@ -185,7 +185,7 @@ function ImageLightbox({
             <div className="font-semibold text-lg">{pieceName}</div>
           )}
           <div className="font-medium text-sm opacity-90">
-            {currentImage.phase_name || 'Unknown phase'}
+            {currentImage.phase_name || 'Okänd fas'}
           </div>
           <div className="text-sm opacity-70 mt-1">
             {new Date(currentImage.created_at).toLocaleDateString()}
@@ -202,14 +202,14 @@ function ImageLightbox({
           {showDelete && onDelete && (
             <Button
               onClick={() => {
-                if (window.confirm('Are you sure you want to delete this image?')) {
+                if (window.confirm('Vill du ta bort den här bilden?')) {
                   onDelete(currentImage.id);
                 }
               }}
               variant="ghost"
               size="icon"
               className="mt-4 text-white hover:bg-white/20"
-              title="Delete image"
+              title="Ta bort bild"
             >
               <Trash2 className="h-5 w-5" />
             </Button>

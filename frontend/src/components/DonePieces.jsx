@@ -37,7 +37,7 @@ function DonePieces() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">Laddar…</div>
         </CardContent>
       </Card>
     );
@@ -46,11 +46,11 @@ function DonePieces() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Done Pieces</h2>
+        <h2 className="page-title">Färdiga pjäser</h2>
         <Button asChild>
           <Link to="/pieces/new">
             <Plus className="mr-2 h-4 w-4" />
-            Add New Piece
+            Ny pjäs
           </Link>
         </Button>
       </div>
@@ -65,7 +65,7 @@ function DonePieces() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-[var(--color-text-tertiary)]">
-              No completed pieces found. Pieces will appear here once they are moved to the final phase.
+              Inga färdiga pjäser ännu. När en pjäs når sista fasen hamnar den här – din samling växer med varje bränning.
             </p>
           </CardContent>
         </Card>
@@ -96,7 +96,7 @@ function DonePieces() {
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <h3 className="font-semibold text-lg line-clamp-2 flex-1">{piece.name}</h3>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-                      Done
+                      Färdig
                     </span>
                   </div>
                   {piece.phase_name && (

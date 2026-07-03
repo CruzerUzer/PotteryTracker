@@ -45,7 +45,7 @@ export const authAPI = {
     });
 
     if (!response.ok) {
-      throw new Error('Logout failed');
+      throw new Error('Utloggningen misslyckades');
     }
 
     return response.json();
@@ -192,15 +192,15 @@ export const imagesAPI = {
         try {
           errorData = await response.json();
         } catch (e) {
-          errorData = { error: 'Upload failed' };
+          errorData = { error: 'Uppladdningen misslyckades' };
         }
-        throw new Error(errorData.error || `Upload failed: ${response.status} ${response.statusText}`);
+        throw new Error(errorData.error || `Uppladdningen misslyckades: ${response.status} ${response.statusText}`);
       }
 
       return await response.json();
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Could not connect to server');
+        throw new Error('Kunde inte nå servern. Kontrollera din anslutning och försök igen.');
       }
       throw error;
     }

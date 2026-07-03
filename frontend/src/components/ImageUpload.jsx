@@ -31,7 +31,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
         return `${f.name} (${sizeMB} MB)`;
       }).join(', ');
-      setError(`File(s) too large: ${fileNames}. Maximum file size is 10 MB.`);
+      setError(`För stora filer: ${fileNames}. Största tillåtna storlek är 10 MB.`);
       setFiles([]);
       setSuccess(null);
       e.target.value = '';
@@ -47,12 +47,12 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
     e.preventDefault();
 
     if (files.length === 0) {
-      setError('Please select at least one file');
+      setError('Välj minst en bild att ladda upp');
       return;
     }
 
     if (!phaseId) {
-      setError('Please select a phase');
+      setError('Välj vilken fas bilden hör till');
       return;
     }
 
@@ -80,7 +80,11 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
       }
 
       if (successCount > 0) {
-        setSuccess(`${successCount} image(s) uploaded successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}!`);
+        setSuccess(
+          successCount === 1
+            ? `Bilden är uppladdad${errorCount > 0 ? `, men ${errorCount} misslyckades` : ''}`
+            : `${successCount} bilder uppladdade${errorCount > 0 ? `, ${errorCount} misslyckades` : ''}`
+        );
         setFiles([]);
         setPhaseId(defaultPhaseId || '');
         setHasUserSelectedPhase(false);
@@ -91,7 +95,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
       }
       
       if (errorCount > 0 && successCount === 0) {
-        setError(`Failed to upload images. Please try again.`);
+        setError('Uppladdningen misslyckades. Försök igen.');
       }
     } catch (err) {
       setError(err.message);
@@ -116,7 +120,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="image-file">Select Image(s)</Label>
+          <Label htmlFor="image-file">Välj bilder</Label>
           <Input
             type="file"
             id="image-file"
@@ -126,11 +130,11 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
             disabled={uploading}
           />
           <p className="text-sm text-[var(--color-text-tertiary)]">
-            You can select multiple images at once. On mobile devices, you can choose from your gallery or take a new photo.
+            Du kan välja flera bilder samtidigt. På mobilen kan du hämta från bildbiblioteket eller fota direkt.
           </p>
           {files.length > 0 && (
             <div className="mt-3 space-y-2">
-              <p className="text-sm font-medium">Selected: {files.length} file(s)</p>
+              <p className="text-sm font-medium">{files.length === 1 ? '1 bild vald' : `${files.length} bilder valda`}</p>
               <ul className="space-y-1 text-sm text-[var(--color-text-secondary)]">
                 {files.map((file, index) => (
                   <li key={index} className="flex items-center gap-2">
@@ -146,7 +150,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="image-phase">Phase</Label>
+          <Label htmlFor="image-phase">Fas</Label>
           <Select
             value={phaseId || undefined}
             onValueChange={(value) => {
@@ -157,7 +161,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
             required
           >
             <SelectTrigger id="image-phase">
-              <SelectValue placeholder="Select a phase" />
+              <SelectValue placeholder="Välj fas" />
             </SelectTrigger>
             <SelectContent>
               {phases.map((phase) => (
@@ -173,12 +177,12 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Uploading... ({Object.values(uploadProgress).filter(p => p === 'uploading').length}/{files.length})
+              Laddar upp… ({Object.values(uploadProgress).filter(p => p === 'uploading').length}/{files.length})
             </>
           ) : (
             <>
               <Upload className="mr-2 h-4 w-4" />
-              Upload {files.length > 0 ? `${files.length} ` : ''}Image{files.length !== 1 ? 's' : ''}
+              {files.length > 1 ? `Ladda upp ${files.length} bilder` : 'Ladda upp bild'}
             </>
           )}
         </Button>

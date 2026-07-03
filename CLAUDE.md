@@ -72,10 +72,14 @@ PotteryTracker/
 
 ## Git Workflow
 
-- **Always create a new branch** for new features and bug fixes: `git checkout -b feature/<feature-name>`
-- Branch naming: `feature/<name>`, `fix/<name>`, `refactor/<name>`
+**CRITICAL RULE: Never work directly on `main` branch.**
+
+- **Always create a new branch** before making any changes: `git checkout -b feature/<feature-name>`
+- Branch naming: `feature/<name>`, `fix/<name>`, `refactor/<name>`, `security/<name>`
 - Push branch and let user test before merging to main
-- Never commit directly to main
+- **Never commit directly to main** — even small fixes go on a branch
+- Merge to main only after: tests pass + frontend builds + user approves
+- Use `git checkout -b <branch>` at the very start of any session before touching code
 
 ## Important Patterns
 

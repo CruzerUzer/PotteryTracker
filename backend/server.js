@@ -32,9 +32,14 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 app.set('trust proxy', 1);
 
 // Configure CORS with credentials
-const corsOrigin = process.env.CORS_ORIGIN === 'true' 
-  ? true 
-  : process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || true;
+// CORS_ORIGIN must be set in production — fallback only safe for local dev
+const corsOrigin = process.env.CORS_ORIGIN === 'true'
+  ? true
+  : process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+    : (NODE_ENV === 'production'
+      ? (() => { throw new Error('CORS_ORIGIN must be set in production'); })()
+      : 'http://localhost:3000');
 
 app.use(cors({
   origin: corsOrigin,
@@ -43,9 +48,18 @@ app.use(cors({
 
 // Security headers with Helmet
 app.use(helmet({
-  // Disable contentSecurityPolicy as it may interfere with frontend
-  contentSecurityPolicy: false,
-  // Allow cross-origin resource sharing
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // inline scripts needed by Vite build
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    }
+  },
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
@@ -61,11 +75,15 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // Limit each IP to 100 requests per minute
+  max: Number(process.env.RATE_LIMIT_MAX) || 300, // Limit each IP per minute (configurable)
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'test' // Skip in test environment
+  // Skip in test environment, and for image file serving (GET only) —
+  // a single page load fetches one thumbnail per piece, which would
+  // otherwise exhaust the limit for users with many pieces.
+  skip: (req) => process.env.NODE_ENV === 'test' ||
+    (req.method === 'GET' && /^\/images\/\d+\/file/.test(req.path))
 });
 
 // Apply general API rate limiter to all /api routes

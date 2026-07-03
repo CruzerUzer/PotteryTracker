@@ -107,7 +107,7 @@ function WorkflowManager() {
   const currentItems = activeTab === 'phases' ? phases : locations;
   const currentAPI = activeTab === 'phases' ? phasesAPI : locationsAPI;
   const setCurrentItems = activeTab === 'phases' ? setPhases : setLocations;
-  const itemLabel = activeTab === 'phases' ? 'Phase' : 'Location';
+  const itemLabel = activeTab === 'phases' ? 'fas' : 'plats';
 
   const handleDragStart = (e, item, index) => {
     setDraggedItem({ item, index });
@@ -269,7 +269,7 @@ function WorkflowManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm(`Are you sure you want to delete this ${itemLabel.toLowerCase()}?`)) {
+    if (!window.confirm(`Vill du ta bort den här ${itemLabel}en?`)) {
       return;
     }
 
@@ -277,7 +277,7 @@ function WorkflowManager() {
       await currentAPI.delete(id);
       loadData();
     } catch (err) {
-      alert(`Error deleting ${itemLabel.toLowerCase()}: ` + err.message);
+      alert(`Kunde inte ta bort ${itemLabel}en: ` + err.message);
     }
   };
 
@@ -300,7 +300,7 @@ function WorkflowManager() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">Laddar…</div>
         </CardContent>
       </Card>
     );
@@ -309,7 +309,7 @@ function WorkflowManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Workflow</h2>
+        <h2 className="page-title">Arbetsflöde</h2>
         <Button
           onClick={() => {
             setShowForm(true);
@@ -318,7 +318,7 @@ function WorkflowManager() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add New {itemLabel}
+          {activeTab === 'phases' ? 'Ny fas' : 'Ny plats'}
         </Button>
       </div>
 
@@ -333,7 +333,7 @@ function WorkflowManager() {
           }`}
         >
           <Layers className="h-4 w-4" />
-          Phases ({phases.length})
+          Faser ({phases.length})
         </button>
         <button
           onClick={() => handleTabChange('locations')}
@@ -344,7 +344,7 @@ function WorkflowManager() {
           }`}
         >
           <MapPin className="h-4 w-4" />
-          Locations ({locations.length})
+          Platser ({locations.length})
         </button>
       </div>
 
@@ -357,12 +357,12 @@ function WorkflowManager() {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? `Edit ${itemLabel}` : `Create New ${itemLabel}`}</CardTitle>
+            <CardTitle>{editingId ? `Redigera ${itemLabel}` : `Ny ${itemLabel}`}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="item-name">Name *</Label>
+                <Label htmlFor="item-name">Namn *</Label>
                 <Input
                   id="item-name"
                   type="text"
@@ -372,7 +372,7 @@ function WorkflowManager() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="item-order">Display Order</Label>
+                <Label htmlFor="item-order">Ordning</Label>
                 <Input
                   id="item-order"
                   type="number"
@@ -384,10 +384,10 @@ function WorkflowManager() {
               </div>
               <div className="flex gap-2 pt-4">
                 <Button type="submit">
-                  {editingId ? 'Update' : 'Create'}
+                  {editingId ? 'Spara' : 'Skapa'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={handleCancel}>
-                  Cancel
+                  Avbryt
                 </Button>
               </div>
             </form>
@@ -399,7 +399,9 @@ function WorkflowManager() {
         <CardContent className="pt-6">
           {currentItems.length === 0 ? (
             <p className="text-center text-[var(--color-text-tertiary)]">
-              No {activeTab} yet. Create your first {itemLabel.toLowerCase()} to get started!
+              {activeTab === 'phases'
+                ? 'Inga faser ännu. Skapa stegen som dina pjäser går igenom – till exempel På tork, Skröjbränd och Glaserad.'
+                : 'Inga platser ännu. Lägg till hyllor och platser i verkstaden så ser du var varje pjäs står.'}
             </p>
           ) : (
             <div className="space-y-2">
@@ -431,7 +433,7 @@ function WorkflowManager() {
                     <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
                     <div>
                       <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-[var(--color-text-tertiary)]">Position: {index + 1}</div>
+                      <div className="text-sm text-[var(--color-text-tertiary)]">Plats i ordningen: {index + 1}</div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -482,7 +484,7 @@ function WorkflowManager() {
               <GripVertical className="h-5 w-5 text-[var(--color-text-tertiary)]" />
               <div>
                 <div className="font-medium">{draggedItem.item.name}</div>
-                <div className="text-sm text-[var(--color-text-tertiary)]">Position: {draggedItem.index + 1}</div>
+                <div className="text-sm text-[var(--color-text-tertiary)]">Plats i ordningen: {draggedItem.index + 1}</div>
               </div>
             </div>
           </div>

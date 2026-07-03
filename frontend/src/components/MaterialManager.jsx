@@ -58,7 +58,7 @@ function MaterialManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this material?')) {
+    if (!window.confirm('Vill du ta bort det här materialet?')) {
       return;
     }
 
@@ -66,7 +66,7 @@ function MaterialManager() {
       await materialsAPI.delete(id);
       loadMaterials();
     } catch (err) {
-      alert('Error deleting material: ' + err.message);
+      alert('Kunde inte ta bort materialet: ' + err.message);
     }
   };
 
@@ -81,7 +81,7 @@ function MaterialManager() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">Laddar…</div>
         </CardContent>
       </Card>
     );
@@ -96,7 +96,7 @@ function MaterialManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Manage Materials</h2>
+        <h2 className="page-title">Material</h2>
         <Button
           onClick={() => {
             setShowForm(true);
@@ -105,7 +105,7 @@ function MaterialManager() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add New Material
+          Nytt material
         </Button>
       </div>
 
@@ -118,12 +118,12 @@ function MaterialManager() {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? 'Edit Material' : 'Create New Material'}</CardTitle>
+            <CardTitle>{editingId ? 'Redigera material' : 'Nytt material'}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="material-name">Name *</Label>
+                <Label htmlFor="material-name">Namn *</Label>
                 <Input
                   id="material-name"
                   type="text"
@@ -133,24 +133,24 @@ function MaterialManager() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="material-type">Type *</Label>
+                <Label htmlFor="material-type">Typ *</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
                   <SelectTrigger id="material-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="clay">Clay</SelectItem>
-                    <SelectItem value="glaze">Glaze</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="clay">Lera</SelectItem>
+                    <SelectItem value="glaze">Glasyr</SelectItem>
+                    <SelectItem value="other">Övrigt</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2 pt-4">
                 <Button type="submit">
-                  {editingId ? 'Update' : 'Create'}
+                  {editingId ? 'Spara' : 'Skapa'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={handleCancel}>
-                  Cancel
+                  Avbryt
                 </Button>
               </div>
             </form>
@@ -161,7 +161,7 @@ function MaterialManager() {
       {materials.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-[var(--color-text-tertiary)]">No materials yet. Create your first material to get started!</p>
+            <p className="text-center text-[var(--color-text-tertiary)]">Inga material ännu. Lägg upp dina leror och glasyrer, så kan du koppla dem till pjäserna.</p>
           </CardContent>
         </Card>
       ) : (
@@ -171,7 +171,7 @@ function MaterialManager() {
               typeMaterials.length > 0 && (
                 <Card key={type}>
                   <CardHeader>
-                    <CardTitle className="capitalize">{type}</CardTitle>
+                    <CardTitle>{{ clay: 'Leror', glaze: 'Glasyrer', other: 'Övrigt' }[type]}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -188,7 +188,7 @@ function MaterialManager() {
                               onClick={() => handleEdit(material)}
                             >
                               <Edit className="h-4 w-4 mr-1" />
-                              Edit
+                              Redigera
                             </Button>
                             <Button
                               variant="destructive"
@@ -196,7 +196,7 @@ function MaterialManager() {
                               onClick={() => handleDelete(material.id)}
                             >
                               <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
+                              Ta bort
                             </Button>
                           </div>
                         </div>

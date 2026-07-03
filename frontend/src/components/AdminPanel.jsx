@@ -13,7 +13,7 @@ function AdminPanel() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Admin Panel</h2>
+        <h2 className="page-title">Administration</h2>
       </div>
 
       {/* Tabs */}
@@ -27,7 +27,7 @@ function AdminPanel() {
           }`}
         >
           <Users className="inline-block mr-2 h-4 w-4" />
-          Users
+          Användare
         </button>
         <button
           onClick={() => setActiveTab('archives')}
@@ -38,7 +38,7 @@ function AdminPanel() {
           }`}
         >
           <Archive className="inline-block mr-2 h-4 w-4" />
-          Archives
+          Arkiv
         </button>
         <button
           onClick={() => setActiveTab('registration')}
@@ -49,7 +49,7 @@ function AdminPanel() {
           }`}
         >
           <SettingsIcon className="inline-block mr-2 h-4 w-4" />
-          Registration
+          Registrering
         </button>
       </div>
 

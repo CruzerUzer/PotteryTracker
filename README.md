@@ -56,7 +56,7 @@ Key environment variables:
 - `IMAGE_MAX_WIDTH/HEIGHT` - Maximum image dimensions (default: 2048px)
 - `THUMBNAIL_WIDTH/HEIGHT` - Thumbnail dimensions (default: 400px)
 - `IMAGE_QUALITY` - JPEG quality (1-100, default: 85)
-- `CORS_ORIGIN` - Allowed origins (comma-separated or 'true' for all)
+- `CORS_ORIGIN` - Allowed origins (comma-separated). **REQUIRED in production** — the server refuses to start without it. Use 'true' only for development.
 - `LOG_LEVEL` - Logging level (debug/info/warn/error)
 
 ## Setup Instructions

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -19,6 +19,7 @@ import BottomNav from './components/BottomNav';
 import Settings from './components/Settings';
 import AdminPanel from './components/AdminPanel';
 import ResetPassword from './components/ResetPassword';
+const StatsDashboard = lazy(() => import('./components/StatsDashboard'));
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,7 +81,15 @@ function AppContent() {
           <header>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h1 style={{ margin: 0, cursor: 'pointer' }}>PotteryTracker</h1>
+                <h1 style={{
+                  margin: 0,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-family-display)',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                }}>
+                  PotteryTracker
+                </h1>
               </Link>
               {user && (
                 <DropdownMenu>
@@ -164,14 +173,6 @@ function AppContent() {
                 }
               />
               <Route
-                path="/kanban"
-                element={
-                  <ProtectedRoute>
-                    <KanbanView />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/pieces/new"
                 element={
                   <ProtectedRoute>
@@ -184,6 +185,16 @@ function AppContent() {
                 element={
                   <ProtectedRoute>
                     <PieceDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stats"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div className="card loading">Laddar statistik...</div>}>
+                      <StatsDashboard />
+                    </Suspense>
                   </ProtectedRoute>
                 }
               />

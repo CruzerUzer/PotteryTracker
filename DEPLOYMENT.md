@@ -336,10 +336,18 @@ Set `VITE_API_BASE` during frontend build if needed.
 - Use environment variables for sensitive data
 - **Enable HTTPS/SSL** (see [HTTPS_SETUP.md](./HTTPS_SETUP.md) for detailed instructions)
 - Set proper file permissions
-- Use CORS configuration for production
-- Implement rate limiting
-- Add authentication if needed (future enhancement)
+- **`CORS_ORIGIN` is REQUIRED in production** — the server refuses to start without it. Set it to your domain, e.g. `CORS_ORIGIN=https://potterytracker.example.com`
+- **`SESSION_SECRET` is REQUIRED in production** — the server refuses to start without it
+- Content Security Policy (CSP) headers are enabled via Helmet
+- Rate limiting is enabled (10 req/15 min on auth endpoints, 100 req/min on API)
+- Passwords require a minimum of 8 characters
 - **Secure cookies**: When HTTPS is enabled, backend automatically uses secure cookies
+
+### 4b. Database Migrations
+
+The update script (`update-potterytracker.sh`) automatically runs all database
+migrations after installing dependencies (Step 3b). Migrations are idempotent —
+they detect already-applied changes and skip them, so user data is never lost.
 
 ### 5. Monitoring
 

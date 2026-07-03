@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, List, CheckCircle, Search, MoreVertical, Settings, Database, FileDown, Shield } from 'lucide-react';
+import { LayoutDashboard, List, CheckCircle, BarChart2, MoreVertical, Settings, Database, FileDown, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,14 +19,14 @@ function BottomNav() {
 
   const mainNavItems = [
     { path: '/', icon: LayoutDashboard, label: 'Kanban' },
-    { path: '/list', icon: List, label: 'List' },
-    { path: '/done', icon: CheckCircle, label: 'Done' },
-    { path: '/list', icon: Search, label: 'Search' }, // Search goes to list with filters
+    { path: '/list', icon: List, label: 'Lista' },
+    { path: '/done', icon: CheckCircle, label: 'Färdiga' },
+    { path: '/stats', icon: BarChart2, label: 'Statistik' },
   ];
 
   const subMenuItems = [
-    { path: '/workflow', icon: Settings, label: 'Workflow' },
-    { path: '/materials', icon: Database, label: 'Materials' },
+    { path: '/workflow', icon: Settings, label: 'Faser' },
+    { path: '/materials', icon: Database, label: 'Material' },
     { path: '/export', icon: FileDown, label: 'Export' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];

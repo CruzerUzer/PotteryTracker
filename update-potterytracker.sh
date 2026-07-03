@@ -197,7 +197,7 @@ cd "$INSTALL_DIR/backend"
 if [ -f "package.json" ]; then
     npm install
     echo -e "${GREEN}Backend dependencies updated${NC}"
-    
+
     # Rebuild native modules
     echo -e "${YELLOW}Rebuilding native modules...${NC}"
     npm rebuild sqlite3 || {
@@ -210,6 +210,36 @@ if [ -f "package.json" ]; then
 else
     echo -e "${RED}Error: backend/package.json not found${NC}"
     exit 1
+fi
+echo ""
+
+# ============================================================================
+# STEP 4b: RUN DATABASE MIGRATIONS
+# ============================================================================
+
+echo -e "${YELLOW}Step 3b: Running database migrations...${NC}"
+cd "$INSTALL_DIR/backend"
+
+DB_PATH="${INSTALL_DIR}/backend/database/database.db"
+if [ -f "$DB_PATH" ]; then
+    # Run all migration files in order
+    MIGRATIONS=(
+        "database/migrate_multi_user.js"
+        "database/migrate_admin.js"
+        "database/migrate_add_done.js"
+        "database/migration-add-locations.js"
+    )
+    for migration in "${MIGRATIONS[@]}"; do
+        if [ -f "$migration" ]; then
+            echo -e "${YELLOW}  Running migration: $migration${NC}"
+            node "$migration" && echo -e "${GREEN}  ✓ $migration${NC}" || {
+                echo -e "${YELLOW}  ⚠ Migration skipped or already applied: $migration${NC}"
+            }
+        fi
+    done
+    echo -e "${GREEN}Migrations complete${NC}"
+else
+    echo -e "${YELLOW}No database found, skipping migrations (fresh install)${NC}"
 fi
 echo ""
 

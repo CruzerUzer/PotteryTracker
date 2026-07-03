@@ -29,27 +29,25 @@ const storage = multer.diskStorage({
 });
 
 // File filter - only images (including HEIC/HEIF from iOS devices)
-// Mobile browsers often send generic or incorrect MIME types, so we check extension OR mimetype
+// Both extension AND mimetype must be acceptable to prevent disguised file uploads
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp|heic|heif/;
+  const allowedExtensions = /^(jpeg|jpg|png|gif|webp|heic|heif)$/i;
   const allowedMimeTypes = /^image\/(jpeg|jpg|png|gif|webp|heic|heif|x-png|pjpeg)$/i;
-  const extname = allowedTypes.test(file.originalname.toLowerCase());
-  // Accept standard MIME types OR if extension matches and MIME type starts with "image/"
-  // This handles mobile browsers that may send generic "image/" MIME types
-  const mimetype = allowedMimeTypes.test(file.mimetype) || 
-                   (file.mimetype && file.mimetype.startsWith('image/') && extname);
+
+  const ext = (file.originalname.split('.').pop() || '').toLowerCase();
+  const extnameOk = allowedExtensions.test(ext);
+  // Mobile browsers sometimes send 'image/heic' or generic types; accept if ext is valid too
+  const mimetypeOk = allowedMimeTypes.test(file.mimetype) ||
+    (file.mimetype && file.mimetype.startsWith('image/') && extnameOk);
 
   logger.debug('File filter check', {
     filename: file.originalname,
     mimetype: file.mimetype,
-    extname,
-    mimetypeMatch: allowedMimeTypes.test(file.mimetype || ''),
-    willAccept: extname || mimetype
+    extnameOk,
+    mimetypeOk,
   });
 
-  // Accept if extension matches OR mimetype is valid
-  // Mobile browsers often send generic MIME types, but we still check extension
-  if (extname || mimetype) {
+  if (extnameOk && mimetypeOk) {
     logger.debug('File accepted by filter', { filename: file.originalname, mimetype: file.mimetype });
     return cb(null, true);
   } else {

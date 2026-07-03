@@ -32,9 +32,14 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 app.set('trust proxy', 1);
 
 // Configure CORS with credentials
-const corsOrigin = process.env.CORS_ORIGIN === 'true' 
-  ? true 
-  : process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || true;
+// CORS_ORIGIN must be set in production — fallback only safe for local dev
+const corsOrigin = process.env.CORS_ORIGIN === 'true'
+  ? true
+  : process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+    : (NODE_ENV === 'production'
+      ? (() => { throw new Error('CORS_ORIGIN must be set in production'); })()
+      : 'http://localhost:3000');
 
 app.use(cors({
   origin: corsOrigin,
@@ -43,9 +48,18 @@ app.use(cors({
 
 // Security headers with Helmet
 app.use(helmet({
-  // Disable contentSecurityPolicy as it may interfere with frontend
-  contentSecurityPolicy: false,
-  // Allow cross-origin resource sharing
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // inline scripts needed by Vite build
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    }
+  },
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 

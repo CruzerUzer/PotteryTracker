@@ -46,3 +46,6 @@ logs/
 
 
 backend/archives/
+
+# Claude Code session files
+.claude/scheduled_tasks.lock

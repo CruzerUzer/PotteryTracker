@@ -44,14 +44,25 @@ router.post('/archive', async (req, res) => {
 router.get('/archive/download/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
-    
-    // Verify filename belongs to this user (filename starts with user_{userId}_)
-    if (!filename.startsWith(`user_${req.userId}_`)) {
+    const db = await getDb();
+
+    // Archives are named `<sanitizedUsername>_<timestamp>[.encrypted].zip`
+    // (see createUserArchive). Verify the file belongs to the requesting user
+    // by matching that exact, anchored pattern — this both enforces ownership
+    // and blocks path traversal (only <username>_<digits>.zip is accepted).
+    const user = await db.get('SELECT username FROM users WHERE id = ?', [req.userId]);
+    if (!user) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    const sanitizedUsername = user.username.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const escaped = sanitizedUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const validPattern = new RegExp(`^${escaped}_\\d+(\\.encrypted)?\\.zip$`);
+    if (!validPattern.test(filename)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const archivePath = getArchivePath( filename);
-    
+    const archivePath = getArchivePath(filename);
+
     if (!existsSync(archivePath)) {
       return res.status(404).json({ error: 'Archive file not found' });
     }

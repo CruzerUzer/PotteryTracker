@@ -238,8 +238,8 @@ export const exportAPI = {
       body: formData,
     });
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Import failed' }));
-      throw new Error(error.error || 'Import failed');
+      const error = await response.json().catch(() => ({ error: 'Importen misslyckades' }));
+      throw new Error(error.error || 'Importen misslyckades');
     }
     return response.json();
   },
@@ -323,8 +323,8 @@ export const adminAPI = {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Archive import failed' }));
-      throw new Error(error.error || 'Archive import failed');
+      const error = await response.json().catch(() => ({ error: 'Importen av arkivet misslyckades' }));
+      throw new Error(error.error || 'Importen av arkivet misslyckades');
     }
     return response.json();
   },

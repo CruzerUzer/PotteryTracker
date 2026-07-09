@@ -176,7 +176,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
 export async function importUserArchive(archivePath, password, targetUserId, db, uploadsDir) {
   // Check if file exists
   if (!existsSync(archivePath)) {
-    throw new Error('Archive file not found');
+    throw new Error('Arkivfilen kunde inte hittas');
   }
 
   // Read and decrypt if needed
@@ -191,7 +191,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
   let zipBuffer;
   if (isEncrypted) {
     if (!password || password.length === 0) {
-      throw new Error('Password required for encrypted archive');
+      throw new Error('Arkivet är krypterat – ange lösenordet');
     }
     try {
       zipBuffer = decryptData(fileBuffer, password);
@@ -205,9 +205,9 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
         hasPassword: !!password
       });
       if (decryptError.message.includes('auth') || decryptError.message.includes('tag') || decryptError.message.includes('Unsupported state')) {
-        throw new Error('Invalid password. The password provided is incorrect or the archive is corrupted.');
+        throw new Error('Fel lösenord. Lösenordet stämmer inte, eller så är arkivet skadat.');
       }
-      throw new Error(`Decryption failed: ${decryptError.message}`);
+      throw new Error(`Kunde inte dekryptera arkivet: ${decryptError.message}`);
     }
   } else {
     zipBuffer = fileBuffer;
@@ -222,7 +222,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
       isEncrypted,
       hasPassword: !!password
     });
-    throw new Error('Invalid archive format. The file may be corrupted or the password is incorrect.');
+    throw new Error('Ogiltigt arkivformat. Filen kan vara skadad eller lösenordet felaktigt.');
   }
 
   // Write temporary ZIP file
@@ -247,9 +247,9 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     } catch (unzipError) {
       // If unzipper fails, provide a helpful error message
       if (unzipError.message && unzipError.message.toLowerCase().includes('not') && unzipError.message.toLowerCase().includes('archive')) {
-        throw new Error('Invalid archive format. The file may be corrupted, the password is incorrect, or the file is not a valid ZIP archive.');
+        throw new Error('Ogiltigt arkivformat. Filen kan vara skadad, lösenordet felaktigt, eller så är det inte ett giltigt ZIP-arkiv.');
       }
-      throw new Error(`Failed to open archive: ${unzipError.message}`);
+      throw new Error(`Kunde inte öppna arkivet: ${unzipError.message}`);
     }
     
     // Read JSON files

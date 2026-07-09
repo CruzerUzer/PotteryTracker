@@ -78,7 +78,7 @@ router.get('/archive/download/:filename', async (req, res) => {
 router.post('/import', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ error: 'Ingen fil vald' });
     }
 
     const { password } = req.body; // Optional password (required if archive is encrypted)
@@ -91,7 +91,7 @@ router.post('/import', upload.single('file'), async (req, res) => {
     if (isEncrypted && !archivePassword) {
       // Cleanup uploaded file
       unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Password required for encrypted archive' });
+      return res.status(400).json({ error: 'Arkivet är krypterat – ange lösenordet' });
     }
 
     const importResult = await importUserArchive(req.file.path, archivePassword, req.userId, db, uploadsDir);
@@ -115,7 +115,7 @@ router.post('/import', upload.single('file'), async (req, res) => {
       }
     }
     logger.error('Error importing archive', { error: error.message, userId: req.userId });
-    res.status(500).json({ error: error.message || 'Failed to import archive' });
+    res.status(500).json({ error: error.message || 'Kunde inte återställa säkerhetskopian' });
   }
 });
 

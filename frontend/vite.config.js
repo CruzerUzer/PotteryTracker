@@ -24,12 +24,12 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 3000,
+    port: Number(process.env.FRONTEND_PORT) || 3000,
     // Tillåt åtkomst via Tailscale (t.ex. hemmalinux.taila35f69.ts.net)
     allowedHosts: ['.ts.net'],
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3001',
         changeOrigin: true,
         cookieDomainRewrite: '',
         cookiePathRewrite: '/',

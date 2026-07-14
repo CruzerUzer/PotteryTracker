@@ -21,6 +21,7 @@ import ThemeToggle from './components/ThemeToggle';
 import Logo from './components/Logo';
 import AdminPanel from './components/AdminPanel';
 import ResetPassword from './components/ResetPassword';
+import InstallPrompt from './components/InstallPrompt';
 const StatsDashboard = lazy(() => import('./components/StatsDashboard'));
 import {
   DropdownMenu,
@@ -245,6 +246,7 @@ function AppContent() {
         {user && <Footer />}
         {user && <BottomNav />}
       </div>
+      <InstallPrompt />
     </div>
   );
 }

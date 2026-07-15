@@ -2,6 +2,11 @@
 # PotteryTracker Update Script
 # This script updates an existing PotteryTracker installation
 # Run from any directory: bash update-potterytracker.sh
+#
+# ALLA frågor ställs först (nedan). Därefter körs resten oövervakat.
+# Ordning: backup → kod (git) → backend + DB → PM2-restart → FRONTEND (sist).
+# Frontend byggs på servern bara om du väljer det; annars deployar du den
+# separat efteråt med ./deploy-frontend.sh (bygg lokalt + rsync).
 
 set -e  # Exit on error
 
@@ -18,11 +23,8 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # ============================================================================
-# STEP 0: SAFETY CHECKS
+# SAFETY: kör INTE som root/sudo (skapar root-ägda filer som bryter appen)
 # ============================================================================
-
-# Kör INTE som root/sudo — det skapar root-ägda filer (uploads, databas,
-# node_modules) som gör att appen inte kan skriva, och PM2 körs per användare.
 if [ "$(id -u)" -eq 0 ]; then
     echo -e "${RED}Fel: Kör inte det här scriptet som root eller med sudo.${NC}"
     echo -e "${YELLOW}Det skapar root-ägda filer (uploads, databas, node_modules) som gör att appen inte kan skriva,${NC}"
@@ -32,9 +34,12 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 # ============================================================================
-# STEP 1: GET INSTALLATION DIRECTORY
+# ALLA FRÅGOR FÖRST — inget mer frågas efter det här blocket
 # ============================================================================
+echo -e "${BLUE}Svara på frågorna nedan. Sedan körs allt klart utan fler frågor.${NC}"
+echo ""
 
+# --- Installationskatalog ---
 read -p "PotteryTracker installation directory (default: /srv/PotteryTracker): " INSTALL_DIR
 INSTALL_DIR="${INSTALL_DIR:-/srv/PotteryTracker}"
 
@@ -52,8 +57,7 @@ if [ ! -d "$INSTALL_DIR/.git" ]; then
     fi
 fi
 
-# Varna vid blandat ägande — en klassisk orsak till "permission denied".
-# Kollar bara nyckelkataloger (snabbt, undviker att skanna hela node_modules).
+# --- Varna vid blandat ägande (klassisk orsak till "permission denied") ---
 CURRENT_USER="$(id -un)"
 MIXED=""
 for d in "$INSTALL_DIR" "$INSTALL_DIR/backend" "$INSTALL_DIR/backend/node_modules" \
@@ -73,37 +77,57 @@ if [ -n "$MIXED" ]; then
     fi
 fi
 
-echo ""
-
-# ============================================================================
-# STEP 2: BACKUP CURRENT STATE
-# ============================================================================
-
-echo -e "${YELLOW}Step 1: Creating backup...${NC}"
-# Backuper hamnar i en dedikerad, användarägd katalog — INTE i föräldern till
-# installationen (ofta /srv, ägd av annan användare → permission denied).
-# Går att styra med miljövariabeln BACKUP_ROOT.
-BACKUP_ROOT="${BACKUP_ROOT:-/srv/potterytracker-backups}"
-BACKUP_DIR="${BACKUP_ROOT}/$(basename "$INSTALL_DIR")_backup_$(date +%Y%m%d_%H%M%S)"
-echo -e "${YELLOW}Backing up to: $BACKUP_DIR${NC}"
-
-# Get PM2 process name if possible
+# --- Upptäck PM2-namn och nuvarande branch (för defaultsvar) ---
 cd "$INSTALL_DIR"
 PM2_NAME="pottery-api"
-if [ -f "package.json" ]; then
-    # Try to detect PM2 name from existing process
+if command -v pm2 &> /dev/null; then
     PM2_LIST=$(pm2 list 2>/dev/null | grep -o "pottery[^ ]*" | head -1 || true)
-    if [ -n "$PM2_LIST" ]; then
-        PM2_NAME="$PM2_LIST"
-    fi
+    [ -n "$PM2_LIST" ] && PM2_NAME="$PM2_LIST"
+fi
+if [ -d ".git" ]; then
+    git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
+    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+else
+    CURRENT_BRANCH="main"
 fi
 
-# Ask if user wants to backup
+# --- Backup? ---
 read -p "Create backup before updating? (y/n, default: y): " CREATE_BACKUP
 CREATE_BACKUP="${CREATE_BACKUP:-y}"
 
+# --- Branch? ---
+read -p "Branch to update to (default: $CURRENT_BRANCH): " UPDATE_BRANCH
+UPDATE_BRANCH="${UPDATE_BRANCH:-$CURRENT_BRANCH}"
+
+# --- Bygg frontend på servern? (default NEJ) ---
+echo ""
+echo -e "${BLUE}Frontend kan byggas HÄR på servern, eller hoppas över och deployas${NC}"
+echo -e "${BLUE}separat efteråt med ./deploy-frontend.sh (bygg lokalt + rsync).${NC}"
+echo -e "${BLUE}Servern har lite RAM — bygg lokalt + rsync är säkrast. Default: NEJ.${NC}"
+read -p "Bygg frontend på servern nu? (j/N): " BUILD_FRONTEND_ANS
+case "$BUILD_FRONTEND_ANS" in
+    j|J|y|Y) BUILD_FRONTEND="yes" ;;
+    *)       BUILD_FRONTEND="no" ;;
+esac
+
+echo ""
+echo -e "${GREEN}Tack — inga fler frågor. Kör:${NC}"
+echo "  Katalog:        $INSTALL_DIR"
+echo "  Branch:         $UPDATE_BRANCH"
+echo "  Backup:         $CREATE_BACKUP"
+echo "  Bygg frontend:  $([ "$BUILD_FRONTEND" = "yes" ] && echo "JA (på servern)" || echo "NEJ (deploya separat efteråt)")"
+echo ""
+
+# ============================================================================
+# STEG 1: BACKUP
+# ============================================================================
+echo -e "${YELLOW}Steg 1: Skapar backup...${NC}"
+# Backuper hamnar i en dedikerad, användarägd katalog (styr med BACKUP_ROOT).
+BACKUP_ROOT="${BACKUP_ROOT:-/srv/potterytracker-backups}"
+BACKUP_DIR="${BACKUP_ROOT}/$(basename "$INSTALL_DIR")_backup_$(date +%Y%m%d_%H%M%S)"
+
 if [ "$CREATE_BACKUP" = "y" ]; then
-    # Se till att backup-roten finns och är skrivbar för den som kör
+    echo -e "${YELLOW}Backar upp till: $BACKUP_DIR${NC}"
     if ! mkdir -p "$BACKUP_ROOT" 2>/dev/null || [ ! -w "$BACKUP_ROOT" ]; then
         echo -e "${YELLOW}Warning: kan inte skriva till $BACKUP_ROOT (behörighet?).${NC}"
         echo -e "${YELLOW}Skapa den en gång med:${NC}"
@@ -111,165 +135,111 @@ if [ "$CREATE_BACKUP" = "y" ]; then
         echo -e "${YELLOW}Hoppar över backup den här gången.${NC}"
         BACKUP_DIR=""
     else
-        # exkludera node_modules/dist/.git för snabbhet; uploads/archives/db bevaras
         rsync -a --exclude 'node_modules' --exclude 'dist' --exclude '.git' "$INSTALL_DIR/" "$BACKUP_DIR/" 2>/dev/null || {
-            echo -e "${YELLOW}Warning: rsync not available, using cp (slower)...${NC}"
+            echo -e "${YELLOW}Warning: rsync saknas, använder cp (långsammare)...${NC}"
             mkdir -p "$BACKUP_DIR"
             cp -r "$INSTALL_DIR/." "$BACKUP_DIR/"
             rm -rf "$BACKUP_DIR/node_modules" "$BACKUP_DIR/dist" "$BACKUP_DIR/.git" 2>/dev/null || true
         }
-        echo -e "${GREEN}Backup created at: $BACKUP_DIR${NC}"
-        echo -e "${YELLOW}Note: Archives and uploads directories are preserved in the installation${NC}"
+        echo -e "${GREEN}Backup skapad: $BACKUP_DIR${NC}"
+        echo -e "${YELLOW}Obs: archives/ och uploads/ bevaras i installationen${NC}"
     fi
 else
+    echo -e "${YELLOW}Hoppar över backup (valdes bort).${NC}"
     BACKUP_DIR=""
 fi
 echo ""
 
 # ============================================================================
-# STEP 3: UPDATE CODE
+# STEG 2: UPPDATERA KOD (git)
 # ============================================================================
-
-echo -e "${YELLOW}Step 2: Updating code from repository...${NC}"
+echo -e "${YELLOW}Steg 2: Uppdaterar kod från repot...${NC}"
 cd "$INSTALL_DIR"
 
-# Fix Git safe directory issue (common when repo is owned by different user)
+# Backup av datakataloger före git-operationer (archives, uploads, database)
+ARCHIVES_BACKUP=""; UPLOADS_BACKUP=""; DATABASE_BACKUP=""
 if [ -d ".git" ]; then
-    echo -e "${YELLOW}Configuring Git safe directory...${NC}"
-    git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
-fi
-
-# Check current branch
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
-echo -e "${BLUE}Current branch: $CURRENT_BRANCH${NC}"
-
-# Ask which branch to update to
-read -p "Branch to update to (default: $CURRENT_BRANCH): " UPDATE_BRANCH
-UPDATE_BRANCH="${UPDATE_BRANCH:-$CURRENT_BRANCH}"
-
-# Backup data directories before git operations (archives, uploads, database)
-ARCHIVES_BACKUP=""
-UPLOADS_BACKUP=""
-DATABASE_BACKUP=""
-if [ -d ".git" ]; then
-    # Create temporary backups of user data directories
     if [ -d "backend/archives" ] && [ "$(ls -A backend/archives 2>/dev/null)" ]; then
-        ARCHIVES_BACKUP=$(mktemp -d)
-        cp -r backend/archives/* "$ARCHIVES_BACKUP/" 2>/dev/null || true
-        echo -e "${YELLOW}Backed up archives directory${NC}"
+        ARCHIVES_BACKUP=$(mktemp -d); cp -r backend/archives/* "$ARCHIVES_BACKUP/" 2>/dev/null || true
+        echo -e "${YELLOW}Backade upp archives-katalogen${NC}"
     fi
     if [ -d "backend/uploads" ] && [ "$(ls -A backend/uploads 2>/dev/null)" ]; then
-        UPLOADS_BACKUP=$(mktemp -d)
-        cp -r backend/uploads/* "$UPLOADS_BACKUP/" 2>/dev/null || true
-        echo -e "${YELLOW}Backed up uploads directory${NC}"
+        UPLOADS_BACKUP=$(mktemp -d); cp -r backend/uploads/* "$UPLOADS_BACKUP/" 2>/dev/null || true
+        echo -e "${YELLOW}Backade upp uploads-katalogen${NC}"
     fi
     if [ -d "backend/database" ] && [ -f "backend/database/database.db" ]; then
-        DATABASE_BACKUP=$(mktemp)
-        cp "backend/database/database.db" "$DATABASE_BACKUP" 2>/dev/null || true
-        echo -e "${YELLOW}Backed up database${NC}"
+        DATABASE_BACKUP=$(mktemp); cp "backend/database/database.db" "$DATABASE_BACKUP" 2>/dev/null || true
+        echo -e "${YELLOW}Backade upp databasen${NC}"
     fi
-fi
 
-# Stash any local changes (excluding untracked files to preserve user data)
-if [ -d ".git" ]; then
-    echo -e "${YELLOW}Stashing local changes (preserving user data directories)...${NC}"
-    # Don't use -u flag to avoid stashing untracked files (user data)
+    echo -e "${YELLOW}Stashar lokala ändringar (bevarar datakataloger)...${NC}"
     git stash push -m "Pre-update stash $(date +%Y%m%d_%H%M%S)" || {
-        # If stash fails, check if there are actually changes
         if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-            echo -e "${YELLOW}Warning: Could not stash changes, attempting to continue...${NC}"
+            echo -e "${YELLOW}Warning: Kunde inte stasha, försöker fortsätta...${NC}"
         fi
     }
-    
-    # Fetch latest
-    echo -e "${YELLOW}Fetching latest changes...${NC}"
+
+    echo -e "${YELLOW}Hämtar senaste...${NC}"
     git fetch origin
-    
-    # Checkout and pull
-    echo -e "${YELLOW}Updating to latest code...${NC}"
-    # Try to checkout, handling case where branch doesn't exist locally
+
+    echo -e "${YELLOW}Uppdaterar till senaste koden...${NC}"
     if git checkout "$UPDATE_BRANCH" 2>/dev/null; then
-        # Branch exists locally, pull updates
         git pull origin "$UPDATE_BRANCH" || {
-            echo -e "${RED}Error: Failed to pull latest changes${NC}"
-            echo -e "${YELLOW}You may need to resolve conflicts manually${NC}"
+            echo -e "${RED}Error: Kunde inte pulla senaste ändringar${NC}"
+            echo -e "${YELLOW}Du kan behöva lösa konflikter manuellt${NC}"
             exit 1
         }
     else
-        # Branch doesn't exist locally, create tracking branch
         if git show-ref --verify --quiet refs/remotes/origin/"$UPDATE_BRANCH"; then
             git checkout -b "$UPDATE_BRANCH" "origin/$UPDATE_BRANCH" || {
-                echo -e "${RED}Error: Failed to checkout branch $UPDATE_BRANCH${NC}"
-                exit 1
-            }
+                echo -e "${RED}Error: Kunde inte checka ut branch $UPDATE_BRANCH${NC}"; exit 1; }
         else
-            echo -e "${RED}Error: Branch $UPDATE_BRANCH does not exist on remote${NC}"
-            exit 1
+            echo -e "${RED}Error: Branch $UPDATE_BRANCH finns inte på remote${NC}"; exit 1
         fi
     fi
-    
-    # Restore user data directories
+
+    # Återställ datakataloger
     if [ -n "$ARCHIVES_BACKUP" ] && [ -d "$ARCHIVES_BACKUP" ]; then
-        mkdir -p backend/archives
-        cp -r "$ARCHIVES_BACKUP"/* backend/archives/ 2>/dev/null || true
-        rm -rf "$ARCHIVES_BACKUP"
-        echo -e "${GREEN}Restored archives directory${NC}"
+        mkdir -p backend/archives; cp -r "$ARCHIVES_BACKUP"/* backend/archives/ 2>/dev/null || true
+        rm -rf "$ARCHIVES_BACKUP"; echo -e "${GREEN}Återställde archives-katalogen${NC}"
     fi
     if [ -n "$UPLOADS_BACKUP" ] && [ -d "$UPLOADS_BACKUP" ]; then
-        mkdir -p backend/uploads
-        cp -r "$UPLOADS_BACKUP"/* backend/uploads/ 2>/dev/null || true
-        rm -rf "$UPLOADS_BACKUP"
-        echo -e "${GREEN}Restored uploads directory${NC}"
+        mkdir -p backend/uploads; cp -r "$UPLOADS_BACKUP"/* backend/uploads/ 2>/dev/null || true
+        rm -rf "$UPLOADS_BACKUP"; echo -e "${GREEN}Återställde uploads-katalogen${NC}"
     fi
     if [ -n "$DATABASE_BACKUP" ] && [ -f "$DATABASE_BACKUP" ]; then
-        mkdir -p backend/database
-        cp "$DATABASE_BACKUP" backend/database/database.db 2>/dev/null || true
-        rm -f "$DATABASE_BACKUP"
-        echo -e "${GREEN}Restored database${NC}"
+        mkdir -p backend/database; cp "$DATABASE_BACKUP" backend/database/database.db 2>/dev/null || true
+        rm -f "$DATABASE_BACKUP"; echo -e "${GREEN}Återställde databasen${NC}"
     fi
-    
-    echo -e "${GREEN}Code updated successfully${NC}"
+    echo -e "${GREEN}Koden uppdaterad${NC}"
 else
-    echo -e "${YELLOW}Not a git repository, skipping code update${NC}"
+    echo -e "${YELLOW}Inte ett git-repo, hoppar över koduppdatering${NC}"
 fi
 echo ""
 
 # ============================================================================
-# STEP 4: UPDATE BACKEND DEPENDENCIES
+# STEG 3: BACKEND-BEROENDEN + MIGRATIONER
 # ============================================================================
-
-echo -e "${YELLOW}Step 3: Updating backend dependencies...${NC}"
+echo -e "${YELLOW}Steg 3: Uppdaterar backend-beroenden...${NC}"
 cd "$INSTALL_DIR/backend"
-
 if [ -f "package.json" ]; then
     npm install
-    echo -e "${GREEN}Backend dependencies updated${NC}"
-
-    # Rebuild native modules
-    echo -e "${YELLOW}Rebuilding native modules...${NC}"
+    echo -e "${GREEN}Backend-beroenden uppdaterade${NC}"
+    echo -e "${YELLOW}Bygger om native-moduler...${NC}"
     npm rebuild sqlite3 || {
-        echo -e "${YELLOW}Warning: sqlite3 rebuild failed, trying clean install...${NC}"
+        echo -e "${YELLOW}Warning: sqlite3-rebuild misslyckades, provar ren install...${NC}"
         rm -rf node_modules/sqlite3
         npm install sqlite3 --build-from-source || {
-            echo -e "${YELLOW}Warning: Failed to rebuild sqlite3, continuing anyway...${NC}"
-        }
+            echo -e "${YELLOW}Warning: Kunde inte bygga om sqlite3, fortsätter ändå...${NC}"; }
     }
 else
-    echo -e "${RED}Error: backend/package.json not found${NC}"
-    exit 1
+    echo -e "${RED}Error: backend/package.json saknas${NC}"; exit 1
 fi
 echo ""
 
-# ============================================================================
-# STEP 4b: RUN DATABASE MIGRATIONS
-# ============================================================================
-
-echo -e "${YELLOW}Step 3b: Running database migrations...${NC}"
-cd "$INSTALL_DIR/backend"
-
+echo -e "${YELLOW}Steg 3b: Kör databasmigrationer...${NC}"
 DB_PATH="${INSTALL_DIR}/backend/database/database.db"
 if [ -f "$DB_PATH" ]; then
-    # Run all migration files in order
     MIGRATIONS=(
         "database/migrate_multi_user.js"
         "database/migrate_admin.js"
@@ -278,196 +248,142 @@ if [ -f "$DB_PATH" ]; then
     )
     for migration in "${MIGRATIONS[@]}"; do
         if [ -f "$migration" ]; then
-            echo -e "${YELLOW}  Running migration: $migration${NC}"
-            node "$migration" && echo -e "${GREEN}  ✓ $migration${NC}" || {
-                echo -e "${YELLOW}  ⚠ Migration skipped or already applied: $migration${NC}"
-            }
+            echo -e "${YELLOW}  Kör migration: $migration${NC}"
+            node "$migration" && echo -e "${GREEN}  ✓ $migration${NC}" || \
+                echo -e "${YELLOW}  ⚠ Migration överhoppad eller redan applicerad: $migration${NC}"
         fi
     done
-    echo -e "${GREEN}Migrations complete${NC}"
+    echo -e "${GREEN}Migrationer klara${NC}"
 else
-    echo -e "${YELLOW}No database found, skipping migrations (fresh install)${NC}"
+    echo -e "${YELLOW}Ingen databas hittad, hoppar över migrationer (ny install)${NC}"
 fi
 echo ""
 
 # ============================================================================
-# STEP 5: UPDATE FRONTEND DEPENDENCIES
+# STEG 4: STARTA OM BACKEND (PM2) — före frontend, så backend+DB är klara först
 # ============================================================================
-
-echo -e "${YELLOW}Step 4: Updating frontend dependencies...${NC}"
-cd "$INSTALL_DIR/frontend"
-
-if [ -f "package.json" ]; then
-    npm install
-    echo -e "${GREEN}Frontend dependencies updated${NC}"
-    
-    # Generate version.js if script exists
-    if [ -f "generate-version.js" ]; then
-        echo -e "${YELLOW}Generating version.js...${NC}"
-        node generate-version.js || true
-    fi
-else
-    echo -e "${RED}Error: frontend/package.json not found${NC}"
-    exit 1
-fi
-echo ""
-
-# ============================================================================
-# STEP 6: BUILD FRONTEND
-# ============================================================================
-
-echo -e "${YELLOW}Step 5: Building frontend for production...${NC}"
-cd "$INSTALL_DIR/frontend"
-
-export PATH="$PWD/node_modules/.bin:$PATH"
-chmod +x node_modules/.bin/vite 2>/dev/null || true
-
-npm run build || {
-    echo -e "${RED}Error: Frontend build failed${NC}"
-    echo -e "${YELLOW}You may need to fix build errors before continuing${NC}"
-    read -p "Continue anyway? (y/n): " CONTINUE
-    if [ "$CONTINUE" != "y" ] && [ "$CONTINUE" != "Y" ]; then
-        exit 1
-    fi
-}
-
-if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
-    echo -e "${RED}Error: Frontend build output not found${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}Frontend built successfully${NC}"
-echo ""
-
-# ============================================================================
-# STEP 7: RESTART SERVICES
-# ============================================================================
-
-echo -e "${YELLOW}Step 6: Restarting services...${NC}"
-
-# Restart backend with PM2
+echo -e "${YELLOW}Steg 4: Startar om backend (PM2)...${NC}"
 if command -v pm2 &> /dev/null; then
     if pm2 list | grep -q "$PM2_NAME"; then
-        echo -e "${YELLOW}Restarting PM2 process: $PM2_NAME${NC}"
-        pm2 restart "$PM2_NAME" || {
-            echo -e "${YELLOW}Warning: PM2 restart failed, trying reload...${NC}"
-            pm2 reload "$PM2_NAME" || true
-        }
+        echo -e "${YELLOW}Startar om PM2-processen: $PM2_NAME${NC}"
+        pm2 restart "$PM2_NAME" || { echo -e "${YELLOW}Warning: restart misslyckades, provar reload...${NC}"; pm2 reload "$PM2_NAME" || true; }
         pm2 save
-        echo -e "${GREEN}Backend restarted${NC}"
+        echo -e "${GREEN}Backend omstartad${NC}"
     else
-        echo -e "${YELLOW}PM2 process '$PM2_NAME' not found, starting it...${NC}"
-        cd "$INSTALL_DIR/backend"
-        pm2 start server.js --name "$PM2_NAME" || true
-        pm2 save
+        echo -e "${YELLOW}PM2-processen '$PM2_NAME' saknas, startar den...${NC}"
+        cd "$INSTALL_DIR/backend"; pm2 start server.js --name "$PM2_NAME" || true; pm2 save
     fi
 else
-    echo -e "${YELLOW}PM2 not found, skipping backend restart${NC}"
+    echo -e "${YELLOW}PM2 saknas, hoppar över backend-omstart${NC}"
 fi
-
-# Restart Nginx
-if command -v nginx &> /dev/null; then
-    echo -e "${YELLOW}Testing Nginx configuration...${NC}"
-    if sudo nginx -t; then
-        sudo service nginx reload || sudo systemctl reload nginx
-        echo -e "${GREEN}Nginx reloaded${NC}"
-    else
-        echo -e "${YELLOW}Warning: Nginx configuration test failed${NC}"
-        echo -e "${YELLOW}Nginx not reloaded, please check configuration${NC}"
-    fi
-else
-    echo -e "${YELLOW}Nginx not found, skipping${NC}"
-fi
-
 echo ""
 
 # ============================================================================
-# STEP 8: VERIFICATION
+# STEG 5: FRONTEND (SIST) — bygg på servern ELLER hoppa över
 # ============================================================================
-
-echo -e "${YELLOW}Step 7: Verifying update...${NC}"
-
-# Check PM2 status
-if command -v pm2 &> /dev/null; then
-    if pm2 list | grep -q "$PM2_NAME"; then
-        PM2_STATUS=$(pm2 jlist | grep -o "\"name\":\"$PM2_NAME\".*\"pm2_env\":{\"status\":\"[^\"]*\"" | grep -o "\"status\":\"[^\"]*\"" | cut -d'"' -f4)
-        if [ "$PM2_STATUS" = "online" ]; then
-            echo -e "${GREEN}✓ PM2 process running${NC}"
+FRONTEND_STATUS="skipped"
+if [ "$BUILD_FRONTEND" = "yes" ]; then
+    echo -e "${YELLOW}Steg 5: Bygger frontend på servern...${NC}"
+    cd "$INSTALL_DIR/frontend"
+    if [ -f "package.json" ]; then
+        npm install
+        export PATH="$PWD/node_modules/.bin:$PATH"
+        chmod +x node_modules/.bin/vite 2>/dev/null || true
+        if npm run build && [ -f "dist/index.html" ]; then
+            FRONTEND_STATUS="built"
+            echo -e "${GREEN}Frontend byggd${NC}"
         else
-            echo -e "${YELLOW}⚠ PM2 process status: $PM2_STATUS${NC}"
+            FRONTEND_STATUS="failed"
+            echo ""
+            echo -e "${RED}✗ Frontend-bygget MISSLYCKADES (troligen slut på minne — 'Killed').${NC}"
+            echo -e "${YELLOW}  Backend + databas är redan uppdaterade och igång.${NC}"
+            echo -e "${YELLOW}  Bygg frontend på en annan maskin och deploya den så här:${NC}"
+            echo -e "${YELLOW}      ./deploy-frontend.sh${NC}"
         fi
     else
-        echo -e "${YELLOW}⚠ PM2 process not found${NC}"
+        FRONTEND_STATUS="failed"
+        echo -e "${RED}Error: frontend/package.json saknas${NC}"
     fi
+else
+    echo ""
+    echo -e "${BLUE}------------------------------------------------------------${NC}"
+    echo -e "${YELLOW}Steg 5: Frontend byggdes INTE (du svarade nej).${NC}"
+    echo -e "${YELLOW}Prod kör fortfarande den GAMLA frontenden tills du deployar den.${NC}"
+    echo -e "${GREEN}  → Kör detta från en dev-maskin för att rulla ut frontenden:${NC}"
+    echo -e "${GREEN}      ./deploy-frontend.sh${NC}"
+    echo -e "${BLUE}------------------------------------------------------------${NC}"
+fi
+echo ""
+
+# ============================================================================
+# STEG 6: NGINX
+# ============================================================================
+echo -e "${YELLOW}Steg 6: Laddar om Nginx...${NC}"
+if command -v nginx &> /dev/null; then
+    if sudo nginx -t; then
+        sudo service nginx reload || sudo systemctl reload nginx
+        echo -e "${GREEN}Nginx omladdad${NC}"
+    else
+        echo -e "${YELLOW}Warning: Nginx-konfigtest misslyckades — laddade inte om${NC}"
+    fi
+else
+    echo -e "${YELLOW}Nginx saknas, hoppar över${NC}"
+fi
+echo ""
+
+# ============================================================================
+# STEG 7: VERIFIERING
+# ============================================================================
+echo -e "${YELLOW}Steg 7: Verifierar...${NC}"
+if command -v pm2 &> /dev/null && pm2 list | grep -q "$PM2_NAME"; then
+    PM2_STATUS=$(pm2 jlist | grep -o "\"name\":\"$PM2_NAME\".*\"pm2_env\":{\"status\":\"[^\"]*\"" | grep -o "\"status\":\"[^\"]*\"" | cut -d'"' -f4)
+    [ "$PM2_STATUS" = "online" ] && echo -e "${GREEN}✓ PM2-processen kör${NC}" || echo -e "${YELLOW}⚠ PM2-status: $PM2_STATUS${NC}"
 fi
 
-# Check backend API (if we know the port)
 if [ -f "$INSTALL_DIR/backend/.env" ]; then
     BACKEND_PORT=$(grep "^PORT=" "$INSTALL_DIR/backend/.env" | cut -d'=' -f2 | tr -d '"' || echo "3001")
 else
     BACKEND_PORT="3001"
 fi
-
 sleep 2
 if curl -s "http://localhost:$BACKEND_PORT/api/version" > /dev/null; then
-    echo -e "${GREEN}✓ Backend API responding${NC}"
+    echo -e "${GREEN}✓ Backend-API svarar${NC}"
 else
-    echo -e "${YELLOW}⚠ Backend API not responding (may need a moment to start)${NC}"
+    echo -e "${YELLOW}⚠ Backend-API svarar inte (kan behöva en stund)${NC}"
 fi
 
-# Check Nginx
-if command -v nginx &> /dev/null; then
-    if sudo service nginx status > /dev/null 2>&1 || sudo systemctl is-active --quiet nginx; then
-        echo -e "${GREEN}✓ Nginx running${NC}"
-    else
-        echo -e "${YELLOW}⚠ Nginx not running${NC}"
-    fi
-fi
-
-# Check frontend files
-if [ -f "$INSTALL_DIR/frontend/dist/index.html" ]; then
-    echo -e "${GREEN}✓ Frontend build files present${NC}"
-else
-    echo -e "${RED}✗ Frontend build files not found${NC}"
-fi
-
+case "$FRONTEND_STATUS" in
+    built)   echo -e "${GREEN}✓ Frontend byggd på servern${NC}" ;;
+    skipped) echo -e "${YELLOW}ℹ Frontend byggdes inte denna körning — deploya separat (./deploy-frontend.sh)${NC}" ;;
+    failed)  echo -e "${RED}✗ Frontend-bygget misslyckades — deploya separat (./deploy-frontend.sh)${NC}" ;;
+esac
 echo ""
 
 # ============================================================================
-# SUMMARY
+# SAMMANFATTNING
 # ============================================================================
+echo -e "${BLUE}========================================${NC}"
+echo -e "${GREEN}Uppdatering klar!${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo ""
+echo "  Katalog:  $INSTALL_DIR"
+echo "  Branch:   $UPDATE_BRANCH"
+[ -n "$BACKUP_DIR" ] && echo "  Backup:   $BACKUP_DIR"
+echo ""
 
-echo -e "${BLUE}========================================${NC}"
-echo -e "${GREEN}Update completed!${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo ""
-echo -e "${YELLOW}Update details:${NC}"
-echo "  Installation directory: $INSTALL_DIR"
-echo "  Updated branch: $UPDATE_BRANCH"
-if [ -n "$BACKUP_DIR" ]; then
-    echo "  Backup location: $BACKUP_DIR"
-fi
-echo ""
-echo -e "${YELLOW}Access your application:${NC}"
-echo "  Local: http://localhost"
-echo "  Network: http://$(hostname -I | awk '{print $1}' 2>/dev/null || echo 'your-server-ip')"
-echo ""
-echo -e "${YELLOW}Useful commands:${NC}"
-echo "  Check PM2 status: pm2 status"
-echo "  View PM2 logs: pm2 logs $PM2_NAME"
-echo "  Restart backend: pm2 restart $PM2_NAME"
-echo "  Restart Nginx: sudo service nginx restart"
-echo ""
-if [ -n "$BACKUP_DIR" ]; then
-    echo -e "${YELLOW}Backup location:${NC}"
-    echo "  $BACKUP_DIR"
-    echo "  (You can remove this after verifying the update works correctly)"
+if [ "$FRONTEND_STATUS" != "built" ]; then
+    echo -e "${RED}========================================${NC}"
+    echo -e "${RED}  VIKTIGT: FRONTENDEN ÄR INTE UTRULLAD${NC}"
+    echo -e "${RED}========================================${NC}"
+    echo -e "${YELLOW}Backend + databas är uppdaterade, men prod visar fortfarande den${NC}"
+    echo -e "${YELLOW}GAMLA frontenden. Kör detta från en dev-maskin för att slutföra:${NC}"
+    echo -e "${GREEN}    ./deploy-frontend.sh${NC}"
     echo ""
 fi
-echo -e "${YELLOW}If you encounter issues:${NC}"
-echo "1. Check PM2 logs: pm2 logs $PM2_NAME"
-echo "2. Check Nginx logs: sudo tail -f /var/log/nginx/error.log"
-echo "3. Review the backup if needed: $BACKUP_DIR"
-echo "4. Restore stashed changes: cd $INSTALL_DIR && git stash list"
-echo ""
 
+echo -e "${YELLOW}Om något strular:${NC}"
+echo "  pm2 logs $PM2_NAME"
+echo "  sudo tail -f /var/log/nginx/error.log"
+[ -n "$BACKUP_DIR" ] && echo "  Backup: $BACKUP_DIR"
+echo "  git stash list   (i $INSTALL_DIR)"
+echo ""

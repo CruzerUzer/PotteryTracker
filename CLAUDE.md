@@ -128,11 +128,25 @@ also need `git pull` + DB migrations on prod, run those steps (or the update
 script) and deploy the frontend this way.
 
 ### 2. Manual update script on the server
-The operator may still run `bash /srv/PotteryTracker/update-potterytracker.sh` on
-prod as `ubuntu` (never `sudo`; the script has a root guard). Answer `y` to the
-backup prompt — backups go to the user-owned `/srv/potterytracker-backups`. The
-2 GB swap lets the in-place `vite build` finish without OOM. If a build is ever
-killed anyway, recover with path 1 (build locally + rsync).
+The operator may run `bash /srv/PotteryTracker/update-potterytracker.sh` on prod as
+`ubuntu` (never `sudo`; the script has a root guard). The script asks **all its
+questions up front** (install dir, backup, branch, and *"build frontend on the
+server now?"* — default **N**), then runs unattended in this order:
+**backup → git pull → backend deps → DB migrations → PM2 restart → frontend (last)
+→ Nginx**. Backend and DB go live first; the frontend flips last.
+
+- Answer `y` to backup (goes to the user-owned `/srv/potterytracker-backups`).
+- The **"build frontend on the server?"** prompt defaults to **N**: it skips the
+  build and prints a clear reminder to run `./deploy-frontend.sh` from a dev
+  machine. Answer `j`/`y` only to build in place (the 2 GB swap makes that
+  OOM-safe, but local build + rsync is still preferred).
+
+**Deploy ordering:** backend/DB first, frontend last works for ~all additive,
+backward-compatible changes (new frontend only goes live once the backend it
+needs is ready). The exception is **breaking** backend changes (an endpoint the
+*old* frontend still uses is removed/renamed): reordering can't make those
+zero-downtime — deploy a backward-compatible backend first, then the frontend,
+then remove the old path (or accept a brief maintenance window).
 
 `ubuntu` has passwordless sudo on prod. Do **not** run the update script or npm
 builds as root/sudo — it creates root-owned files that break the app.

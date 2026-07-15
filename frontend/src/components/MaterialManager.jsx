@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Textarea } from './ui/textarea';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
 function MaterialManager() {
@@ -12,7 +13,7 @@ function MaterialManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', type: 'clay' });
+  const [formData, setFormData] = useState({ name: '', type: 'clay', description: '' });
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ function MaterialManager() {
       } else {
         await materialsAPI.create(formData);
       }
-      setFormData({ name: '', type: 'clay' });
+      setFormData({ name: '', type: 'clay', description: '' });
       setEditingId(null);
       setShowForm(false);
       loadMaterials();
@@ -52,7 +53,7 @@ function MaterialManager() {
   };
 
   const handleEdit = (material) => {
-    setFormData({ name: material.name, type: material.type });
+    setFormData({ name: material.name, type: material.type, description: material.description || '' });
     setEditingId(material.id);
     setShowForm(true);
   };
@@ -71,7 +72,7 @@ function MaterialManager() {
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', type: 'clay' });
+    setFormData({ name: '', type: 'clay', description: '' });
     setEditingId(null);
     setShowForm(false);
     setError(null);
@@ -101,7 +102,7 @@ function MaterialManager() {
           onClick={() => {
             setShowForm(true);
             setEditingId(null);
-            setFormData({ name: '', type: 'clay' });
+            setFormData({ name: '', type: 'clay', description: '' });
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -145,6 +146,16 @@ function MaterialManager() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="material-description">Beskrivning</Label>
+                <Textarea
+                  id="material-description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={4}
+                  placeholder="Valfritt – t.ex. tillverkare, bränntemperatur, färg, hur den beter sig…"
+                />
+              </div>
               <div className="flex gap-2 pt-4">
                 <Button type="submit">
                   {editingId ? 'Spara' : 'Skapa'}
@@ -178,10 +189,17 @@ function MaterialManager() {
                       {typeMaterials.map((material) => (
                         <div
                           key={material.id}
-                          className="flex items-center justify-between p-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                          className="flex items-start justify-between gap-3 p-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] transition-colors"
                         >
-                          <span className="font-medium">{material.name}</span>
-                          <div className="flex gap-2">
+                          <div className="min-w-0">
+                            <div className="font-medium">{material.name}</div>
+                            {material.description && (
+                              <p className="mt-1 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
+                                {material.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-2 shrink-0">
                             <Button
                               variant="secondary"
                               size="sm"

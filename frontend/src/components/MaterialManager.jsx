@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 function MaterialManager() {
   const [materials, setMaterials] = useState([]);
@@ -65,6 +65,10 @@ function MaterialManager() {
 
     try {
       await materialsAPI.delete(id);
+      // Ta bort sker inifrån edit-vyn → stäng formuläret och visa listan igen
+      setFormData({ name: '', type: 'clay', description: '' });
+      setEditingId(null);
+      setShowForm(false);
       loadMaterials();
     } catch (err) {
       alert('Kunde inte ta bort materialet: ' + err.message);
@@ -98,16 +102,18 @@ function MaterialManager() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="page-title">Material</h2>
-        <Button
-          onClick={() => {
-            setShowForm(true);
-            setEditingId(null);
-            setFormData({ name: '', type: 'clay', description: '' });
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nytt material
-        </Button>
+        {!showForm && (
+          <Button
+            onClick={() => {
+              setShowForm(true);
+              setEditingId(null);
+              setFormData({ name: '', type: 'clay', description: '' });
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nytt material
+          </Button>
+        )}
       </div>
 
       {error && (
@@ -116,7 +122,7 @@ function MaterialManager() {
         </div>
       )}
 
-      {showForm && (
+      {showForm ? (
         <Card>
           <CardHeader>
             <CardTitle>{editingId ? 'Redigera material' : 'Nytt material'}</CardTitle>
@@ -163,13 +169,22 @@ function MaterialManager() {
                 <Button type="button" variant="secondary" onClick={handleCancel}>
                   Avbryt
                 </Button>
+                {editingId && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="ml-auto"
+                    onClick={() => handleDelete(editingId)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Ta bort
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>
         </Card>
-      )}
-
-      {materials.length === 0 ? (
+      ) : materials.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-[var(--color-text-tertiary)]">Inga material ännu. Lägg upp dina leror och glasyrer, så kan du koppla dem till pjäserna.</p>
@@ -187,37 +202,19 @@ function MaterialManager() {
                   <CardContent>
                     <div className="space-y-2">
                       {typeMaterials.map((material) => (
-                        <div
+                        <button
                           key={material.id}
-                          className="flex items-start justify-between gap-3 p-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                          type="button"
+                          onClick={() => handleEdit(material)}
+                          className="w-full text-left p-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-primary)] transition-colors cursor-pointer"
                         >
-                          <div className="min-w-0">
-                            <div className="font-medium">{material.name}</div>
-                            {material.description && (
-                              <p className="mt-1 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
-                                {material.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-2 shrink-0">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleEdit(material)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Redigera
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDelete(material.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Ta bort
-                            </Button>
-                          </div>
-                        </div>
+                          <div className="font-medium">{material.name}</div>
+                          {material.description && (
+                            <p className="mt-1 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
+                              {material.description}
+                            </p>
+                          )}
+                        </button>
                       ))}
                     </div>
                   </CardContent>

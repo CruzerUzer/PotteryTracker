@@ -6,6 +6,8 @@ frontend/node_modules/
 # Database
 backend/database/database.db
 backend/database/*.db
+# Session store (connect-sqlite3) incl. journal/WAL
+backend/database/sessions.db*
 
 # Seed data (allow seed directory but not the actual database)
 # backend/database/seed/ is tracked

@@ -27,8 +27,8 @@ router.get('/', async (req, res) => {
 // POST /api/materials - Create a new material
 router.post('/', async (req, res) => {
   try {
-    const { name, type } = req.body;
-    
+    const { name, type, description } = req.body;
+
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ error: 'Material name is required' });
     }
@@ -38,14 +38,16 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Material type must be one of: clay, glaze, other' });
     }
 
+    const desc = (typeof description === 'string' && description.trim() !== '') ? description.trim() : null;
+
     const db = await getDb();
     const result = await db.run(
-      'INSERT INTO materials (user_id, name, type) VALUES (?, ?, ?)',
-      [req.userId, name.trim(), type]
+      'INSERT INTO materials (user_id, name, type, description) VALUES (?, ?, ?, ?)',
+      [req.userId, name.trim(), type, desc]
     );
 
     logger.info('Material created', { materialId: result.lastID, name, type, userId: req.userId });
-    res.status(201).json({ id: result.lastID, name: name.trim(), type });
+    res.status(201).json({ id: result.lastID, name: name.trim(), type, description: desc });
   } catch (error) {
     logger.error('Error creating material', {
       error: error.message,
@@ -62,7 +64,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, type } = req.body;
+    const { name, type, description } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ error: 'Material name is required' });
@@ -73,20 +75,22 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Material type must be one of: clay, glaze, other' });
     }
 
+    const desc = (typeof description === 'string' && description.trim() !== '') ? description.trim() : null;
+
     const db = await getDb();
     // Verify material belongs to user
     const material = await db.get('SELECT id FROM materials WHERE id = ? AND user_id = ?', [id, req.userId]);
     if (!material) {
       return res.status(404).json({ error: 'Material not found' });
     }
-    
+
     const result = await db.run(
-      'UPDATE materials SET name = ?, type = ? WHERE id = ? AND user_id = ?',
-      [name.trim(), type, id, req.userId]
+      'UPDATE materials SET name = ?, type = ?, description = ? WHERE id = ? AND user_id = ?',
+      [name.trim(), type, desc, id, req.userId]
     );
 
     logger.info('Material updated', { materialId: id, name, type, userId: req.userId });
-    res.json({ id: parseInt(id), name: name.trim(), type });
+    res.json({ id: parseInt(id), name: name.trim(), type, description: desc });
   } catch (error) {
     logger.error('Error updating material', {
       error: error.message,

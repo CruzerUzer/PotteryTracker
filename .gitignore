@@ -57,3 +57,6 @@ backend/database/*.local-backup-*
 
 # Design concept mockups (working artifacts)
 frontend/public/design-concepts/
+
+# Screenshot-verktygets genererade bilder
+tools/screenshots/out/

@@ -1,0 +1,12 @@
+{
+  "name": "potterytracker-screenshots",
+  "private": true,
+  "type": "module",
+  "description": "Fotar varje vy av den körande appen (för visuell jämförelse mot Stitch-förslaget)",
+  "scripts": {
+    "capture": "node capture.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

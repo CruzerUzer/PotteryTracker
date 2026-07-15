@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
+import connectSqlite3 from 'connect-sqlite3';
+import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, readFileSync } from 'fs';
@@ -96,8 +98,18 @@ app.use('/api', apiLimiter);
 const useSecureCookies = process.env.HTTPS_ENABLED === 'true' || 
                          (NODE_ENV === 'production' && process.env.HTTPS_ENABLED !== 'false');
 
+// Beständig session-store (SQLite) — sessioner överlever omstarter/deploys
+// och undviker MemoryStore-varningen i produktion. Lagras i en egen sessions.db
+// (skild från app-databasen) i backend/database (styrbart via SESSIONS_DIR).
+const SQLiteStore = connectSqlite3(session);
+const sessionsDir = process.env.SESSIONS_DIR || join(__dirname, 'database');
+// Denna connect-sqlite3-version vill ha en öppen sqlite3-instans (inte ett
+// filnamn), så vi öppnar en egen anslutning mot sessions.db.
+const sessionDb = new sqlite3.Database(join(sessionsDir, 'sessions.db'));
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || (NODE_ENV === 'production' 
+  store: new SQLiteStore({ db: sessionDb, table: 'sessions', concurrentDb: true }),
+  secret: process.env.SESSION_SECRET || (NODE_ENV === 'production'
     ? (() => { throw new Error('SESSION_SECRET must be set in production'); })()
     : 'pottery-tracker-secret-key-change-in-production'),
   resave: false,

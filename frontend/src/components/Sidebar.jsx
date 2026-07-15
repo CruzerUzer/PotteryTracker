@@ -10,7 +10,8 @@ import {
   Archive,
   LogOut,
   Shield,
-  BarChart2
+  BarChart2,
+  Workflow
 } from 'lucide-react';
 
 function Sidebar() {
@@ -26,9 +27,10 @@ function Sidebar() {
     { path: '/list', icon: List, label: 'Lista' },
     { path: '/done', icon: CheckCircle, label: 'Färdiga' },
     { path: '/stats', icon: BarChart2, label: 'Statistik' },
-    { path: '/workflow', icon: Settings, label: 'Arbetsflöde' },
+    { path: '/workflow', icon: Workflow, label: 'Arbetsflöde' },
     { path: '/materials', icon: Database, label: 'Material' },
     { path: '/backup', icon: Archive, label: 'Säkerhetskopia' },
+    { path: '/settings', icon: Settings, label: 'Inställningar' },
     ...(isAdmin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 

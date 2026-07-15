@@ -27,10 +27,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './components/ui/dropdown-menu';
-import { Settings as SettingsIcon, LogOut, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 function ProtectedRoute({ children }) {
@@ -120,13 +119,6 @@ function AppContent() {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
-                        <SettingsIcon size={16} />
-                        <span>Inställningar</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={async () => {
                         await logout();

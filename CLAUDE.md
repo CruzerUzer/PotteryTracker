@@ -100,6 +100,37 @@ Before EVERY commit, verify:
 The update script runs: `npm install` (both dirs) → `npm run build` (frontend) → PM2 restart.
 If tests fail or build fails, the commit will break production deployment.
 
+## Deployment
+
+Production runs at `https://potterytracker.faris.se` on `ubuntu@potterytracker.faris.se`
+(dir `/srv/PotteryTracker`, PM2 process `pottery-api`, Nginx serving `frontend/dist`).
+The prod VM has only **~1 GB RAM**, so `vite build` run **on the server** can be
+OOM-killed (kernel prints `Killed`), which leaves `frontend/dist/` without
+`index.html` and takes the site down (403/404). A 2 GB swapfile is configured to
+give the build headroom.
+
+There are **two supported deploy paths**:
+
+### 1. Build locally + rsync (preferred for automation / Claude sessions)
+Never build on the prod VM. Build on a machine with plenty of RAM and copy the
+finished `dist/` over. One command from the repo root:
+```bash
+./deploy-frontend.sh            # builds frontend locally, rsyncs dist/ to prod, verifies 200
+```
+This avoids the OOM entirely. Use it for frontend-only changes. For changes that
+also need `git pull` + DB migrations on prod, run those steps (or the update
+script) and deploy the frontend this way.
+
+### 2. Manual update script on the server
+The operator may still run `bash /srv/PotteryTracker/update-potterytracker.sh` on
+prod as `ubuntu` (never `sudo`; the script has a root guard). Answer `y` to the
+backup prompt — backups go to the user-owned `/srv/potterytracker-backups`. The
+2 GB swap lets the in-place `vite build` finish without OOM. If a build is ever
+killed anyway, recover with path 1 (build locally + rsync).
+
+`ubuntu` has passwordless sudo on prod. Do **not** run the update script or npm
+builds as root/sudo — it creates root-owned files that break the app.
+
 ## File Boundaries
 
 - **Safe to edit**: `/frontend/src/`, `/backend/routes/`, `/backend/middleware/`

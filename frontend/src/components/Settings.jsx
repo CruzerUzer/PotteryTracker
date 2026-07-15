@@ -8,7 +8,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ArrowLeft, Save, Palette, Lock } from 'lucide-react';
+import { ArrowLeft, Save, Palette, Lock, Smartphone, Download, Check } from 'lucide-react';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import IOSInstallHelp from './IOSInstallHelp';
 
 function Settings() {
   const navigate = useNavigate();
@@ -21,6 +23,9 @@ function Settings() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const { canPromptInstall, standalone, isIOS, isMobile, promptInstall } = useInstallPrompt();
+  const [showIOSHelp, setShowIOSHelp] = useState(false);
+  const showInstallCard = isMobile || canPromptInstall || standalone;
 
   const handleChange = (key, value) => {
     setLocalSettings((prev) => ({ ...prev, [key]: value }));
@@ -162,6 +167,50 @@ function Settings() {
           </form>
         </CardContent>
       </Card>
+
+      {showInstallCard && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5" />
+              Installera appen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {standalone ? (
+              <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                <Check className="h-4 w-4 text-[var(--color-success)]" />
+                Appen är installerad – du kör den redan från hemskärmen.
+              </div>
+            ) : isIOS ? (
+              <div className="space-y-3">
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Lägg till PotteryTracker på hemskärmen så öppnas den som en app.
+                </p>
+                <Button variant="outline" onClick={() => setShowIOSHelp(true)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Lägg till på hemskärmen
+                </Button>
+              </div>
+            ) : canPromptInstall ? (
+              <div className="space-y-3">
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Installera PotteryTracker som app på den här enheten.
+                </p>
+                <Button variant="outline" onClick={() => promptInstall()}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Installera appen
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Öppna webbläsarens meny och välj <strong>Installera app</strong> eller{' '}
+                <strong>Lägg till på startskärmen</strong> för att installera PotteryTracker.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -314,6 +363,8 @@ function Settings() {
           </Button>
         </CardFooter>
       </Card>
+
+      <IOSInstallHelp open={showIOSHelp} onOpenChange={setShowIOSHelp} />
     </div>
   );
 }

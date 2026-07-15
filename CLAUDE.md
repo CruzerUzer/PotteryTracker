@@ -102,6 +102,12 @@ If tests fail or build fails, the commit will break production deployment.
 
 ## Deployment
 
+**CRITICAL RULE: Never deploy to production without asking the user first.**
+This means: do not run `deploy-frontend.sh`, `update-potterytracker.sh`, rsync to
+prod, PM2/Nginx restarts, or any change to the prod server until the user has
+explicitly approved that specific deploy. Merging to `main` is not approval to
+deploy — ask before pushing anything to production.
+
 Production runs at `https://potterytracker.faris.se` on `ubuntu@potterytracker.faris.se`
 (dir `/srv/PotteryTracker`, PM2 process `pottery-api`, Nginx serving `frontend/dist`).
 The prod VM has only **~1 GB RAM**, so `vite build` run **on the server** can be

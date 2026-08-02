@@ -16,6 +16,15 @@ npx playwright install chromium
   (skapa med: `SHOT_USER=stitchbot SHOT_PASS=stitchbot-pw-1234` via registrering,
   eller ange egna via miljövariabler).
 
+### Fyll/synka testkontot med data
+`stitchbot` bär en kopia av `Adam`s data. Skapa om eller synka den med:
+```bash
+cd ../../backend
+node tools/copy-user.mjs Adam stitchbot            # kräver tomt mål
+node tools/copy-user.mjs Adam stitchbot --wipe     # rensa målet och synka om
+```
+Bildfiler på disk delas — radera dem aldrig för att "städa" ett testkonto.
+
 ## Kör
 ```bash
 npm run capture

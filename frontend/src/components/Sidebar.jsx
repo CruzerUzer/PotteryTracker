@@ -11,7 +11,8 @@ import {
   LogOut,
   Shield,
   BarChart2,
-  Workflow
+  Workflow,
+  Plus
 } from 'lucide-react';
 
 function Sidebar() {
@@ -42,7 +43,11 @@ function Sidebar() {
   };
 
   return (
-    <div className="sidebar">
+    <nav className="sidebar" aria-label="Huvudmeny">
+      <Link to="/pieces/new" className="sidebar-new">
+        <Plus size={18} />
+        <span>Ny pjäs</span>
+      </Link>
       {navItems.map((item) => {
         const Icon = item.icon;
         return (
@@ -50,13 +55,14 @@ function Sidebar() {
             key={item.path}
             to={item.path}
             className={`sidebar-item ${isActive(item.path) ? 'active' : ''}`}
+            aria-current={isActive(item.path) ? 'page' : undefined}
           >
             <Icon className="sidebar-icon" size={20} />
             <span>{item.label}</span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 

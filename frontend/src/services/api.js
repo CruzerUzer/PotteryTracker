@@ -138,6 +138,7 @@ export const piecesAPI = {
     if (filters.phase_id !== undefined && filters.phase_id !== null) {
       params.append('phase_id', filters.phase_id);
     }
+    if (filters.location_id) params.append('location_id', filters.location_id);
     if (filters.material_id) params.append('material_id', filters.material_id);
     if (filters.search) params.append('search', filters.search);
     if (filters.date_from) params.append('date_from', filters.date_from);

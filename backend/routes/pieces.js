@@ -34,10 +34,10 @@ async function isFinalPhase(db, phaseId, userId) {
   return Number(phaseResult.display_order) === Number(maxOrder);
 }
 
-// GET /api/pieces - Get all pieces (optional query params: phase_id, search, material_id, date_from, date_to, done)
+// GET /api/pieces - Get all pieces (optional query params: phase_id, location_id, search, material_id, date_from, date_to, done)
 router.get('/', async (req, res) => {
   try {
-    const { phase_id, search, material_id, date_from, date_to, done } = req.query;
+    const { phase_id, location_id, search, material_id, date_from, date_to, done } = req.query;
     const db = await getDb();
 
     let query = `
@@ -71,28 +71,39 @@ router.get('/', async (req, res) => {
 
     const params = [req.userId];
     
-    // Filter by phase
-    if (phase_id) {
-      if (phase_id === 'no-phase') {
-        // Filter for pieces with no phase (null current_phase_id)
-        query += ' AND p.current_phase_id IS NULL';
-      } else {
-        query += ' AND p.current_phase_id = ?';
-        params.push(phase_id);
+    // Listfilter: ett värde eller kommaseparerat, t.ex. phase_id=1,3,no-phase.
+    // Flera värden inom en kategori betyder "någon av".
+    const list = (v) => (v ? String(v).split(',').map((x) => x.trim()).filter(Boolean) : []);
+    const anyOf = (column, values, noneToken) => {
+      if (!values.length) return;
+      const ids = values.filter((v) => v !== noneToken);
+      const conds = [];
+      if (ids.length) {
+        conds.push(`${column} IN (${ids.map(() => '?').join(', ')})`);
+        params.push(...ids);
       }
-    }
-    
-    // Filter by material
-    if (material_id) {
+      if (values.includes(noneToken)) conds.push(`${column} IS NULL`);
+      query += ` AND (${conds.join(' OR ')})`;
+    };
+
+    // Filter by phase ('no-phase' = pieces without a phase)
+    anyOf('p.current_phase_id', list(phase_id), 'no-phase');
+
+    // Filter by location ('no-location' = pieces without a location)
+    anyOf('p.current_location_id', list(location_id), 'no-location');
+
+    // Filter by material (piece has any of the given materials)
+    const materialIds = list(material_id);
+    if (materialIds.length) {
       query += ` AND p.id IN (
-        SELECT piece_id FROM piece_materials 
-        WHERE material_id = ? AND piece_id IN (
+        SELECT piece_id FROM piece_materials
+        WHERE material_id IN (${materialIds.map(() => '?').join(', ')}) AND piece_id IN (
           SELECT id FROM ceramic_pieces WHERE user_id = ?
         )
       )`;
-      params.push(material_id, req.userId);
+      params.push(...materialIds, req.userId);
     }
-    
+
     // Search by name or description
     if (search && search.trim()) {
       query += ' AND (p.name LIKE ? OR p.description LIKE ?)';

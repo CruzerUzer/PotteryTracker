@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { imagesAPI } from '../services/api';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Upload, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Upload, CheckCircle, XCircle, Loader2, Camera, Check } from 'lucide-react';
+import { phaseColor } from './kanban/phaseColors';
 
 function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
   const [files, setFiles] = useState([]);
@@ -90,7 +88,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         setHasUserSelectedPhase(false);
         e.target.reset();
         if (onUploaded) {
-          onUploaded();
+          onUploaded({ successCount, errorCount });
         }
       }
       
@@ -120,64 +118,73 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="image-file">Välj bilder</Label>
-          <Input
-            type="file"
-            id="image-file"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-          <p className="text-sm text-[var(--color-text-tertiary)]">
-            Du kan välja flera bilder samtidigt. På mobilen kan du hämta från bildbiblioteket eller fota direkt.
-          </p>
+          <label htmlFor="image-file" className={`file-drop${uploading ? ' file-drop--disabled' : ''}`}>
+            <Camera size={22} aria-hidden="true" />
+            <span className="file-drop-title">
+              {files.length === 0
+                ? 'Välj eller ta bilder'
+                : files.length === 1
+                  ? '1 bild vald'
+                  : `${files.length} bilder valda`}
+            </span>
+            <span className="file-drop-hint">Flera åt gången går bra. Max 10 MB per bild.</span>
+            <input
+              type="file"
+              id="image-file"
+              className="sr-only"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+          </label>
           {files.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm font-medium">{files.length === 1 ? '1 bild vald' : `${files.length} bilder valda`}</p>
-              <ul className="space-y-1 text-sm text-[var(--color-text-secondary)]">
-                {files.map((file, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    {uploadProgress[index] === 'uploading' && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {uploadProgress[index] === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                    {uploadProgress[index] === 'error' && <XCircle className="h-4 w-4 text-red-600" />}
-                    <span>{file.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="space-y-1 text-sm text-[var(--color-text-secondary)]">
+              {files.map((file, index) => (
+                <li key={index} className="flex items-center gap-2 min-w-0">
+                  {uploadProgress[index] === 'uploading' && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />}
+                  {uploadProgress[index] === 'success' && <CheckCircle className="h-4 w-4 text-[var(--color-success)] flex-shrink-0" />}
+                  {uploadProgress[index] === 'error' && <XCircle className="h-4 w-4 text-[var(--color-error)] flex-shrink-0" />}
+                  <span className="truncate">{file.name}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="image-phase">Fas</Label>
-          <Select
-            value={phaseId || undefined}
-            onValueChange={(value) => {
-              setPhaseId(value || '');
-              setHasUserSelectedPhase(true);
-            }}
-            disabled={uploading}
-            required
-          >
-            <SelectTrigger id="image-phase">
-              <SelectValue placeholder="Välj fas" />
-            </SelectTrigger>
-            <SelectContent>
-              {phases.map((phase) => (
-                <SelectItem key={phase.id} value={phase.id.toString()}>
+          <span className="field-sublabel" id="image-phase-label">Bilden hör till fas</span>
+          <div className="chip-row" role="radiogroup" aria-labelledby="image-phase-label">
+            {phases.map((phase, i) => {
+              const active = String(phaseId) === String(phase.id);
+              const c = phaseColor(i);
+              return (
+                <button
+                  key={phase.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  className={`chip chip--phase${active ? ' chip--active' : ''}`}
+                  style={{ '--chip-bg': c.bg, '--chip-border': c.border, '--chip-accent': c.accent }}
+                  onClick={() => {
+                    setPhaseId(String(phase.id));
+                    setHasUserSelectedPhase(true);
+                  }}
+                  disabled={uploading}
+                >
+                  {active && <Check size={14} aria-hidden="true" />}
                   {phase.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <Button type="submit" disabled={uploading || files.length === 0 || !phaseId} className="w-full">
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Laddar upp… ({Object.values(uploadProgress).filter(p => p === 'uploading').length}/{files.length})
+              Laddar upp… ({Math.min(Object.keys(uploadProgress).length, files.length)}/{files.length})
             </>
           ) : (
             <>

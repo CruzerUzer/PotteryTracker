@@ -14,22 +14,28 @@ const defaultSettings = {
   theme: 'light', // 'light', 'dark', 'auto' — ljust läge som standard för nya användare
   fontSize: 100, // percentage
   layoutDensity: 'comfortable', // 'compact', 'comfortable', 'spacious'
-  defaultView: 'kanban', // 'kanban', 'list', 'grid'
-  showImagesInCards: true,
-  showDescriptions: true,
-  phaseColors: {
-    'På tork': '#E3F2FD',
-    'Skröjbränd': '#FFF3E0',
-    'Glaserad': '#F3E5F5',
-    'Glasyrbränd': '#E8F5E9',
-  },
 };
 
+// Inställningar som togs bort 2026-11 (lästes aldrig). Rensas ur sparad data.
+const REMOVED_KEYS = ['defaultView', 'showImagesInCards', 'showDescriptions', 'phaseColors'];
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('potteryTrackerSettings') || 'null');
+    if (!saved) return defaultSettings;
+    const clean = { ...saved };
+    REMOVED_KEYS.forEach((k) => delete clean[k]);
+    if (REMOVED_KEYS.some((k) => k in saved)) {
+      localStorage.setItem('potteryTrackerSettings', JSON.stringify(clean));
+    }
+    return { ...defaultSettings, ...clean };
+  } catch {
+    return defaultSettings;
+  }
+}
+
 export const ThemeProvider = ({ children }) => {
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem('potteryTrackerSettings');
-    return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
-  });
+  const [settings, setSettings] = useState(loadSettings);
 
   const [actualTheme, setActualTheme] = useState('light');
 
@@ -54,12 +60,20 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', actualTheme);
     document.documentElement.setAttribute('data-density', settings.layoutDensity);
     document.documentElement.style.fontSize = `${settings.fontSize}%`;
+    // Statusfältet i mobilwebbläsaren följer temat
+    const bg = actualTheme === 'dark' ? '#111013' : '#F4F1EA';
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', bg));
+    document.documentElement.style.colorScheme = actualTheme;
   }, [actualTheme, settings.layoutDensity, settings.fontSize]);
 
   const updateSettings = (newSettings) => {
     const updated = { ...settings, ...newSettings };
     setSettings(updated);
-    localStorage.setItem('potteryTrackerSettings', JSON.stringify(updated));
+    try {
+      localStorage.setItem('potteryTrackerSettings', JSON.stringify(updated));
+    } catch {
+      /* privat läge: inställningen gäller bara den här sessionen */
+    }
   };
 
   const resetSettings = () => {

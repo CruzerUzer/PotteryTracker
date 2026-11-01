@@ -13,7 +13,7 @@
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { mkdirSync } from 'fs';
+import { mkdirSync, existsSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -21,6 +21,8 @@ const BASE = process.env.BASE_URL || 'http://localhost:4301';
 const USER = process.env.SHOT_USER || 'stitchbot';
 const PASS = process.env.SHOT_PASS || 'stitchbot-pw-1234';
 const OUT = process.env.SHOT_OUT || join(__dirname, 'out');
+// Sessionen återanvänds: backend tillåter bara 10 inloggningar per 15 minuter.
+const AUTH = join(__dirname, 'out', '.auth.json');
 
 const routes = [
   ['kanban', '/'],
@@ -35,19 +37,23 @@ const routes = [
 
 const viewports = [
   ['desktop', { width: 1280, height: 900 }],
+  ['surfplatta', { width: 900, height: 1180 }],
   ['mobil', { width: 390, height: 844 }],
 ];
 
 const themes = ['light', 'dark'];
 
 async function login(page) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+  if (!new URL(page.url()).pathname.startsWith('/login')) return;
   await page.fill('#username', USER);
   await page.fill('#password', PASS);
   await Promise.all([
     page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15000 }),
     page.click('button[type="submit"]'),
   ]);
+  mkdirSync(dirname(AUTH), { recursive: true });
+  await page.context().storageState({ path: AUTH });
 }
 
 const run = async () => {
@@ -55,7 +61,7 @@ const run = async () => {
   try {
     for (const theme of themes) {
       // Sätt temat i localStorage innan appens JS kör
-      const context = await browser.newContext();
+      const context = await browser.newContext({ storageState: existsSync(AUTH) ? AUTH : undefined });
       await context.addInitScript((t) => {
         localStorage.setItem('potteryTrackerSettings', JSON.stringify({ theme: t }));
         localStorage.setItem('pwaInstallDismissed', '1'); // dölj install-bannern i bilderna

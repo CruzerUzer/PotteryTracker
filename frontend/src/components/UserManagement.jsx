@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PageSkeleton from './PageSkeleton';
 import { adminAPI } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -115,7 +116,7 @@ function UserManagement() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Hämtar användare…</div>;
+    return <PageSkeleton rows={3} title={false} label="Hämtar användare" />;
   }
 
   return (

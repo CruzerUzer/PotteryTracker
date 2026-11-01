@@ -1,560 +1,542 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Star,
+  Plus,
+  MapPin,
+  Layers,
+  ImagePlus,
+  Package,
+  ChevronDown,
+} from 'lucide-react';
 import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
 import ImageLightbox from './ImageLightbox';
-import { Button } from './ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Label } from './ui/label';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus, MapPin, Star } from 'lucide-react';
+import MaterialPicker, { MATERIAL_TYPE_LABELS } from './MaterialPicker';
+import MoveSheet from './kanban/MoveSheet';
+import { phaseColor } from './kanban/phaseColors';
+import { Sheet, SheetContent } from './ui/sheet';
+import { useToast } from './ui/toast';
+import { useConfirm } from './ui/confirm-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { useBackNavigation } from '../hooks/useBackNavigation';
+import { usePieceMover } from '../hooks/usePieceMover';
+import Logo from './Logo';
+
+const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
+
+const formatDate = (value) => {
+  if (!value) return null;
+  const d = new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`);
+  return Number.isNaN(d.getTime())
+    ? null
+    : d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
+};
 
 function PieceDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const goBack = useBackNavigation('/');
 
   const [piece, setPiece] = useState(null);
   const [phases, setPhases] = useState([]);
   const [locations, setLocations] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [selectedPhase, setSelectedPhase] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [updating, setUpdating] = useState(false);
+
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  
-  // Inline editing state
-  const [editingField, setEditingField] = useState(null);
+  const [moveFocus, setMoveFocus] = useState(null); // 'phase' | 'location' | null
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [materialsOpen, setMaterialsOpen] = useState(false);
+  const [editing, setEditing] = useState(null); // 'name' | 'description' | null
   const [editValue, setEditValue] = useState('');
   const [editMaterials, setEditMaterials] = useState([]);
   const [saving, setSaving] = useState(false);
 
+  const loadData = useCallback(
+    async ({ quiet = false } = {}) => {
+      try {
+        if (!quiet) setLoading(true);
+        setError(null);
+        const [pieceData, phasesData, locationsData, materialsData] = await Promise.all([
+          piecesAPI.getById(id),
+          phasesAPI.getAll(),
+          locationsAPI.getAll(),
+          materialsAPI.getAll(),
+        ]);
+        setPiece(pieceData);
+        setPhases([...phasesData].sort(byOrder));
+        setLocations([...locationsData].sort(byOrder));
+        setMaterials(materialsData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [id]
+  );
+
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [loadData]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [pieceData, phasesData, locationsData, materialsData] = await Promise.all([
-        piecesAPI.getById(id),
-        phasesAPI.getAll(),
-        locationsAPI.getAll(),
-        materialsAPI.getAll(),
-      ]);
-      setPiece(pieceData);
-      setPhases(phasesData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
-      setLocations(locationsData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
-      setMaterials(materialsData);
-      setSelectedPhase(pieceData.current_phase_id || '');
-      setSelectedLocation(pieceData.current_location_id || '');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  // Nyss skapad pjäs: öppna bilduppladdningen direkt
+  useEffect(() => {
+    if (location.state?.justCreated) {
+      setUploadOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
     }
-  };
+  }, [location.state, location.pathname, navigate]);
 
-  const handlePhaseChange = async (value) => {
-    setUpdating(true);
-    try {
-      await piecesAPI.updatePhase(id, value);
-      setSelectedPhase(value);
-      await loadData();
-    } catch (err) {
-      alert('Kunde inte byta fas: ' + err.message);
-    } finally {
-      setUpdating(false);
-    }
-  };
+  const onPatch = useCallback((_, patch) => setPiece((p) => (p ? { ...p, ...patch } : p)), []);
+  const movePiece = usePieceMover({ phases, locations, onPatch });
 
-  const handleLocationChange = async (value) => {
-    setUpdating(true);
-    try {
-      await piecesAPI.updateLocation(id, value);
-      setSelectedLocation(value);
-      await loadData();
-    } catch (err) {
-      alert('Kunde inte byta plats: ' + err.message);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm('Vill du ta bort den här pjäsen? Alla bilder följer med och kan inte återskapas.')) {
-      return;
-    }
-
-    try {
-      await piecesAPI.delete(id);
-      navigate('/kanban');
-    } catch (err) {
-      alert('Kunde inte ta bort pjäsen: ' + err.message);
-    }
-  };
-
-  const handleImageUploaded = () => {
-    loadData();
-  };
-
-  const handleImageDelete = async (imageId) => {
-    if (!window.confirm('Vill du ta bort den här bilden?')) {
-      return;
-    }
-
-    try {
-      await imagesAPI.delete(imageId);
-      loadData();
-    } catch (err) {
-      alert('Kunde inte ta bort bilden: ' + err.message);
-    }
-  };
-
-  const handleSetDefaultImage = async (imageId) => {
-    try {
-      // If clicking on current default, clear it (set to null)
-      const newDefaultId = piece.default_image_id === imageId ? null : imageId;
-      await piecesAPI.setDefaultImage(id, newDefaultId);
-      loadData();
-    } catch (err) {
-      alert('Kunde inte välja omslagsbild: ' + err.message);
-    }
-  };
-
-  const startEditing = (field, initialValue = null) => {
-    if (field === 'name') {
-      setEditValue(piece.name || '');
-    } else if (field === 'description') {
-      setEditValue(piece.description || '');
-    } else if (field === 'materials') {
-      setEditMaterials(piece.materials?.map(m => m.id) || []);
-    }
-    setEditingField(field);
-  };
-
-  const cancelEditing = () => {
-    setEditingField(null);
-    setEditValue('');
-    setEditMaterials([]);
-  };
-
-  const saveField = async () => {
-    if (saving) return;
-    
+  /** PUT kräver hela pjäsen, annars nollställs utelämnade fält. */
+  const savePiece = async (changes, successMessage) => {
     setSaving(true);
     try {
-      // Always include name since backend requires it for updates
-      const updateData = {
+      await piecesAPI.update(id, {
         name: piece.name,
-      };
-      
-      if (editingField === 'name') {
-        if (!editValue.trim()) {
-          alert('Pjäsen behöver ett namn');
-          setSaving(false);
-          return;
-        }
-        updateData.name = editValue.trim();
-      } else if (editingField === 'description') {
-        updateData.description = editValue.trim();
-      } else if (editingField === 'materials') {
-        updateData.material_ids = editMaterials;
-      }
-
-      await piecesAPI.update(id, updateData);
-      await loadData();
-      setEditingField(null);
-      setEditValue('');
-      setEditMaterials([]);
+        description: piece.description || '',
+        current_phase_id: piece.current_phase_id || null,
+        current_location_id: piece.current_location_id || null,
+        ...changes,
+      });
+      await loadData({ quiet: true });
+      if (successMessage) toast.success(successMessage);
+      return true;
     } catch (err) {
-      alert('Kunde inte spara: ' + err.message);
+      toast.error('Kunde inte spara', err.message);
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
-  const handleMaterialToggle = (materialId) => {
-    setEditMaterials(prev =>
-      prev.includes(materialId)
-        ? prev.filter(id => id !== materialId)
-        : [...prev, materialId]
-    );
+  const startEditing = (field) => {
+    setEditValue(field === 'name' ? piece.name || '' : piece.description || '');
+    setEditing(field);
+  };
+
+  const saveEditing = async () => {
+    if (saving) return;
+    const value = editValue.trim();
+    if (editing === 'name' && !value) {
+      toast.error('Pjäsen behöver ett namn');
+      return;
+    }
+    const ok = await savePiece(editing === 'name' ? { name: value } : { description: value });
+    if (ok) setEditing(null);
+  };
+
+  const saveMaterials = async () => {
+    const ok = await savePiece({ material_ids: editMaterials }, 'Materialen är sparade');
+    if (ok) setMaterialsOpen(false);
+  };
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: 'Ta bort pjäsen?',
+      description: `”${piece.name}” och alla dess bilder raderas och kan inte återskapas.`,
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await piecesAPI.delete(id);
+      toast.success('Pjäsen är borttagen');
+      goBack();
+    } catch (err) {
+      toast.error('Kunde inte ta bort pjäsen', err.message);
+    }
+  };
+
+  const deleteImage = async (imageId) => {
+    try {
+      await imagesAPI.delete(imageId);
+      await loadData({ quiet: true });
+      return true;
+    } catch (err) {
+      toast.error('Kunde inte ta bort bilden', err.message);
+      return false;
+    }
+  };
+
+  const confirmDeleteImage = async (imageId) => {
+    const ok = await confirm({
+      title: 'Ta bort bilden?',
+      description: 'Bilden raderas permanent.',
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (ok) deleteImage(imageId);
+  };
+
+  const toggleCover = async (imageId) => {
+    try {
+      const next = piece.default_image_id === imageId ? null : imageId;
+      await piecesAPI.setDefaultImage(id, next);
+      setPiece((p) => ({ ...p, default_image_id: next }));
+      toast.success(next ? 'Ny omslagsbild' : 'Omslagsbilden är borttagen');
+    } catch (err) {
+      toast.error('Kunde inte välja omslagsbild', err.message);
+    }
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Laddar…</div>
-        </CardContent>
-      </Card>
+      <div className="detail" aria-busy="true">
+        <div className="skeleton h-9 w-24 mb-4" />
+        <div className="detail-layout">
+          <div className="skeleton detail-hero-skeleton" />
+          <div className="space-y-3">
+            <div className="skeleton h-10 w-3/4" />
+            <div className="skeleton h-8 w-1/2" />
+            <div className="skeleton h-24 w-full" />
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (error || !piece) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm mb-4">
-            {error || 'Pjäsen hittades inte'}
-          </div>
-          <Button variant="secondary" onClick={() => navigate('/kanban')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Tillbaka
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="detail">
+        <div className="error" role="alert">
+          {error || 'Pjäsen hittades inte'}
+        </div>
+        <button type="button" className="btn btn-secondary" onClick={goBack}>
+          <ArrowLeft size={16} /> Tillbaka
+        </button>
+      </div>
     );
   }
 
-  const currentPhase = phases.find((p) => p.id === piece.current_phase_id);
+  const images = piece.images || [];
+  const coverId = piece.default_image_id || images[0]?.id;
+  const coverIndex = Math.max(0, images.findIndex((img) => img.id === coverId));
+  const cover = images[coverIndex];
+  const phaseIdx = phases.findIndex((p) => p.id === piece.current_phase_id);
+  const pc = phaseIdx >= 0 ? phaseColor(phaseIdx) : null;
+  const created = formatDate(piece.created_at);
+  const updated = formatDate(piece.updated_at);
 
   return (
-    <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/kanban')}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          {editingField === 'name' ? (
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Input
+    <div className="detail">
+      <div className="detail-topbar">
+        <button type="button" className="icon-btn" onClick={goBack} aria-label="Tillbaka">
+          <ArrowLeft size={19} />
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="icon-btn" aria-label="Fler val">
+              <MoreHorizontal size={19} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DropdownMenuItem onClick={() => startEditing('name')} className="gap-2">
+              <Pencil size={15} /> Byt namn
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUploadOpen(true)} className="gap-2">
+              <ImagePlus size={15} /> Lägg till bilder
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleDelete} className="gap-2 text-[var(--color-error)]">
+              <Trash2 size={15} /> Ta bort pjäsen
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="detail-layout">
+        <div className="detail-media">
+          {cover ? (
+            <button
+              type="button"
+              className="detail-hero"
+              onClick={() => setLightboxIndex(coverIndex)}
+              aria-label="Visa bilden i helskärm"
+            >
+              <img src={imagesAPI.getFileUrl(cover.id)} alt={piece.name} />
+              {images.length > 1 && <span className="detail-hero-count">{images.length} bilder</span>}
+            </button>
+          ) : (
+            <button type="button" className="detail-hero detail-hero--empty" onClick={() => setUploadOpen(true)}>
+              <span className="detail-hero-empty-mark" style={pc ? { color: pc.accent } : undefined}>
+                <Logo size={36} color="currentColor" />
+              </span>
+              <span className="detail-hero-empty-title">Lägg till första bilden</span>
+              <span className="detail-hero-empty-text">Ett foto per fas gör det lätt att följa pjäsens resa.</span>
+            </button>
+          )}
+
+          {images.length > 0 && (
+            <div className="image-strip" role="list" aria-label="Bilder">
+              {images.map((image, index) => {
+                const isCover = piece.default_image_id === image.id;
+                return (
+                  <div key={image.id} className={`strip-item${index === coverIndex ? ' strip-item--current' : ''}`} role="listitem">
+                    <button
+                      type="button"
+                      className="strip-thumb"
+                      onClick={() => setLightboxIndex(index)}
+                      aria-label={`Bild ${index + 1}${image.phase_name ? `, ${image.phase_name}` : ''}`}
+                    >
+                      <img src={imagesAPI.getFileUrl(image.id, true)} alt="" loading="lazy" />
+                      {image.phase_name && <span className="strip-phase">{image.phase_name}</span>}
+                    </button>
+                    <button
+                      type="button"
+                      className={`strip-star${isCover ? ' strip-star--on' : ''}`}
+                      onClick={() => toggleCover(image.id)}
+                      aria-pressed={isCover}
+                      aria-label={isCover ? 'Ta bort som omslagsbild' : 'Använd som omslagsbild'}
+                      title={isCover ? 'Omslagsbild' : 'Använd som omslagsbild'}
+                    >
+                      <Star size={13} className={isCover ? 'fill-current' : ''} />
+                    </button>
+                    <button
+                      type="button"
+                      className="strip-delete"
+                      onClick={() => confirmDeleteImage(image.id)}
+                      aria-label="Ta bort bilden"
+                      title="Ta bort bilden"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                );
+              })}
+              <button type="button" className="strip-add" onClick={() => setUploadOpen(true)} aria-label="Lägg till bilder">
+                <Plus size={22} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="detail-info">
+          {editing === 'name' ? (
+            <div className="inline-edit">
+              <input
+                className="field-input field-input--title"
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveField();
-                  if (e.key === 'Escape') cancelEditing();
+                  if (e.key === 'Enter') saveEditing();
+                  if (e.key === 'Escape') setEditing(null);
                 }}
-                className="text-3xl font-bold flex-1"
+                aria-label="Namn"
                 autoFocus
                 disabled={saving}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={saveField}
-                disabled={saving}
-                className="text-green-600 hover:text-green-700"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={cancelEditing}
-                disabled={saving}
-                className="text-red-600 hover:text-red-700"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <button type="button" className="icon-btn icon-btn--primary" onClick={saveEditing} disabled={saving} aria-label="Spara namn">
+                <Check size={18} />
+              </button>
+              <button type="button" className="icon-btn" onClick={() => setEditing(null)} disabled={saving} aria-label="Avbryt">
+                <X size={18} />
+              </button>
             </div>
           ) : (
-            <h1
-              className="text-3xl font-bold cursor-pointer hover:text-[var(--color-primary)] transition-colors flex items-center gap-2 group"
-              onClick={() => startEditing('name')}
-              title="Klicka för att ändra"
+            <div className="detail-title-row">
+              <h1 className="detail-title">{piece.name}</h1>
+              <button type="button" className="icon-btn icon-btn--ghost" onClick={() => startEditing('name')} aria-label="Byt namn">
+                <Pencil size={16} />
+              </button>
+            </div>
+          )}
+
+          <div className="detail-chips">
+            <button
+              type="button"
+              className="chip chip--phase chip--lg"
+              style={pc ? { '--chip-bg': pc.bg, '--chip-border': pc.border, '--chip-accent': pc.accent } : undefined}
+              onClick={() => setMoveFocus('phase')}
+              aria-label={`Fas: ${piece.phase_name || 'ingen'}. Byt fas`}
             >
-              {piece.name}
-              <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
-            </h1>
+              <Layers size={14} aria-hidden="true" />
+              {piece.phase_name || 'Ingen fas'}
+              <ChevronDown size={14} aria-hidden="true" className="opacity-60" />
+            </button>
+            <button
+              type="button"
+              className="chip chip--lg"
+              onClick={() => setMoveFocus('location')}
+              aria-label={`Plats: ${piece.location_name || 'ingen'}. Byt plats`}
+            >
+              <MapPin size={14} aria-hidden="true" />
+              {piece.location_name || 'Ingen plats'}
+              <ChevronDown size={14} aria-hidden="true" className="opacity-60" />
+            </button>
+            {piece.done === 1 && <span className="done-chip done-chip--lg">Färdig</span>}
+          </div>
+
+          <section className="detail-section">
+            <div className="detail-section-head">
+              <h2>Beskrivning</h2>
+              {editing !== 'description' && (
+                <button type="button" className="icon-btn icon-btn--ghost" onClick={() => startEditing('description')} aria-label="Redigera beskrivning">
+                  <Pencil size={15} />
+                </button>
+              )}
+            </div>
+            {editing === 'description' ? (
+              <div className="space-y-2">
+                <textarea
+                  className="field-input"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  rows={5}
+                  disabled={saving}
+                  aria-label="Beskrivning"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button type="button" className="btn btn-primary" onClick={saveEditing} disabled={saving}>
+                    <Check size={15} /> {saving ? 'Sparar…' : 'Spara'}
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)} disabled={saving}>
+                    Avbryt
+                  </button>
+                </div>
+              </div>
+            ) : piece.description ? (
+              <p className="detail-description">{piece.description}</p>
+            ) : (
+              <button type="button" className="detail-placeholder" onClick={() => startEditing('description')}>
+                Ingen beskrivning ännu. Tryck för att skriva en.
+              </button>
+            )}
+          </section>
+
+          <section className="detail-section">
+            <div className="detail-section-head">
+              <h2>Material</h2>
+              <button
+                type="button"
+                className="icon-btn icon-btn--ghost"
+                onClick={() => {
+                  setEditMaterials(piece.materials?.map((m) => m.id) || []);
+                  setMaterialsOpen(true);
+                }}
+                aria-label="Redigera material"
+              >
+                <Pencil size={15} />
+              </button>
+            </div>
+            {piece.materials?.length ? (
+              <div className="chip-row">
+                {piece.materials.map((m) => (
+                  <span key={m.id} className="chip chip--static">
+                    <Package size={13} aria-hidden="true" />
+                    {m.name}
+                    <span className="chip-note">{MATERIAL_TYPE_LABELS[m.type] || m.type}</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="detail-placeholder"
+                onClick={() => {
+                  setEditMaterials([]);
+                  setMaterialsOpen(true);
+                }}
+              >
+                Inga material angivna. Tryck för att lägga till.
+              </button>
+            )}
+          </section>
+
+          {(created || updated) && (
+            <p className="detail-meta">
+              {created && <>Skapad {created}</>}
+              {created && updated && updated !== created && ' · '}
+              {updated && updated !== created && <>Ändrad {updated}</>}
+            </p>
           )}
-          {piece.done === 1 && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-              Färdig
-            </span>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Ta bort
-          </Button>
         </div>
       </div>
 
-      {/* Main content */}
-      <Card>
-        <CardContent className="pt-6 space-y-6">
-          {/* Description */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-              Beskrivning
-            </h3>
-            {editingField === 'description' ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  rows={4}
-                  disabled={saving}
-                  className="w-full"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={saveField}
-                    disabled={saving}
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Spara
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={cancelEditing}
-                    disabled={saving}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Avbryt
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div
-                className="whitespace-pre-wrap text-[var(--color-text-primary)] p-3 rounded-md border border-transparent hover:border-[var(--color-border)] cursor-pointer group transition-colors min-h-[3rem]"
-                onClick={() => startEditing('description')}
-                title="Klicka för att ändra"
-              >
-                {piece.description ? (
-                  <p className="flex items-start gap-2">
-                    <span className="flex-1">{piece.description}</span>
-                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0 mt-1" />
-                  </p>
-                ) : (
-                  <p className="text-[var(--color-text-tertiary)] italic flex items-center gap-2">
-                    <span>Ingen beskrivning ännu. Klicka för att skriva en.</span>
-                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+      <MoveSheet
+        open={!!moveFocus}
+        onOpenChange={(open) => !open && setMoveFocus(null)}
+        piece={{ ...piece, display_image_id: cover?.id, image_count: images.length, material_count: piece.materials?.length }}
+        phases={phases}
+        locations={locations}
+        onMove={movePiece}
+        showOpenLink={false}
+        focus={moveFocus || 'phase'}
+      />
 
-          {/* Phase and Location */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="phase-select">Fas</Label>
-              <div className="mt-2">
-                <Select value={selectedPhase?.toString() || 'null'} onValueChange={(value) => handlePhaseChange(value === 'null' ? null : value)} disabled={updating}>
-                  <SelectTrigger id="phase-select">
-                    <SelectValue>
-                      {piece.phase_name || 'Ingen fas'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="null">Ingen fas</SelectItem>
-                    {phases.map((phase) => (
-                      <SelectItem key={phase.id} value={phase.id.toString()}>
-                        {phase.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+      <Sheet open={uploadOpen} onOpenChange={setUploadOpen}>
+        <SheetContent title="Lägg till bilder" description={piece.name}>
+          <ImageUpload
+            pieceId={id}
+            phases={phases}
+            defaultPhaseId={piece.current_phase_id || null}
+            onUploaded={async ({ successCount = 1, errorCount = 0 } = {}) => {
+              await loadData({ quiet: true });
+              if (errorCount > 0) {
+                toast.error(`${errorCount} ${errorCount === 1 ? 'bild' : 'bilder'} kunde inte laddas upp`, 'Försök igen med dem.');
+                return; // arket står kvar så att användaren ser vilka som misslyckades
+              }
+              setUploadOpen(false);
+              toast.success(successCount === 1 ? 'Bilden är uppladdad' : `${successCount} bilder uppladdade`);
+            }}
+          />
+        </SheetContent>
+      </Sheet>
 
-            <div>
-              <Label htmlFor="location-select">Plats</Label>
-              <div className="mt-2">
-                <Select value={selectedLocation?.toString() || 'null'} onValueChange={(value) => handleLocationChange(value === 'null' ? null : value)} disabled={updating}>
-                  <SelectTrigger id="location-select">
-                    <SelectValue>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {piece.location_name || 'Ingen plats'}
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="null">Ingen plats</SelectItem>
-                    {locations.map((location) => (
-                      <SelectItem key={location.id} value={location.id.toString()}>
-                        {location.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          {updating && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Sparar…</p>}
-
-          {/* Materials */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Material
-            </h3>
-            {editingField === 'materials' ? (
-              <div className="space-y-3">
-                {materials.length === 0 ? (
-                  <p className="text-sm text-[var(--color-text-tertiary)] italic">
-                    Inga material upplagda ännu. Lägg till leror och glasyrer under Material.
-                  </p>
-                ) : (
-                  <div className="space-y-2 border border-[var(--color-border)] rounded-md p-4 bg-[var(--color-surface)]">
-                    {materials.map((material) => (
-                      <label
-                        key={material.id}
-                        className="flex items-center space-x-2 cursor-pointer hover:bg-[var(--color-surface-hover)] p-2 rounded"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={editMaterials.includes(material.id)}
-                          onChange={() => handleMaterialToggle(material.id)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm">
-                          {material.name} <span className="text-[var(--color-text-tertiary)]">({material.type})</span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={saveField}
-                    disabled={saving}
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Spara
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={cancelEditing}
-                    disabled={saving}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Avbryt
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div
-                className="p-3 rounded-md border border-transparent hover:border-[var(--color-border)] cursor-pointer group transition-colors"
-                onClick={() => startEditing('materials')}
-                title="Klicka för att ändra"
-              >
-                {piece.materials && piece.materials.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {piece.materials.map((material) => (
-                      <span
-                        key={material.id}
-                        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
-                      >
-                        {material.name} <span className="ml-2 text-[var(--color-text-tertiary)]">({material.type})</span>
-                      </span>
-                    ))}
-                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity ml-2" />
-                  </div>
-                ) : (
-                  <p className="text-[var(--color-text-tertiary)] italic flex items-center gap-2">
-                    <span>Inga material angivna. Klicka för att lägga till.</span>
-                    <Edit2 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Images */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5" />
-            Bilder
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ImageUpload pieceId={id} phases={phases} onUploaded={handleImageUploaded} defaultPhaseId={piece.current_phase_id || null} />
-
-          {piece.images && piece.images.length > 0 ? (
+      <Sheet open={materialsOpen} onOpenChange={setMaterialsOpen}>
+        <SheetContent
+          title="Material"
+          footer={
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
-                {piece.images.map((image, index) => {
-                  const isDefault = piece.default_image_id === image.id;
-                  return (
-                    <div
-                      key={image.id}
-                      className="relative group cursor-pointer rounded-md overflow-hidden border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
-                      onClick={() => setLightboxIndex(index)}
-                    >
-                      <img
-                        src={imagesAPI.getFileUrl(image.id, true)}
-                        alt={image.original_filename || 'Bild på pjäs'}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-end p-2">
-                        <div className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div>{image.phase_name || 'Okänd fas'}</div>
-                          <div className="text-xs opacity-90">
-                            {new Date(image.created_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                          isDefault
-                            ? 'bg-yellow-500 text-white opacity-100'
-                            : 'bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-yellow-500'
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSetDefaultImage(image.id);
-                        }}
-                        title={isDefault ? 'Ta bort som omslagsbild' : 'Använd som omslagsbild'}
-                      >
-                        <Star className={`h-4 w-4 ${isDefault ? 'fill-current' : ''}`} />
-                      </button>
-                      <button
-                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleImageDelete(image.id);
-                        }}
-                        title="Ta bort bild"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-              {lightboxIndex !== null && (
-                <ImageLightbox
-                  images={piece.images}
-                  currentIndex={lightboxIndex}
-                  onClose={() => setLightboxIndex(null)}
-                  onDelete={(imageId) => {
-                    handleImageDelete(imageId);
-                    if (piece.images.length === 1) {
-                      setLightboxIndex(null);
-                    } else if (lightboxIndex === piece.images.length - 1) {
-                      setLightboxIndex(lightboxIndex - 1);
-                    }
-                  }}
-                />
-              )}
+              <button type="button" className="btn btn-secondary" onClick={() => setMaterialsOpen(false)} disabled={saving}>
+                Avbryt
+              </button>
+              <button type="button" className="btn btn-primary" onClick={saveMaterials} disabled={saving}>
+                {saving ? 'Sparar…' : 'Spara'}
+              </button>
             </>
-          ) : (
-            <p className="text-center text-[var(--color-text-tertiary)] italic mt-6">
-              Inga bilder ännu. Ladda upp den första här ovanför – ett foto per fas gör det lätt att följa pjäsens resa.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          }
+        >
+          <MaterialPicker materials={materials} value={editMaterials} onChange={setEditMaterials} disabled={saving} />
+        </SheetContent>
+      </Sheet>
+
+      {lightboxIndex !== null && images.length > 0 && (
+        <ImageLightbox
+          images={images}
+          currentIndex={Math.min(lightboxIndex, images.length - 1)}
+          onNavigate={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          pieceName={piece.name}
+          onDelete={async (imageId) => {
+            const ok = await deleteImage(imageId);
+            if (!ok) return;
+            if (images.length === 1) setLightboxIndex(null);
+            else if (lightboxIndex >= images.length - 1) setLightboxIndex(images.length - 2);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -30,32 +30,17 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
 
 function KpiCard({ icon: Icon, label, value, sub, color }) {
   return (
-    <div style={{
-      background: 'var(--color-surface)',
-      borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--color-border)',
-      boxShadow: 'var(--shadow-md)',
-      padding: '20px 24px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      transition: 'all 220ms ease',
-    }}
-    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'; }}
-    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
-    >
-      <div style={{
-        width: 48, height: 48, borderRadius: '50%',
-        background: color ? `${color}18` : 'var(--color-primary-light)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}>
+    <div className="kpi-card">
+      <div
+        className="kpi-icon"
+        style={{ background: color ? `color-mix(in srgb, ${color} 14%, transparent)` : 'var(--color-primary-light)' }}
+      >
         <Icon size={22} color={color || 'var(--color-primary)'} />
       </div>
-      <div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.1 }}>{value}</div>
-        {sub && <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: 2 }}>{sub}</div>}
+      <div className="min-w-0">
+        <div className="kpi-label">{label}</div>
+        <div className="kpi-value">{value}</div>
+        {sub && <div className="kpi-sub">{sub}</div>}
       </div>
     </div>
   );
@@ -87,7 +72,7 @@ function StatsDashboard() {
 
   if (loading) {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+      <div className="kpi-grid">
         {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 100, borderRadius: 14 }} />)}
       </div>
     );
@@ -136,7 +121,7 @@ function StatsDashboard() {
       </h2>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+      <div className="kpi-grid">
         <KpiCard icon={Package} label="Totalt" value={totalPieces} sub="pjäser skapade" />
         <KpiCard icon={Clock} label="Aktiva" value={activePieces} sub="i arbete" color="var(--phase-color-2-accent)" />
         <KpiCard icon={CheckCircle} label="Färdiga" value={donePieces} sub="klara pjäser" color="var(--color-success)" />
@@ -144,7 +129,7 @@ function StatsDashboard() {
       </div>
 
       {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: 20 }}>
 
         {/* Phase Distribution */}
         {phaseData.length > 0 && (

@@ -1,0 +1,21 @@
+# Testserver på Hemmalinux (systemd user-enhet). Vite dev-server på 4301 med
+# HMR, så varje kodändring syns direkt i telefonen utan ombyggnad.
+# Porten är claimad via Helm: helmctl port claim potterytracker-frontend
+# Publicerad tailnet-only: tailscale serve --bg --https=8453 http://127.0.0.1:4301
+# Serve-porten är claimad via Helm: helmctl serve claim potterytracker 8453
+[Unit]
+Description=PotteryTracker TEST frontend (Vite dev, port 4301, tailnet via tailscale serve 8453)
+After=network-online.target potterytracker-backend.service
+Wants=potterytracker-backend.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/programmering/potterytracker/frontend
+Environment=FRONTEND_PORT=4301
+Environment=API_PROXY_TARGET=http://127.0.0.1:4300
+ExecStart=/usr/bin/env npx vite --host 127.0.0.1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

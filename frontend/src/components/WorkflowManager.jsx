@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PageSkeleton from './PageSkeleton';
+import EmptyState from './EmptyState';
 import { phasesAPI, locationsAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { GripVertical, Edit, Trash2, Plus, Layers, MapPin } from 'lucide-react';
+import { useToast } from './ui/toast';
+import { useConfirm } from './ui/confirm-dialog';
 
 function WorkflowManager() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState('phases');
   const [phases, setPhases] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -269,15 +275,19 @@ function WorkflowManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm(`Vill du ta bort den här ${itemLabel}en?`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Ta bort ${itemLabel}en?`,
+      description: 'Det går inte att ångra.',
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       await currentAPI.delete(id);
       loadData();
     } catch (err) {
-      alert(`Kunde inte ta bort ${itemLabel}en: ` + err.message);
+      toast.error(`Kunde inte ta bort ${itemLabel}en`, err.message);
     }
   };
 
@@ -297,13 +307,7 @@ function WorkflowManager() {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Laddar…</div>
-        </CardContent>
-      </Card>
-    );
+    return <PageSkeleton rows={4} label="Laddar arbetsflöde" />;
   }
 
   return (
@@ -398,11 +402,20 @@ function WorkflowManager() {
       <Card>
         <CardContent className="pt-6">
           {currentItems.length === 0 ? (
-            <p className="text-center text-[var(--color-text-tertiary)]">
-              {activeTab === 'phases'
-                ? 'Inga faser ännu. Skapa stegen som dina pjäser går igenom – till exempel På tork, Skröjbränd och Glaserad.'
-                : 'Inga platser ännu. Lägg till hyllor och platser i verkstaden så ser du var varje pjäs står.'}
-            </p>
+            <EmptyState
+              title={activeTab === 'phases' ? 'Inga faser ännu' : 'Inga platser ännu'}
+              text={
+                activeTab === 'phases'
+                  ? 'Skapa stegen som dina pjäser går igenom, till exempel På tork, Skröjbränd och Glaserad.'
+                  : 'Lägg till hyllor och platser i verkstaden så ser du var varje pjäs står.'
+              }
+              actionLabel={activeTab === 'phases' ? 'Lägg till första fasen' : 'Lägg till första platsen'}
+              onAction={() => {
+                setShowForm(true);
+                setEditingId(null);
+                setFormData({ name: '', display_order: 0 });
+              }}
+            />
           ) : (
             <div className="space-y-2">
               {currentItems.map((item, index) => (
@@ -450,8 +463,10 @@ function WorkflowManager() {
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="ghost"
                       size="sm"
+                      className="text-[var(--color-error)] hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)]"
+                      aria-label={`Ta bort ${item.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(item.id);

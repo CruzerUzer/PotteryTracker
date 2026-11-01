@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -17,20 +17,14 @@ import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Settings from './components/Settings';
-import ThemeToggle from './components/ThemeToggle';
-import Logo from './components/Logo';
+import AppHeader from './components/AppHeader';
 import AdminPanel from './components/AdminPanel';
 import ResetPassword from './components/ResetPassword';
 import InstallPrompt from './components/InstallPrompt';
 const StatsDashboard = lazy(() => import('./components/StatsDashboard'));
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from './components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ToastProvider } from './components/ui/toast';
+import { ConfirmProvider } from './components/ui/confirm-dialog';
+import { useScrollMemory } from './hooks/useScrollMemory';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -65,7 +59,9 @@ function AdminRoute({ children }) {
 }
 
 function AppContent() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  useScrollMemory();
 
   if (loading) {
     return (
@@ -76,68 +72,13 @@ function AppContent() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className={`app-shell${user ? ' app-shell--authed' : ''}`}>
       {user && <Sidebar />}
-      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {user && (
-          <header>
-            <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Logo size={26} />
-                <h1 style={{ margin: 0, cursor: 'pointer' }}>
-                  Pottery<span className="wordmark-accent">Tracker</span>
-                </h1>
-              </Link>
-              {user && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <ThemeToggle />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--color-border)',
-                        background: 'var(--color-surface)',
-                        color: 'var(--color-text-primary)',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = 'var(--color-surface-hover)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'var(--color-surface)';
-                      }}
-                    >
-                      <User size={16} />
-                      <span>{user.username}</span>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={async () => {
-                        await logout();
-                      }}
-                      style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-                    >
-                      <LogOut size={16} />
-                      <span>Logga ut</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                </div>
-              )}
-            </div>
-          </header>
-        )}
-        <main style={{ flex: 1 }}>
-          <div className="container">
-            <Routes>
+      <div className="main-content">
+        {user && <AppHeader />}
+        <main className="app-main">
+          <div className="container page-transition" key={location.pathname}>
+            <Routes location={location}>
               <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
               <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -248,9 +189,13 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <AppContent />
-          </Router>
+          <ToastProvider>
+            <ConfirmProvider>
+              <Router>
+                <AppContent />
+              </Router>
+            </ConfirmProvider>
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

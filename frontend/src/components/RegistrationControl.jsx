@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PageSkeleton from './PageSkeleton';
 import { adminAPI } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { Button } from './ui/button';
@@ -47,7 +48,7 @@ function RegistrationControl() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Laddar…</div>;
+    return <PageSkeleton rows={1} title={false} />;
   }
 
   return (

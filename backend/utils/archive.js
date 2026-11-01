@@ -144,6 +144,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
         imageFiles.add(img.filename);
       });
       (studyData.study_session_images || []).forEach((img) => imageFiles.add(img.filename));
+      (studyData.glaze_test_images || []).forEach((img) => imageFiles.add(img.filename));
 
       // Add images
       for (const filename of imageFiles) {
@@ -283,7 +284,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
       } else if (file.path === 'data/piece_images.json') {
         pieceImages = JSON.parse(content.toString());
       } else {
-        const m = file.path.match(/^data\/(study_[a-z_]+)\.json$/);
+        const m = file.path.match(/^data\/((?:study|glaze)_[a-z_]+)\.json$/);
         if (m && STUDY_EXPORT_FILES.includes(m[1])) {
           studyData[m[1]] = JSON.parse(content.toString());
         }
@@ -388,6 +389,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
       imageFilesToImport.add(img.filename);
     });
     (studyData.study_session_images || []).forEach((img) => imageFilesToImport.add(img.filename));
+    (studyData.glaze_test_images || []).forEach((img) => imageFilesToImport.add(img.filename));
     
     for (const file of directory.files) {
       if (file.path.startsWith('images/') && !file.path.endsWith('/')) {

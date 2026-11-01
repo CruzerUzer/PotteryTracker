@@ -175,6 +175,9 @@ function StudyToday() {
             <Link to="/studie/logg" className="study-hero-link">
               Loggboken <ArrowRight size={13} />
             </Link>
+            <Link to="/studie/glasyr" className="study-hero-link">
+              Glasyr <ArrowRight size={13} />
+            </Link>
           </p>
         </div>
         <ProgressRing value={progress.doneInBlock} max={progress.blockLength} label={`${progress.doneInBlock} av ${progress.blockLength} pass i blocket`} />

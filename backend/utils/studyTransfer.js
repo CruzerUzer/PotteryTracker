@@ -17,6 +17,9 @@ export const STUDY_EXPORT_FILES = [
   'study_session_images',
   'study_block_reviews',
   'study_metrics',
+  'glaze_recipes',
+  'glaze_tests',
+  'glaze_test_images',
 ];
 
 /** Läser all studiedata för en användare. */
@@ -38,6 +41,9 @@ export async function exportStudyData(db, userId) {
     study_session_images: await db.all('SELECT * FROM study_session_images WHERE user_id = ? ORDER BY id', [userId]),
     study_block_reviews: await db.all('SELECT * FROM study_block_reviews WHERE user_id = ? ORDER BY id', [userId]),
     study_metrics: await db.all('SELECT * FROM study_metrics WHERE user_id = ? ORDER BY id', [userId]),
+    glaze_recipes: await db.all('SELECT * FROM glaze_recipes WHERE user_id = ? ORDER BY id', [userId]),
+    glaze_tests: await db.all('SELECT * FROM glaze_tests WHERE user_id = ? ORDER BY id', [userId]),
+    glaze_test_images: await db.all('SELECT * FROM glaze_test_images WHERE user_id = ? ORDER BY id', [userId]),
   };
 }
 
@@ -50,7 +56,7 @@ export async function deleteStudyData(db, userId) {
     'DELETE FROM study_session_pieces WHERE session_id IN (SELECT id FROM study_sessions WHERE user_id = ?)',
     [userId]
   );
-  for (const table of ['study_metrics', 'study_block_reviews', 'study_session_images', 'study_log_entries', 'study_series', 'study_gate_checks', 'study_sessions', 'study_stage_phase_map', 'study_plan_revisions', 'study_plans']) {
+  for (const table of ['glaze_test_images', 'glaze_tests', 'glaze_recipes', 'study_metrics', 'study_block_reviews', 'study_session_images', 'study_log_entries', 'study_series', 'study_gate_checks', 'study_sessions', 'study_stage_phase_map', 'study_plan_revisions', 'study_plans']) {
     await db.run(`DELETE FROM ${table} WHERE user_id = ?`, [userId]);
   }
 }
@@ -73,7 +79,7 @@ export async function importStudyData(db, data, targetUserId, maps = {}) {
   const phase = lookup(maps.phases);
   const material = lookup(maps.materials);
   const pieceImage = lookup(maps.pieceImages);
-  const counts = { plans: 0, sessions: 0, sessionPieces: 0, series: 0, gateChecks: 0, logEntries: 0, images: 0, reviews: 0, metrics: 0 };
+  const counts = { plans: 0, sessions: 0, sessionPieces: 0, series: 0, gateChecks: 0, logEntries: 0, images: 0, reviews: 0, metrics: 0, glazeRecipes: 0, glazeTests: 0, glazeImages: 0 };
 
   const plans = data.study_plans || [];
   const planMap = new Map();
@@ -202,6 +208,39 @@ export async function importStudyData(db, data, targetUserId, maps = {}) {
       [targetUserId, m.plan_block_id, m.metric_id, m.value, m.measured_at, sessionMap.get(m.session_id) ?? null, m.note, m.created_at]
     );
     counts.metrics++;
+  }
+
+  const recipeMap = new Map();
+  for (const r of data.glaze_recipes || []) {
+    const res = await db.run(
+      'INSERT INTO glaze_recipes (user_id, name, cone, ingredients_json, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [targetUserId, r.name, r.cone, r.ingredients_json, r.notes, r.created_at, r.updated_at]
+    );
+    recipeMap.set(r.id, res.lastID);
+    counts.glazeRecipes++;
+  }
+  const testMap = new Map();
+  for (const t of data.glaze_tests || []) {
+    const res = await db.run(
+      `INSERT INTO glaze_tests (user_id, session_id, tile_code, clay_material_id, glaze_material_id, recipe_id, method,
+         dip_seconds, coats, layering, firing, result, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [targetUserId, sessionMap.get(t.session_id) ?? null, t.tile_code, material(t.clay_material_id), material(t.glaze_material_id),
+        recipeMap.get(t.recipe_id) ?? null, t.method, t.dip_seconds, t.coats, t.layering, t.firing, t.result, t.created_at, t.updated_at]
+    );
+    testMap.set(t.id, res.lastID);
+    counts.glazeTests++;
+  }
+  for (const img of data.glaze_test_images || []) {
+    const testId = testMap.get(img.glaze_test_id);
+    if (!testId) continue;
+    const filename = maps.copyFile ? maps.copyFile(img.filename) : img.filename;
+    if (!filename) continue;
+    await db.run(
+      'INSERT INTO glaze_test_images (glaze_test_id, user_id, filename, original_filename, created_at) VALUES (?, ?, ?, ?, ?)',
+      [testId, targetUserId, filename, img.original_filename, img.created_at]
+    );
+    counts.glazeImages++;
   }
 
   return counts;

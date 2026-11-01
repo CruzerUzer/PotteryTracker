@@ -11,12 +11,26 @@ och ägarens svar. Uppdatera statustabellen när en modul blir klar.
 | 2. Timer | `feature/studie-2-timer` | Klar 2026-11-01, väntar på ägarens test |
 | 3. Loggbok, blockutvärdering, mått | `feature/studie-3-loggbok` | Klar 2026-11-01, väntar på ägarens test |
 | 5. Versionerad plan och manuell redigering | `feature/studie-5-plan-redigering` | Klar 2026-11-01, väntar på ägarens test (utan AI) |
-| 4. Glasyrtester, minsta version | `feature/studie-4-glasyr` | Planerad |
+| 4. Glasyrtester, minsta version | `feature/studie-4-glasyr` | Klar 2026-11-01, väntar på ägarens test |
 | AI-redigering (del av modul 5) | – | Skjuten på framtiden, se nedan |
 
 En commit per modul. Backendtester och frontendbygge körs före och efter.
 Ägaren testar på testservern (:8453) innan merge. Inget till produktion utan
 uttryckligt OK (CLAUDE.md).
+
+### Branchar och test (2026-11-01)
+
+Branscharna är staplade i byggordning: `studie-1-plan` → `studie-2-timer` →
+`studie-3-loggbok` → `studie-5-plan-redigering` → `studie-4-glasyr`. Varje
+branch innehåller modulerna före. Testservern (:8453) kör arbetskatalogen,
+alltså den senaste branchen med alla moduler. Merge till main i samma
+ordning (eller bara den sista, som innehåller allt).
+
+Migrationen `database/migrate_study.js` skapar alla studietabeller och är
+idempotent; servern kör den också vid start. Studie slås på per användare
+under Admin → Användare.
+
+Kvar till senare: AI-redigering (beslut 6), linjeblandning i glasyrtester.
 
 ## Beslut från ägaren (2026-11-01)
 

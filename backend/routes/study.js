@@ -588,6 +588,8 @@ router.delete('/sessions/:id', handle('ta bort passet', async (req, res) => {
   await db.run('DELETE FROM study_session_images WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
   for (const img of imgs || []) removeStudyFiles(img.filename);
   await db.run('UPDATE study_series SET session_id = NULL WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
+  await db.run('UPDATE glaze_tests SET session_id = NULL WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
+  await db.run('UPDATE study_metrics SET session_id = NULL WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
   await db.run('DELETE FROM study_sessions WHERE id = ? AND user_id = ?', [row.id, req.userId]);
   logger.info('Study session deleted', { userId: req.userId, sessionId: row.id });
   res.json({ message: 'Passet är borttaget' });

@@ -235,7 +235,7 @@ async function main() {
     console.log(`  bilder: ${imageMap.size}${orphanImages ? ` (varav ${orphanImages} föräldralösa → första fasen)` : ''}`);
     console.log(`  default-bilder satta: ${defaultsFixed}`);
     console.log(`  material-kopplingar: ${links}`);
-    console.log(`  studie: ${study.plans} plan, ${study.sessions} pass, ${study.sessionPieces} alsterkopplingar, ${study.series} serier, ${study.gateChecks} grindkryss, ${study.logEntries} loggrader, ${study.images} foton, ${study.reviews} utvärderingar, ${study.metrics} mått`);
+    console.log(`  studie: ${study.plans} plan, ${study.sessions} pass, ${study.sessionPieces} alsterkopplingar, ${study.series} serier, ${study.gateChecks} grindkryss, ${study.logEntries} loggrader, ${study.images} foton, ${study.reviews} utvärderingar, ${study.metrics} mått, ${study.glazeTests} provplattor, ${study.glazeRecipes} recept`);
   } catch (err) {
     await db.exec('ROLLBACK');
     throw err;

@@ -11,6 +11,8 @@ import SeriesForm from './SeriesForm';
 import PiecePicker from './PiecePicker';
 import SessionPieces from './SessionPieces';
 import LogbookForm from './LogbookForm';
+import { GlazeTestForm } from './GlazeForms';
+import { GlazeTile } from './StudyGlaze';
 import { Link } from 'react-router-dom';
 import SegmentTimer, { QuickActions } from './SegmentTimer';
 import { useStudyClock } from '../../hooks/useStudyClock';
@@ -105,6 +107,8 @@ function StudySession() {
   const [drawn, setDrawn] = useState(null);
   const goalSaved = useRef('');
   const [editingLog, setEditingLog] = useState(false);
+  const [glazeTests, setGlazeTests] = useState([]);
+  const [glazeForm, setGlazeForm] = useState(null);
   const [reviewDue, setReviewDue] = useState(null);
 
   const load = useCallback(async () => {
@@ -157,6 +161,11 @@ function StudySession() {
   useEffect(() => {
     studyAPI.getToday().then((t) => setShelf(t.shelf)).catch(() => {});
   }, [id]);
+
+  const loadGlaze = useCallback(() => {
+    studyAPI.listGlazeTests(id).then(setGlazeTests).catch(() => {});
+  }, [id]);
+  useEffect(() => { loadGlaze(); }, [loadGlaze]);
 
   const update = async (patch, { quiet = true } = {}) => {
     try {
@@ -523,6 +532,20 @@ function StudySession() {
       />
 
       <section className="study-section">
+        <div className="study-section-head">
+          <h2 className="study-h2">Provplattor{glazeTests.length ? ` · ${glazeTests.length}` : ''}</h2>
+          <button type="button" className="link-btn" onClick={() => setGlazeForm({ id: null })}>
+            <Plus size={13} /> Ny provplatta
+          </button>
+        </div>
+        {glazeTests.length > 0 ? (
+          <ul className="tile-list">{glazeTests.map((t) => <GlazeTile key={t.id} t={t} onOpen={(gid) => setGlazeForm({ id: gid })} />)}</ul>
+        ) : (
+          <p className="study-muted">Inga provplattor i passet.</p>
+        )}
+      </section>
+
+      <section className="study-section">
         <h2 className="study-h2">Utmaningskort</h2>
         <ChallengeCard
           card={card}
@@ -594,6 +617,13 @@ function StudySession() {
         </div>
       )}
 
+      <GlazeTestForm
+        open={!!glazeForm}
+        onOpenChange={(o) => !o && setGlazeForm(null)}
+        testId={glazeForm?.id || null}
+        sessionId={session.id}
+        onSaved={loadGlaze}
+      />
       <SeriesForm
         open={seriesOpen}
         onOpenChange={setSeriesOpen}

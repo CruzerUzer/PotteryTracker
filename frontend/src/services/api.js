@@ -409,6 +409,28 @@ export const studyAPI = {
   createMetric: (data) => apiCall('/study/metrics', { method: 'POST', body: json(data) }),
   deleteMetric: (id) => apiCall(`/study/metrics/${id}`, { method: 'DELETE' }),
   exportUrl: (format) => `${API_BASE}/study/export?format=${format}`,
+  listGlazeTests: (sessionId) => apiCall(`/study/glaze/tests${sessionId ? `?session_id=${sessionId}` : ''}`),
+  getGlazeTest: (id) => apiCall(`/study/glaze/tests/${id}`),
+  nextTileCode: () => apiCall('/study/glaze/tests/next-code'),
+  createGlazeTest: (data) => apiCall('/study/glaze/tests', { method: 'POST', body: json(data) }),
+  updateGlazeTest: (id, data) => apiCall(`/study/glaze/tests/${id}`, { method: 'PUT', body: json(data) }),
+  deleteGlazeTest: (id) => apiCall(`/study/glaze/tests/${id}`, { method: 'DELETE' }),
+  uploadGlazeImage: async (id, file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await fetch(`${API_BASE}/study/glaze/tests/${id}/images`, { method: 'POST', credentials: 'include', body: formData });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Uppladdningen misslyckades' }));
+      throw new Error(error.error || 'Uppladdningen misslyckades');
+    }
+    return response.json();
+  },
+  deleteGlazeImage: (imageId) => apiCall(`/study/glaze-images/${imageId}`, { method: 'DELETE' }),
+  glazeImageUrl: (imageId, thumbnail = false) => `${API_BASE}/study/glaze-images/${imageId}/file${thumbnail ? '?thumbnail=true' : ''}`,
+  listRecipes: () => apiCall('/study/glaze/recipes'),
+  createRecipe: (data) => apiCall('/study/glaze/recipes', { method: 'POST', body: json(data) }),
+  updateRecipe: (id, data) => apiCall(`/study/glaze/recipes/${id}`, { method: 'PUT', body: json(data) }),
+  deleteRecipe: (id) => apiCall(`/study/glaze/recipes/${id}`, { method: 'DELETE' }),
   drawCard: (block, exclude) => {
     const params = new URLSearchParams();
     if (block) params.set('block', block);

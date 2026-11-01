@@ -154,6 +154,54 @@ CREATE TABLE IF NOT EXISTS study_metrics (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Modul 4: glasyrtester (minsta version)
+CREATE TABLE IF NOT EXISTS glaze_recipes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    cone TEXT,
+    ingredients_json TEXT NOT NULL DEFAULT '[]',
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS glaze_tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    session_id INTEGER,
+    tile_code TEXT NOT NULL,
+    clay_material_id INTEGER,
+    glaze_material_id INTEGER,
+    recipe_id INTEGER,
+    method TEXT CHECK(method IN ('dip', 'brush', 'pour', 'spray', 'other')),
+    dip_seconds REAL,
+    coats INTEGER,
+    layering TEXT,
+    firing TEXT,
+    result TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES glaze_recipes(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS glaze_test_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    glaze_test_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    original_filename TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (glaze_test_id) REFERENCES glaze_tests(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_glaze_recipes_user ON glaze_recipes(user_id);
+CREATE INDEX IF NOT EXISTS idx_glaze_tests_user ON glaze_tests(user_id);
+CREATE INDEX IF NOT EXISTS idx_glaze_tests_session ON glaze_tests(session_id);
+CREATE INDEX IF NOT EXISTS idx_glaze_test_images_test ON glaze_test_images(glaze_test_id);
 CREATE INDEX IF NOT EXISTS idx_study_log_entries_user ON study_log_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_session_images_session ON study_session_images(session_id);
 CREATE INDEX IF NOT EXISTS idx_study_block_reviews_user ON study_block_reviews(user_id);

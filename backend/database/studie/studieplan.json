@@ -1,11 +1,14 @@
 {
   "$schema": "./studieplan.schema.json",
   "id": "studieplan-2026",
-  "version": 1,
+  "version": 2,
   "title": "Studieplan i keramik – från drejning till färdigt alster",
   "language": "sv",
   "createdAt": "2026-11-01",
   "source": "https://claude.ai/artifact/PTWnLk4KpnTx63pbuKvzCw",
+  "changes": [
+    { "version": 2, "date": "2026-11-01", "summary": "Huvudpasset 65 minuter, Lämna skivan 15 minuter." }
+  ],
   "goals": [
     "Teknisk säkerhet i hela kedjan: centrera och dra upp på första försöket, svarva rent, hänklar och lock som sitter, glasyr utan överraskningar.",
     "Ett eget formspråk: i slutet av året kunna peka på en serie föremål och säga 'det där är mitt'.",
@@ -24,11 +27,11 @@
     "segments": [
       { "id": "in", "fromMinute": 0, "toMinute": 15, "name": "In, utan skiva", "wheel": false,
         "description": "Läs förra veckans tre rader, skriv dagens delmål. Knåda och väg lera till hela passet. Ta fram läderhårt gods. Dra hänklar och låt dem vila." },
-      { "id": "main", "fromMinute": 15, "toMinute": 85, "name": "Huvudpass, på skivan", "wheel": true,
+      { "id": "main", "fromMinute": 15, "toMinute": 80, "name": "Huvudpass, på skivan", "wheel": true,
         "description": "Blockets övning, oftast en serie om 6–10. De två första är uppvärmning: skär itu en av dem och titta på väggen innan du fortsätter. Sista föremålet får bli en fri variant." },
-      { "id": "finish", "fromMinute": 85, "toMinute": 125, "name": "Finish, på skivan", "wheel": true,
+      { "id": "finish", "fromMinute": 80, "toMinute": 120, "name": "Finish, på skivan", "wheel": true,
         "description": "Svarva förra veckans läderhårda gods. Sätt de vilade hänklarna, passa lock." },
-      { "id": "leave-wheel", "fromMinute": 125, "toMinute": 135, "name": "Lämna skivan", "wheel": true,
+      { "id": "leave-wheel", "fromMinute": 120, "toMinute": 135, "name": "Lämna skivan", "wheel": true,
         "description": "Torka av skiva och stänkskydd. Täck det nya godset tätt." },
       { "id": "surface", "fromMinute": 135, "toMinute": 160, "name": "Yta och glasyr, utan skiva", "wheel": false,
         "description": "Dekorera läderhårt eller torrt gods. Glasera skröjbränt gods och provplattor." },

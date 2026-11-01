@@ -473,7 +473,7 @@ function StudySession() {
         {status === 'prepared' && !backdated && (
           <label className="study-check">
             <input type="checkbox" checked={session.is_free} onChange={(e) => update({ is_free: e.target.checked })} />
-            <span>Fritt pass (räknas inte upp veckan)</span>
+            <span>Fritt pass (räknar inte upp veckan)</span>
           </label>
         )}
       </section>

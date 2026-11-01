@@ -30,7 +30,7 @@ Planen bygger på det som håller i forskningen om motorisk inlärning, reflekti
 
 | Princip | Vad forskningen säger | Så syns det i planen |
 | --- | --- | --- |
-| Avsiktlig övning | [Ericsson](https://jsomers.net/blog/deliberate-practice): tydligt delmål, omedelbar återkoppling, repetition och full koncentration; fokuserade pass på 80–120 minuter. [Macnamara](https://www.sciencedaily.com/releases/2014/07/140716123835.htm) visar att övning förklarar en del av skillnaden mellan utövare, inte allt. | Ett delmål per session. Huvudpasset är 70 minuter. Platåer är normala, inte ett misslyckande. |
+| Avsiktlig övning | [Ericsson](https://jsomers.net/blog/deliberate-practice): tydligt delmål, omedelbar återkoppling, repetition och full koncentration; fokuserade pass på 80–120 minuter. [Macnamara](https://www.sciencedaily.com/releases/2014/07/140716123835.htm) visar att övning förklarar en del av skillnaden mellan utövare, inte allt. | Ett delmål per session. Huvudpasset är 65 minuter. Platåer är normala, inte ett misslyckande. |
 | Utmaningspunkten | [Guadagnoli & Lee](https://en.wikipedia.org/wiki/Challenge_point_framework): inlärning är störst vid en svårighet som växer med skickligheten. Sämre resultat i stunden är priset för inlärning. | Varje block höjer svårigheten: mer lera, högre, tunnare, nya former. |
 | Serier och blandning | Blandad övning ger bättre kvarhållning i labb, men stödet i verkliga miljöer är svagt ([Czyż m.fl. 2024](https://frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2024.1377122/full)). Blockad repetition fungerar när en delfärdighet är ny. | Serier av samma form när något är nytt. Blandade former i samma session när det börjar sitta. |
 | Återkoppling | Mät, men inte efter varje försök; bestäm själv när du kontrollerar. Stödet för självstyrd återkoppling är lovande men svagt ([metaanalys 2025](https://www.mdpi.com/2076-328X/15/9/1291)). | Skär itu ett föremål per session. Skjutmått och foto, inte en dom efter varje mugg. |
@@ -52,9 +52,9 @@ Skivan är bokad två timmar, 0:15–2:15. Kvarten före är förberedelse, de 4
 | Tid | Pass | Vad du gör |
 | --- | --- | --- |
 | 0:00–0:15 | In, utan skiva | Läs förra veckans tre rader, skriv dagens delmål. Knåda och väg lera till hela passet. Ta fram läderhårt gods. Dra hänklar och låt dem vila. |
-| 0:15–1:25 | Huvudpass, på skivan | Blockets övning (avsnitt 5), oftast en serie om 6–10. De två första är uppvärmning: skär itu en av dem och titta på väggen innan du fortsätter. Sista föremålet får bli en fri variant. |
-| 1:25–2:05 | Finish, på skivan | Svarva förra veckans läderhårda gods. Sätt de vilade hänklarna, passa lock. |
-| 2:05–2:15 | Lämna skivan | Torka av skiva och stänkskydd. Täck det nya godset tätt. |
+| 0:15–1:20 | Huvudpass, på skivan | Blockets övning (avsnitt 5), oftast en serie om 6–10. De två första är uppvärmning: skär itu en av dem och titta på väggen innan du fortsätter. Sista föremålet får bli en fri variant. |
+| 1:20–2:00 | Finish, på skivan | Svarva förra veckans läderhårda gods. Sätt de vilade hänklarna, passa lock. |
+| 2:00–2:15 | Lämna skivan | Torka av skiva och stänkskydd. Täck det nya godset tätt. |
 | 2:15–2:40 | Yta och glasyr, utan skiva | Dekorera läderhårt eller torrt gods. Glasera skröjbränt gods och provplattor. |
 | 2:40–3:00 | Städ och logg ut | Städa bord och verktyg, 15 minuter. Märk gods. Tre rader och ett foto i loggboken, 5 minuter. |
 

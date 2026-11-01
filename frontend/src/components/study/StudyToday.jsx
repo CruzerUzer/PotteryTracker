@@ -250,7 +250,7 @@ function StudyToday() {
             <CalendarPlus size={14} /> Logga ett pass i efterhand
           </button>
         </div>
-        <p className="study-muted study-start-hint">Ett fritt pass räknas inte upp veckan.</p>
+        <p className="study-muted study-start-hint">Ett fritt pass räknar inte upp veckan.</p>
       </section>
 
       {gate && gate.items.length > 0 && (
@@ -340,7 +340,7 @@ function StudyToday() {
             </label>
             <label className="study-check">
               <input type="checkbox" checked={lateFree} onChange={(e) => setLateFree(e.target.checked)} />
-              <span>Fritt pass (räknas inte upp veckan)</span>
+              <span>Fritt pass (räknar inte upp veckan)</span>
             </label>
           </div>
         </SheetContent>

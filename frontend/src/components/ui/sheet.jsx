@@ -59,6 +59,20 @@ const SheetContent = React.forwardRef(
       }
     };
 
+    // Radix låter bara översta lagret ta emot Escape, och en toast räknas som
+    // ett lager. Stäng arket även då, men inte om en bekräftelsedialog är öppen.
+    React.useEffect(() => {
+      const onKey = (e) => {
+        if (e.key !== 'Escape') return;
+        if (panelRef.current?.dataset.state !== 'open') return;
+        if (document.querySelector('[role="alertdialog"][data-state="open"]')) return;
+        if (document.querySelector('[role="menu"][data-state="open"]')) return;
+        closeRef.current?.click();
+      };
+      document.addEventListener('keydown', onKey);
+      return () => document.removeEventListener('keydown', onKey);
+    }, []);
+
     const dragHandlers = {
       onPointerDown,
       onPointerMove,

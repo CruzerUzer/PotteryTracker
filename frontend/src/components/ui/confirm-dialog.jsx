@@ -57,7 +57,6 @@ export function ConfirmProvider({ children }) {
                 type="button"
                 className={`btn ${state?.destructive ? 'btn-danger' : 'btn-primary'}`}
                 onClick={() => finish(true)}
-                autoFocus
               >
                 {state?.confirmLabel || 'OK'}
               </button>

@@ -1,53 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { piecesAPI, phasesAPI, imagesAPI } from '../services/api';
+import { Plus } from 'lucide-react';
+import { piecesAPI } from '../services/api';
 import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Plus, Package, Image as ImageIcon } from 'lucide-react';
+import { PieceLinkTile } from './kanban/PieceCard';
+import EmptyState from './EmptyState';
 
+/** Färdiga pjäser som ett galleri. */
 function DonePieces() {
   const [pieces, setPieces] = useState([]);
-  const [phases, setPhases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadData();
+    let alive = true;
+    piecesAPI
+      .getAll()
+      .then((data) => alive && setPieces(data.filter((piece) => piece.done === 1)))
+      .catch((err) => alive && setError(err.message))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
   }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [piecesData, phasesData] = await Promise.all([
-        piecesAPI.getAll(),
-        phasesAPI.getAll(),
-      ]);
-      const donePieces = piecesData.filter(piece => piece.done === 1);
-      setPieces(donePieces);
-      setPhases(phasesData);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Laddar…</div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4" aria-busy="true">
+        <div className="skeleton h-8 w-48" />
+        <div className="tile-grid">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton tile-skeleton" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="page-title">Färdiga pjäser</h2>
-        <Button asChild>
+    <div className="done-view">
+      <div className="actions-row">
+        <div>
+          <h2 className="page-title">Färdiga pjäser</h2>
+          <p className="page-subtitle">
+            {pieces.length === 0 ? 'Samlingen väntar' : `${pieces.length} ${pieces.length === 1 ? 'pjäs' : 'pjäser'} i samlingen`}
+          </p>
+        </div>
+        <Button asChild className="hide-below-lg">
           <Link to="/pieces/new">
             <Plus className="mr-2 h-4 w-4" />
             Ny pjäs
@@ -56,72 +55,23 @@ function DonePieces() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm">
+        <div className="error" role="alert">
           {error}
         </div>
       )}
 
       {pieces.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-[var(--color-text-tertiary)]">
-              Inga färdiga pjäser ännu. När en pjäs når sista fasen hamnar den här – din samling växer med varje bränning.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          title="Inga färdiga pjäser ännu"
+          text="När en pjäs når sista fasen hamnar den här. Din samling växer med varje bränning."
+          actionLabel="Till Kanban"
+          actionTo="/"
+          plus={false}
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="tile-grid tile-grid--gallery">
           {pieces.map((piece) => (
-            <Card key={piece.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <Link
-                to={`/pieces/${piece.id}`}
-                className="block"
-              >
-                <div className="relative">
-                  {piece.display_image_id ? (
-                    <div className="aspect-video overflow-hidden bg-[var(--color-surface-hover)]">
-                      <img
-                        src={imagesAPI.getFileUrl(piece.display_image_id, true)}
-                        alt={piece.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-[var(--color-surface-hover)] flex items-center justify-center">
-                      <ImageIcon className="h-12 w-12 text-[var(--color-text-tertiary)]" />
-                    </div>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-lg line-clamp-2 flex-1">{piece.name}</h3>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)] text-white flex-shrink-0">
-                      Färdig
-                    </span>
-                  </div>
-                  {piece.phase_name && (
-                    <span className="inline-block px-2 py-1 rounded-md text-xs font-medium bg-[var(--phase-color-1)] text-[var(--color-text-primary)] border border-[var(--color-border)] mb-2">
-                      {piece.phase_name}
-                    </span>
-                  )}
-                  {piece.description && (
-                    <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2 mt-2">
-                      {piece.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 mt-3 text-xs text-[var(--color-text-tertiary)]">
-                    <span className="flex items-center gap-1">
-                      <Package className="h-3 w-3" />
-                      {piece.material_count || 0}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ImageIcon className="h-3 w-3" />
-                      {piece.image_count || 0}
-                    </span>
-                  </div>
-                </CardContent>
-              </Link>
-            </Card>
+            <PieceLinkTile key={piece.id} piece={piece} showDone={false} showPhase={false} />
           ))}
         </div>
       )}

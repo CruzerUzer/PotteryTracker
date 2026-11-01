@@ -159,7 +159,7 @@ describe('Study API', () => {
   });
 
   describe('POST /api/study/sessions', () => {
-    it('skapar ett pass med veckans huvudpass som delmål och mallens segment', async () => {
+    it('skapar ett pass med veckans drejning som delmål och mallens segment', async () => {
       const s = setupDb({ completed: 4 });
       s.session = sessionRow();
       await request(app).post('/api/study/sessions').send({}).expect(201);

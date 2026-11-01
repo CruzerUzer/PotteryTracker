@@ -125,19 +125,21 @@ Startsidan. Innehåll uppifrån och ned:
    framstegsring (4/12) och årets framsteg (pass 8 av 52).
 2. **Förra gången.** Citatkort med förra passets "en förändring" (och
    observationen i mindre stil). Döljs vecka 1.
-3. **Veckans drejning** och **Beskickning och yta**, planens texter för aktuell vecka.
+3. **Veckans drejning** och **Beskickning och yta**, planens texter för aktuell vecka,
+   samt **Inspiration**: veckans video, läsning, bok eller besök ur planfilen
+   (`weeks[].inspiration`, även på passets sida i förberedelsen).
    Delmålet (redigerbart) föreslås av drejningens text.
 4. **Gods på hyllan.** Två rader: "Att beskicka: 6 cylindrar (drejade
    24 okt)" och "Att glasera: 4 bägare (skröjbrända)". Hämtas från
    `study_session_pieces` + alstrens aktuella fas. Klick öppnar listan.
-5. **Starta passet**, stor primärknapp. Under den: *Fritt pass* (räknar inte
+5. **Förbered passet**, stor primärknapp (skapar passet; själva starten sker på passets sida). Under den: *Fritt pass* (räknar inte
    upp veckan) och *Logga ett pass i efterhand*.
 6. **Blockets milstolpe** som checklista. Kryssas i av användaren när den
    klarats, sparas på blocket (`study_gate_checks`).
 7. **Utmaningskort.** "Dra ett kort" (blockets lek eller hela). Kortet kan
    fästas vid dagens pass.
 8. **Inför nästa pass.** Planens `betweenSessions` plus nästa veckas
-   huvudpass i en rad.
+   drejning i en rad.
 
 ### `/studie/pass/:id` – Passet
 
@@ -167,7 +169,7 @@ segmentbyte bara om tillåtet och sidan är öppen; annars tyst.
 
 Årets fem block som kapitel i en tidslinje med blockfärger. Aktuellt block
 är utfällt, aktuell vecka markerad. Varje block visar tema (tekniskt och
-kreativt), veckor (drejning samt beskickning och yta), milstolpe och lek. Flik **Om planen**
+kreativt), veckor (drejning samt beskickning och yta, med inspiration), milstolpe och lek. Flik **Om planen**
 renderar `studieplan.md` (syfte, forskning, bränningsflöde, resurser).
 Modul 5 lägger till *Redigera* här.
 
@@ -344,7 +346,7 @@ pass och Material. Linjeblandning senare.
 - Användare med flaggan av ser ingen Studie-flik och får 403 på
   `/api/study/*`.
 - Första öppning seedar planen; Idag visar "Återstart · vecka 1" med rätt
-  huvudpass.
+  drejning.
 - Efter fyra avslutade pass (inte fria) visas Block 1, vecka 5. Ett fritt
   pass däremellan ändrar inte det.
 - En serie om 6 skapar 6 alster i *På gång*, kopplade till passet som

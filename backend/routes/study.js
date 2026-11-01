@@ -26,6 +26,7 @@ import {
   SESSION_ACTIONS,
   ACTION_TO_STAGE,
   ACTION_LABELS,
+  weekEntry,
 } from '../utils/studyPlan.js';
 
 const router = express.Router();
@@ -239,6 +240,7 @@ async function sessionDetail(db, userId, row, plan) {
     previous: previous ? { ...formatSession(previous, plan), log: previousLog || null } : null,
     wheel_booking: plan.sessionTemplate?.wheelBooking || null,
     logbook_fields: plan.logbook?.perSession || [],
+    inspiration: (row.plan_block_id && row.week_number ? weekEntry(findBlock(plan, row.plan_block_id), row.week_number)?.inspiration : null) || [],
   };
 }
 

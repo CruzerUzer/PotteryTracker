@@ -5,6 +5,7 @@ import { useToast } from '../ui/toast';
 import { useConfirm } from '../ui/confirm-dialog';
 import { studyAPI } from '../../services/api';
 import { shortBlockName } from './studyUtils';
+import { INSPIRATION_TYPES } from './Inspiration';
 
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const num = (v) => (v === '' || v === null || v === undefined ? '' : Number(v));
@@ -72,6 +73,46 @@ function TextList({ items, onChange, placeholder, addLabel }) {
   );
 }
 
+/** Veckans inspiration i blockredigeraren: typ, titel, valfri länk och notering. */
+function InspirationList({ items, onChange }) {
+  const update = (i, k, v) => onChange(items.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+  return (
+    <div className="edit-insp">
+      <span className="field-sublabel">Inspiration</span>
+      {items.map((it, i) => (
+        <div key={i} className="edit-insp-item">
+          <div className="edit-insp-row">
+            <select className="field-input" value={it.type || 'read'} aria-label="Typ" onChange={(e) => update(i, 'type', e.target.value)}>
+              {INSPIRATION_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+            <input className="field-input" value={it.title || ''} placeholder="Titel" aria-label="Titel" onChange={(e) => update(i, 'title', e.target.value)} />
+            <button type="button" className="icon-btn icon-btn--ghost" aria-label="Ta bort inspirationen" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+              <Trash2 size={15} />
+            </button>
+          </div>
+          <input className="field-input" type="url" inputMode="url" value={it.url || ''} placeholder="https://… (valfritt)" aria-label="Länk" onChange={(e) => update(i, 'url', e.target.value)} />
+          <input className="field-input" value={it.note || ''} placeholder="Kort notering (valfritt)" aria-label="Notering" onChange={(e) => update(i, 'note', e.target.value)} />
+        </div>
+      ))}
+      <button type="button" className="link-btn edit-add" onClick={() => onChange([...items, { type: 'video', title: '', url: '', note: '' }])}>
+        <Plus size={14} /> Lägg till inspiration
+      </button>
+    </div>
+  );
+}
+
+/** Tomma fält faller bort; en rad utan titel sparas inte. */
+function cleanInspiration(items) {
+  return (items || [])
+    .map((it) => {
+      const o = { type: it.type || 'read', title: (it.title || '').trim() };
+      if ((it.url || '').trim()) o.url = it.url.trim();
+      if ((it.note || '').trim()) o.note = it.note.trim();
+      return o;
+    })
+    .filter((it) => it.title);
+}
+
 // ─── Block ──────────────────────────────────────────────────────────
 
 export function BlockEditor({ open, onOpenChange, plan, blockId, onSaved }) {
@@ -102,7 +143,13 @@ export function BlockEditor({ open, onOpenChange, plan, blockId, onSaved }) {
       weekFrom: num(draft.weekFrom),
       weekTo: num(draft.weekTo),
       themeCreative: draft.themeCreative?.trim() ? draft.themeCreative : null,
-      weeks: draft.weeks.map((w) => ({ ...w, weekFrom: num(w.weekFrom), weekTo: num(w.weekTo), finish: w.finish || '' })),
+      weeks: draft.weeks.map((w) => {
+        const week = { ...w, weekFrom: num(w.weekFrom), weekTo: num(w.weekTo), finish: w.finish || '' };
+        const inspiration = cleanInspiration(w.inspiration);
+        if (inspiration.length) week.inspiration = inspiration;
+        else delete week.inspiration;
+        return week;
+      }),
       gate: (draft.gate || []).map((g) => g.trim()).filter(Boolean),
     };
     if (!clean.safety) delete clean.safety;
@@ -152,6 +199,7 @@ export function BlockEditor({ open, onOpenChange, plan, blockId, onSaved }) {
               </div>
               <textarea className="field-input" rows={2} value={w.main} placeholder="Drejning" aria-label="Drejning" onChange={(e) => setWeek(i, 'main', e.target.value)} />
               <textarea className="field-input" rows={2} value={w.finish || ''} placeholder="Beskickning och yta" aria-label="Beskickning och yta" onChange={(e) => setWeek(i, 'finish', e.target.value)} />
+              <InspirationList items={w.inspiration || []} onChange={(v) => setWeek(i, 'inspiration', v)} />
             </div>
           ))}
           <button type="button" className="link-btn edit-add" onClick={() => {

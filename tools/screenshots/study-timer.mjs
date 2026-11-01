@@ -20,7 +20,7 @@ const d = new Date(); d.setHours(9, 47, 0, 0);
 await page.clock.install({ time: d });
 await page.goto(`${BASE}/studie`, { waitUntil: 'networkidle' });
 const shot = async (n, full = false) => { await page.waitForTimeout(600); await page.screenshot({ path: join(out, `${n}.png`), fullPage: full }); console.log('shot', n); };
-await page.getByRole('button', { name: /Starta passet|Fortsätt/ }).first().click();
+await page.getByRole('button', { name: /Förbered passet|Fortsätt/ }).first().click();
 await page.waitForURL(/\/studie\/pass\//);
 await page.waitForTimeout(800);
 await page.getByRole('radio', { name: 'Ange starttid' }).click();

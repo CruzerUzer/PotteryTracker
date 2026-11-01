@@ -67,7 +67,7 @@ Drejskivan är bokad två timmar, 0:15–2:15. Kvarten före är förberedelse, 
 
 **När tiden inte räcker.** Beskickningen går före nytt gods. Läderhårt gods som väntar en vecka till blir sällan bättre. Glasyr går före beskickning om bränningen är på gång. Korta hellre serien till fyra än att hoppa över städning och loggbok.
 
-**Mellan passen.** Tio minuters mental repetition av veckans form hemma, gärna med en skiss. Titta på en teknikvideo med just den form du ska dreja nästa gång.
+**Mellan passen.** Tio minuters mental repetition av veckans form hemma, gärna med en skiss. Titta på en teknikvideo med just den form du ska dreja nästa gång. Varje vecka i årsplanen har en eller två tips på inspiration, en video, en artikel, en bok eller ett besök, som appen visar på Idag och i passets förberedelse.
 
 ## Bränningsflödet: tre generationer gods varje vecka
 
@@ -125,7 +125,7 @@ Ingenting ska bli bra. Syftet är att få tillbaka händerna, få rutinen att si
 | 1 | Centrera 6 klumpar à 1 kg, skär av, centrera om. Sedan 4 cylindrar à 500 g; skär itu alla. | Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda. |
 | 2 | 6 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste. | Gör 6 provplattor av spillet. |
 | 3 | 6 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4. | Beskicka vecka 2:s cylindrar till bägare. |
-| 4 | 6 skålar à 500 g: öppna cylindern till skål med ribb. Behåll 4. | Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp. |
+| 4 | 6 skålar à 500 g: öppna cylindern till skål med sken. Behåll 4. | Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp. |
 
 **Milstolpe.** Ett kilo lera centrerat på första försöket. En cylinder på 12 cm från 500 g med jämn vägg i snittet.
 
@@ -152,8 +152,8 @@ Temat är funktion: tallriken som inte spricker, locket som passar, flaskan som 
 
 | Vecka | Drejning | Beskickning, dekor och glasyr |
 | --- | --- | --- |
-| 17–18 | Tallrikar: 4 à 1–1,3 kg, 24–26 cm. Komprimera bottnen med ribb, låt dem torka upp och ned under plast. | Beskicka fot. Insidan av fotringen ska vara tallrikens tunnaste ställe, annars torkar mitten sist och spricker ([S-sprickor](https://ceramicartsnetwork.org/daily/pottery-making-techniques/wheel-throwing-techniques/tips-for-centering-and-preventing-s-cracks-in-dinner-plates/)). |
-| 19–21 | Burkar med lock: 4 burkar à 800 g per pass, fals med ribb, mät med skjutmått. Lock à 250 g som låg cylinder med kant som passar i falsen. Vecka 21: locken beskickas på sina burkar. | Lock och burk torkar tillsammans, en vecka. Vaxa fals och lockkant före glasering ([Billy Lloyd](https://ceramicartsnetwork.org/docs/default-source/shop-downloads/shop-book-excerpts/throwing-techniques-excerpt.pdf)). |
+| 17–18 | Tallrikar: 4 à 1–1,3 kg, 24–26 cm. Komprimera bottnen med sken, låt dem torka upp och ned under plast. | Beskicka fot. Insidan av fotringen ska vara tallrikens tunnaste ställe, annars torkar mitten sist och spricker ([S-sprickor](https://ceramicartsnetwork.org/daily/pottery-making-techniques/wheel-throwing-techniques/tips-for-centering-and-preventing-s-cracks-in-dinner-plates/)). |
+| 19–21 | Burkar med lock: 4 burkar à 800 g per pass, fals med sken, mät med skjutmått. Lock à 250 g som låg cylinder med kant som passar i falsen. Vecka 21: locken beskickas på sina burkar. | Lock och burk torkar tillsammans, en vecka. Vaxa fals och lockkant före glasering ([Billy Lloyd](https://ceramicartsnetwork.org/docs/default-source/shop-downloads/shop-book-excerpts/throwing-techniques-excerpt.pdf)). |
 | 22–23 | Flaskor och vaser: 4 à 800 g. Dra upp cylinder, snörp halsen i tre steg med händerna. | Beskicka. Sgraffito på två. |
 | 24–26 | Kannor: 3 à 900 g plus 6 pipar, så att du kan välja de bästa. Pip på mjukt läderhårt gods, spetsen ovanför mynningen, en aning motsols ([pipar](https://ceramicartsnetwork.org/daily/article/How-to-Make-a-Teapot-Spout-Fit-Perfectly)). | Hänklar. Glasera flaskor och burkar. |
 | 27–28 | Slutserien: ett set, till exempel kanna med fyra bägare, eller burk med lock och en skål i samma formspråk. | Glasera. Hälltest i diskhon när setet kommer ur ugnen. Blockutvärdering. |
@@ -221,7 +221,7 @@ Skriv korten på riktiga lappar och lägg dem i en burk i verkstaden. Dra ett ko
 | Linjeblandning | Två glasyrer i fem steg: 100/0, 75/25, 50/50, 25/75, 0/100. | Glasyrbibliotek |
 | Utan beskickning | Dreja så att bottnen inte behöver beskickas alls. | Tunn botten från början |
 | 20-centimetersregeln | Allt du gör idag ska vara exakt 20 cm högt. | Att växa uppåt |
-| En ribb | Bara ett verktyg hela passet. | Vad verktyget gör |
+| En sken | Bara ett verktyg hela passet. | Vad verktyget gör |
 | Present | Gör något till en bestämd person. Tänk på handen som ska hålla det. | Funktion, mottagare |
 
 Gör egna kort när du upptäcker ett fel du gör ofta. Ett bra kort är kort, mätbart och lite irriterande.
@@ -298,7 +298,7 @@ Två böcker räcker långt: Clary Illians *A Potter's Workbook* för form och �
 
 **Museer och utställningar.** [Gustavsbergs Porslinsmuseum](https://www.nationalmuseum.se/utst%C3%A4llningar/p%C3%A5-annan-plats/stig-lindbergs-lustfyllda-v%C3%A4rld) (Stig Lindberg till maj 2027). [Nationalmuseum](https://www.nationalmuseum.se/) (Kåge och Hamada till 10 januari 2027, passar block 1). [Rörstrand Museum](https://en.rorstrand-museum.se/) i Lidköping. [Röhsska](https://www.goteborg.com/platser/rohsska-museet) i Göteborg. [KKAM](https://www.kkam.nu/) i Höganäs.
 
-**Leverantörer.** [Seemann](https://seemann.nu/) i Stockholm och [Lermakeriet](https://lermakeriet.se/) i Valbo för lera, glasyr och verktyg. [Cerama](https://cerama.se/) (f.d. Cebex) och [Lervis](https://www.lervis.se/) på nätet. Köp skjutmått, en bra ribb i metall och en profilmall i plast; resten finns oftast i verkstaden.
+**Leverantörer.** [Seemann](https://seemann.nu/) i Stockholm och [Lermakeriet](https://lermakeriet.se/) i Valbo för lera, glasyr och verktyg. [Cerama](https://cerama.se/) (f.d. Cebex) och [Lervis](https://www.lervis.se/) på nätet. Köp skjutmått, en bra sken i metall och en profilmall i plast; resten finns oftast i verkstaden.
 
 **Gemenskap.** [Blås & Knåda](https://www.blasknada.com/) och [Kaolin](https://www.kaolin.se/) på Hornsgatan i Stockholm för att se vad svenska keramiker gör just nu. [Konsthantverkscentrums](https://www.konsthantverkscentrum.se/portfolio) katalog filtrerar på keramik och region. [Keramikrundan på Öland](https://en.oland.se/the-pottery-round) i september. Och den viktigaste: personen vid drejskivan bredvid dig, en fråga per pass.
 

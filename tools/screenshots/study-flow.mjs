@@ -32,7 +32,7 @@ await shot('01-idag'); await overflow();
 if (steps.includes('start')) {
   await page.getByRole('button', { name: 'Dra ett kort' }).click();
   await shot('02-kort', false);
-  await page.getByRole('button', { name: /Starta passet|Fortsätt/ }).first().click();
+  await page.getByRole('button', { name: /Förbered passet|Fortsätt/ }).first().click();
   await page.waitForURL(/\/studie\/pass\//);
   await shot('03-forberedelse'); await overflow();
 }

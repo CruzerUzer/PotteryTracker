@@ -18,6 +18,7 @@ import { Sheet, SheetContent } from '../ui/sheet';
 import PageSkeleton from '../PageSkeleton';
 import ProgressRing from './ProgressRing';
 import ChallengeCard from './ChallengeCard';
+import Inspiration from './Inspiration';
 import {
   blockStyle,
   shortBlockName,
@@ -207,13 +208,18 @@ function StudyToday() {
 
       <section className="study-card study-week">
         <div className="study-week-item">
-          <span className="study-label">Veckans huvudpass</span>
+          <span className="study-label">Veckans drejning</span>
           <p className="study-week-main">{entry?.main || 'Fri form.'}</p>
         </div>
         {entry?.finish && (
           <div className="study-week-item">
             <span className="study-label">Beskickning och yta</span>
             <p>{entry.finish}</p>
+          </div>
+        )}
+        {entry?.inspiration?.length > 0 && (
+          <div className="study-week-item">
+            <Inspiration items={entry.inspiration} />
           </div>
         )}
       </section>
@@ -231,7 +237,7 @@ function StudyToday() {
       <section className="study-start">
         <button type="button" className="btn btn-primary study-start-btn" onClick={() => startSession()} disabled={starting}>
           <Play size={20} />
-          {activeSession ? `Fortsätt ${sessionTitle(activeSession).toLowerCase()}` : starting ? 'Förbereder…' : 'Starta passet'}
+          {activeSession ? `Fortsätt ${sessionTitle(activeSession).toLowerCase()}` : starting ? 'Förbereder…' : 'Förbered passet'}
         </button>
         {liveClock && (
           <p className="study-start-note study-live">

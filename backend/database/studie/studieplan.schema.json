@@ -412,6 +412,39 @@
               },
               "finish": {
                 "type": "string"
+              },
+              "inspiration": {
+                "description": "Veckans inspiration: video, läsning, bok eller besök. Visas på Idag och i passets förberedelse.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "video",
+                        "read",
+                        "book",
+                        "visit"
+                      ]
+                    },
+                    "title": {
+                      "$ref": "#/definitions/text"
+                    },
+                    "url": {
+                      "type": "string",
+                      "pattern": "^https?://"
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  }
+                }
               }
             }
           }

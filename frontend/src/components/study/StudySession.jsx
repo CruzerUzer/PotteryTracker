@@ -7,6 +7,7 @@ import { useConfirm } from '../ui/confirm-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import PageSkeleton from '../PageSkeleton';
 import ChallengeCard from './ChallengeCard';
+import Inspiration from './Inspiration';
 import SeriesForm from './SeriesForm';
 import PiecePicker from './PiecePicker';
 import SessionPieces from './SessionPieces';
@@ -326,6 +327,11 @@ function StudySession() {
       {prev.log?.observation && <p className="study-quote-sub">Observation: {prev.log.observation}</p>}
     </section>
   ) : null;
+  const inspirationBlock = session.inspiration?.length ? (
+    <section className="study-card">
+      <Inspiration items={session.inspiration} />
+    </section>
+  ) : null;
   const log = session.log;
   const logSummary = log ? (
     <section className="study-card log-summary">
@@ -406,6 +412,7 @@ function StudySession() {
           onEnableNotify={enableNotify}
         >
           {clock?.current?.id === 'in' && previousQuote}
+          {clock?.current?.id === 'in' && inspirationBlock}
           {(clock?.over || clock?.current?.id === 'out') && (
             <div className="quick">
               <h3 className="quick-title">Loggboken</h3>
@@ -433,6 +440,7 @@ function StudySession() {
       )}
 
       {status === 'prepared' && previousQuote}
+      {status === 'prepared' && inspirationBlock}
 
       {ended && reviewDue && (
         <Link to={`/studie/utvardering/${reviewDue.blockId}`} className="review-due">

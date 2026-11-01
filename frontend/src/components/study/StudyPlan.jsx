@@ -4,6 +4,7 @@ import { ArrowLeft, Check, ChevronDown, Disc3, Pencil, Plus, RotateCcw } from 'l
 import { useConfirm } from '../ui/confirm-dialog';
 import { BlockEditor, TemplateEditor, CardEditor } from './PlanEditors';
 import FileUpdateBanner from './FileUpdateBanner';
+import Inspiration from './Inspiration';
 import { phasesAPI, studyAPI } from '../../services/api';
 import { useToast } from '../ui/toast';
 import PageSkeleton from '../PageSkeleton';
@@ -101,6 +102,7 @@ function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdi
                   <div className="week-text">
                     <p>{w.main}</p>
                     {w.finish && <p className="week-finish"><span>Beskickning och yta:</span> {w.finish}</p>}
+                    <Inspiration items={w.inspiration} className="week-insp" />
                   </div>
                 </li>
               );

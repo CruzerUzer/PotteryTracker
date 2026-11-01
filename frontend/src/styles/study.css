@@ -1179,3 +1179,22 @@
 .recipe-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .recipe-sum { font-size: 0.82rem; font-weight: 600; color: var(--color-warning); font-variant-numeric: lining-nums; }
 .recipe-sum.is-ok { color: var(--color-success); }
+
+/* ── Inspiration: veckans video, läsning, bok eller besök ── */
+.inspiration-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.inspiration-item { display: flex; gap: 10px; align-items: flex-start; }
+.inspiration-icon { flex-shrink: 0; margin-top: 2px; color: var(--color-text-secondary); }
+.inspiration-text { display: flex; flex-direction: column; min-width: 0; }
+.inspiration-link { font-weight: 500; color: var(--color-text); text-decoration: underline; text-decoration-color: var(--color-border); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.inspiration-link:hover { text-decoration-color: currentColor; }
+.inspiration-title { font-weight: 500; }
+.inspiration-note { font-size: 0.85rem; color: var(--color-text-tertiary); }
+.week-insp { margin-top: 6px; }
+.week-insp .study-label { font-size: 0.7rem; }
+.week-insp .inspiration-list { gap: 4px; }
+.week-insp .inspiration-item { font-size: 0.86rem; }
+.edit-insp { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); }
+.edit-insp-item { display: flex; flex-direction: column; gap: 6px; }
+.edit-insp-row { display: flex; gap: 6px; align-items: center; }
+.edit-insp-row select.field-input { width: auto; flex-shrink: 0; padding-right: 28px; }
+.edit-insp-row input.field-input { flex: 1; min-width: 0; }

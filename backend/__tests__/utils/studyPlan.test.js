@@ -36,6 +36,27 @@ describe('studieplanen', () => {
     expect(errors.join()).toMatch(/saknas/);
   });
 
+  it('varje vecka i planfilen har inspiration med giltig länk', () => {
+    for (const b of plan.phases) {
+      for (const w of b.weeks) {
+        expect(w.inspiration?.length).toBeGreaterThan(0);
+        for (const it of w.inspiration) {
+          expect(['video', 'read', 'book', 'visit']).toContain(it.type);
+          if (it.url) expect(it.url).toMatch(/^https?:\/\//);
+        }
+      }
+    }
+  });
+
+  it('underkänner inspiration utan titel eller med fel sorts länk', () => {
+    const bad = clone(plan);
+    bad.phases[0].weeks[0].inspiration = [{ type: 'video', url: 'https://example.com' }];
+    expect(validatePlan(bad).valid).toBe(false);
+    const bad2 = clone(plan);
+    bad2.phases[0].weeks[0].inspiration = [{ type: 'read', title: 'Artikel', url: 'ftp://nej' }];
+    expect(validatePlan(bad2).valid).toBe(false);
+  });
+
   it('underkänner överlappande veckor', () => {
     const bad = clone(plan);
     bad.phases[1].weekFrom = 4;

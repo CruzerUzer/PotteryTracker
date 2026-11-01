@@ -1,12 +1,13 @@
 {
   "$schema": "./studieplan.schema.json",
   "id": "studieplan-2026",
-  "version": 3,
+  "version": 4,
   "title": "Studieplan i keramik – från drejning till färdigt alster",
   "language": "sv",
   "createdAt": "2026-11-01",
   "source": "https://claude.ai/artifact/PTWnLk4KpnTx63pbuKvzCw",
   "changes": [
+    { "version": 4, "date": "2026-11-01", "summary": "Inspiration per vecka: video, läsning, bok eller besök, på Idag och i passets förberedelse. Verktyget heter sken, inte ribb." },
     { "version": 3, "date": "2026-11-01", "summary": "Mindre per pass (serier om sex, färre tunga föremål), två glasyrpass i block 3, hänklar dras i beskickningen. Svensk terminologi: drejskiva, beskicka, milstolpe, pass och moment." },
     { "version": 2, "date": "2026-11-01", "summary": "Huvudpasset 65 minuter, Lämna skivan 15 minuter." }
   ],
@@ -70,10 +71,26 @@
       "themeTechnical": "Få tillbaka händerna, få rutinen att sitta, få igång flödet med provplattor och fuktlåda.",
       "themeCreative": null,
       "weeks": [
-        { "weekFrom": 1, "weekTo": 1, "main": "Centrera 6 klumpar à 1 kg, skär av, centrera om. Sedan 4 cylindrar à 500 g; skär itu alla.", "finish": "Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda." },
-        { "weekFrom": 2, "weekTo": 2, "main": "6 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste.", "finish": "Gör 6 provplattor av spillet." },
-        { "weekFrom": 3, "weekTo": 3, "main": "6 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4.", "finish": "Beskicka vecka 2:s cylindrar till bägare." },
-        { "weekFrom": 4, "weekTo": 4, "main": "6 skålar à 500 g: öppna cylindern till skål med ribb. Behåll 4.", "finish": "Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp." }
+        { "weekFrom": 1, "weekTo": 1, "main": "Centrera 6 klumpar à 1 kg, skär av, centrera om. Sedan 4 cylindrar à 500 g; skär itu alla.", "finish": "Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda.",
+          "inspiration": [
+            {"type": "read", "title": "Hamish Jackson: cylindern i åtta steg", "url": "https://www.hamishjacksonpottery.com/blog/2019/4/4/pottery-108-how-to-throw-a-cylinder-in-8-steps", "note": "Checklista för återstarten."},
+            {"type": "book", "title": "Stuart Carey, Dreja: från lera till keramik", "note": "Slå upp centrering och cylindern innan passet."}
+          ] },
+        { "weekFrom": 2, "weekTo": 2, "main": "6 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste.", "finish": "Gör 6 provplattor av spillet.",
+          "inspiration": [
+            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Välj videon om cylindrar, titta med avsikt."},
+            {"type": "read", "title": "Pitelka: drejning i tvärsnitt", "url": "https://ceramicartsnetwork.org/daily/article/Wheel-Throwing-in-Cross-Section", "note": "Jämför ditt snitt med bilderna."}
+          ] },
+        { "weekFrom": 3, "weekTo": 3, "main": "6 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4.", "finish": "Beskicka vecka 2:s cylindrar till bägare.",
+          "inspiration": [
+            {"type": "read", "title": "CAN: mallar och mått för serier", "url": "https://ceramicartsnetwork.org/daily/article/Making-Multiples-Using-Templates-to-Throw-Uniform-Shapes-on-the-Pottery-Wheel", "note": "Hur man drejar lika."},
+            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Tre drag: se hur handen flyttar mellan dragen."}
+          ] },
+        { "weekFrom": 4, "weekTo": 4, "main": "6 skålar à 500 g: öppna cylindern till skål med sken. Behåll 4.", "finish": "Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp.",
+          "inspiration": [
+            {"type": "read", "title": "CAN: att beskicka skålar", "url": "https://ceramicartsnetwork.org/daily/article/Tips-for-Trimming-Bowls-on-the-Pottery-Wheel", "note": "Inför beskickningen av veckans skålar."},
+            {"type": "read", "title": "Potclays: nybörjarguide till provplattor", "url": "https://www.potclays.co.uk/the-beginners-guide-to-glaze-testing/", "note": "Innan du glaserar provplattorna."}
+          ] }
       ],
       "gate": [
         "Ett kilo lera centrerat på första försöket.",
@@ -90,12 +107,36 @@
       "themeTechnical": "Serien: samma form, samma vikt, sex stycken, mät och jämför. Cylinder, skål, mugg med dragen hänkel, beskickad fot.",
       "themeCreative": "Att se: varje serie får ett medvetet val av mynning, övergång och fot (Clary Illian, A Potter's Workbook).",
       "weeks": [
-        { "weekFrom": 5, "weekTo": 6, "main": "Cylindrar: 6 à 600 g, mål 15 × 8 cm. Mät alla, skriv spridningen. Vecka 6: blicken på kanten, inte händerna.", "finish": "Beskicka. Provplattor." },
-        { "weekFrom": 7, "weekTo": 8, "main": "Bägare: 6 à 400 g, samma form. Två får en medvetet annan mynning (rak, utåt, inåt).", "finish": "Beskicka fotringar: foten en tredjedel till hälften av mynningen. Dra 10 hänklar och kasta alla." },
-        { "weekFrom": 9, "weekTo": 10, "main": "Muggar: 6 à 450 g. Hänkel för ett, två och tre fingrar.", "finish": "Dra hänklar först i beskickningen, låt dem styvna, sätt dem på de läderhårda muggarna sist. Täck noga första dygnet." },
-        { "weekFrom": 11, "weekTo": 12, "main": "Skålar: 6 à 600 g i tre kurvor: öppen, rund, djup. Tänk på insidans linje.", "finish": "Beskicka. Första engobetest på två skålar." },
-        { "weekFrom": 13, "weekTo": 14, "main": "Blandat pass: 2 cylindrar, 2 skålar, 2 bägare i samma pass. Jämför med serierna.", "finish": "Glasera blockets första serier." },
-        { "weekFrom": 15, "weekTo": 16, "main": "Slutserien: 6 muggar à 450 g, samma form och hänkel.", "finish": "Beskicka, hänkla, glasera. Blockutvärdering." }
+        { "weekFrom": 5, "weekTo": 6, "main": "Cylindrar: 6 à 600 g, mål 15 × 8 cm. Mät alla, skriv spridningen. Vecka 6: blicken på kanten, inte händerna.", "finish": "Beskicka. Provplattor.",
+          "inspiration": [
+            {"type": "book", "title": "Clary Illian, A Potter's Workbook", "note": "Övningarna om cylindern och mynningen."},
+            {"type": "read", "title": "CAN: mallar och mått för serier", "url": "https://ceramicartsnetwork.org/daily/article/Making-Multiples-Using-Templates-to-Throw-Uniform-Shapes-on-the-Pottery-Wheel", "note": "Mät och jämför i serien."}
+          ] },
+        { "weekFrom": 7, "weekTo": 8, "main": "Bägare: 6 à 400 g, samma form. Två får en medvetet annan mynning (rak, utåt, inåt).", "finish": "Beskicka fotringar: foten en tredjedel till hälften av mynningen. Dra 10 hänklar och kasta alla.",
+          "inspiration": [
+            {"type": "book", "title": "Clary Illian, A Potter's Workbook", "note": "Avsnitten om foten och fotringen."},
+            {"type": "read", "title": "Oxford Clay: fem tips för att dra hänklar", "url": "https://oxfordclay.co.uk/blog-1/five-tips-for-pulling-handles-in-pottery", "note": "Inför de tjugo hänklarna."}
+          ] },
+        { "weekFrom": 9, "weekTo": 10, "main": "Muggar: 6 à 450 g. Hänkel för ett, två och tre fingrar.", "finish": "Dra hänklar först i beskickningen, låt dem styvna, sätt dem på de läderhårda muggarna sist. Täck noga första dygnet.",
+          "inspiration": [
+            {"type": "read", "title": "Oxford Clay: fem tips för att dra hänklar", "url": "https://oxfordclay.co.uk/blog-1/five-tips-for-pulling-handles-in-pottery", "note": "Hänkel för ett, två och tre fingrar."},
+            {"type": "book", "title": "Clary Illian, A Potter's Workbook", "note": "Hänkeln och hur den möter kroppen."}
+          ] },
+        { "weekFrom": 11, "weekTo": 12, "main": "Skålar: 6 à 600 g i tre kurvor: öppen, rund, djup. Tänk på insidans linje.", "finish": "Beskicka. Första engobetest på två skålar.",
+          "inspiration": [
+            {"type": "book", "title": "Clary Illian, A Potter's Workbook", "note": "Skålen: insidans linje."},
+            {"type": "read", "title": "CAN: att beskicka skålar", "url": "https://ceramicartsnetwork.org/daily/article/Tips-for-Trimming-Bowls-on-the-Pottery-Wheel"}
+          ] },
+        { "weekFrom": 13, "weekTo": 14, "main": "Blandat pass: 2 cylindrar, 2 skålar, 2 bägare i samma pass. Jämför med serierna.", "finish": "Glasera blockets första serier.",
+          "inspiration": [
+            {"type": "read", "title": "Florian Gadsby i Ceramics Monthly", "url": "https://ceramicartsnetwork.org/ceramics-monthly/ceramics-monthly-article/working-artist-florian-gadsby", "note": "Serietänk och arbetsrytm."},
+            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Välj formen du är sämst på av de tre."}
+          ] },
+        { "weekFrom": 15, "weekTo": 16, "main": "Slutserien: 6 muggar à 450 g, samma form och hänkel.", "finish": "Beskicka, hänkla, glasera. Blockutvärdering.",
+          "inspiration": [
+            {"type": "read", "title": "Pitelka: drejning i tvärsnitt", "url": "https://ceramicartsnetwork.org/daily/article/Wheel-Throwing-in-Cross-Section", "note": "Skär itu en mugg och lägg snittet bredvid."},
+            {"type": "read", "title": "PMI: åtta sätt att lägga glasyr", "url": "https://ceramicartsnetwork.org/pottery-making-illustrated/pottery-making-illustrated-article/8-Ways-to-Apply-Glaze", "note": "Inför blockets glasering."}
+          ] }
       ],
       "gate": [
         "Sex muggar där högsta och lägsta skiljer högst 5 mm, hänklar som sitter efter bränning, glaserade.",
@@ -112,11 +153,31 @@
       "themeTechnical": "Funktion: tallriken som inte spricker, locket som passar, flaskan som snörps, kannan som häller.",
       "themeCreative": "Mottagaren: varje serie görs till en bestämd hand, mun eller matsituation (Robin Hopper, Functional Pottery).",
       "weeks": [
-        { "weekFrom": 17, "weekTo": 18, "main": "Tallrikar: 4 à 1–1,3 kg, 24–26 cm. Komprimera bottnen med ribb, torka upp och ned under plast.", "finish": "Beskicka fot. Insidan av fotringen ska vara tunnaste stället, annars S-sprickor." },
-        { "weekFrom": 19, "weekTo": 21, "main": "Burkar med lock: 4 burkar à 800 g per pass, fals med ribb, mät med skjutmått. Lock à 250 g som låg cylinder med kant som passar i falsen. Vecka 21: locken beskickas på sina burkar.", "finish": "Lock och burk torkar tillsammans, en vecka. Vaxa fals och lockkant före glasering." },
-        { "weekFrom": 22, "weekTo": 23, "main": "Flaskor och vaser: 4 à 800 g. Dra upp cylinder, snörp halsen i tre steg.", "finish": "Beskicka. Sgraffito på två." },
-        { "weekFrom": 24, "weekTo": 26, "main": "Kannor: 3 à 900 g plus 6 pipar. Pip på mjukt läderhårt gods, spetsen ovanför mynningen, en aning motsols.", "finish": "Hänklar. Glasera flaskor och burkar." },
-        { "weekFrom": 27, "weekTo": 28, "main": "Slutserien: ett set, t.ex. kanna med fyra bägare, eller burk med lock och skål i samma formspråk.", "finish": "Glasera. Hälltest i diskhon. Blockutvärdering." }
+        { "weekFrom": 17, "weekTo": 18, "main": "Tallrikar: 4 à 1–1,3 kg, 24–26 cm. Komprimera bottnen med sken, torka upp och ned under plast.", "finish": "Beskicka fot. Insidan av fotringen ska vara tunnaste stället, annars S-sprickor.",
+          "inspiration": [
+            {"type": "read", "title": "CAN: S-sprickor i tallrikar", "url": "https://ceramicartsnetwork.org/daily/pottery-making-techniques/wheel-throwing-techniques/tips-for-centering-and-preventing-s-cracks-in-dinner-plates/", "note": "Komprimera bottnen, beskicka rätt."},
+            {"type": "book", "title": "Robin Hopper, Functional Pottery", "note": "Tallriken och bordet den ska stå på."}
+          ] },
+        { "weekFrom": 19, "weekTo": 21, "main": "Burkar med lock: 4 burkar à 800 g per pass, fals med sken, mät med skjutmått. Lock à 250 g som låg cylinder med kant som passar i falsen. Vecka 21: locken beskickas på sina burkar.", "finish": "Lock och burk torkar tillsammans, en vecka. Vaxa fals och lockkant före glasering.",
+          "inspiration": [
+            {"type": "read", "title": "CAN: lock och falsar (utdrag ur Throwing Techniques)", "url": "https://ceramicartsnetwork.org/docs/default-source/shop-downloads/shop-book-excerpts/throwing-techniques-excerpt.pdf", "note": "Billy Lloyd om lock som passar."},
+            {"type": "book", "title": "Ben Carter, Mastering the Potter's Wheel", "note": "Kapitlet om lock."}
+          ] },
+        { "weekFrom": 22, "weekTo": 23, "main": "Flaskor och vaser: 4 à 800 g. Dra upp cylinder, snörp halsen i tre steg.", "finish": "Beskicka. Sgraffito på två.",
+          "inspiration": [
+            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Videon om att snörpa in halsen."},
+            {"type": "book", "title": "Robin Hopper, Functional Pottery", "note": "Form och proportion i flaskan."}
+          ] },
+        { "weekFrom": 24, "weekTo": 26, "main": "Kannor: 3 à 900 g plus 6 pipar. Pip på mjukt läderhårt gods, spetsen ovanför mynningen, en aning motsols.", "finish": "Hänklar. Glasera flaskor och burkar.",
+          "inspiration": [
+            {"type": "read", "title": "CAN: en pip som passar", "url": "https://ceramicartsnetwork.org/daily/article/How-to-Make-a-Teapot-Spout-Fit-Perfectly", "note": "Pipens vinkel och spets."},
+            {"type": "book", "title": "Robin Hopper, Functional Pottery", "note": "Hur vätskan rör sig genom pipen."}
+          ] },
+        { "weekFrom": 27, "weekTo": 28, "main": "Slutserien: ett set, t.ex. kanna med fyra bägare, eller burk med lock och skål i samma formspråk.", "finish": "Glasera. Hälltest i diskhon. Blockutvärdering.",
+          "inspiration": [
+            {"type": "book", "title": "Robin Hopper, Functional Pottery", "note": "Set: former som hör ihop."},
+            {"type": "read", "title": "CAN: för bok över glasyrtester", "url": "https://ceramicartsnetwork.org/daily/article/how-to-keep-good-records-when-testing-ceramic-glazes-(and-improve-your-results!)", "note": "Inför block 3: så förs glasyrloggen."}
+          ] }
       ],
       "gate": [
         "Ett lock som passar efter glasyrbränning.",
@@ -134,12 +195,36 @@
       "themeTechnical": "Lära känna verkstadens glasyrer systematiskt och blanda din första egna, så att resultatet beror på dig och inte på tur.",
       "themeCreative": "Variation: en form, tjugo ytor, sedan två ytor som fördjupas.",
       "weeks": [
-        { "weekFrom": 29, "weekTo": 30, "main": "8 skålar à 500 g, snabbt. Provplattor av spillet från beskickningen, 6 per pass.", "finish": "Engobe på läderhårt: två skålar täcks, två sgraffito, två mishima." },
-        { "weekFrom": 31, "weekTo": 32, "main": "8 bägare à 400 g.", "finish": "Vaxresist och underglasyr. Fem provplattor i verkstadens glasyr doppade 1–5 s. Två glasyrer i lager, A över B och B över A." },
-        { "weekFrom": 33, "weekTo": 34, "main": "Vecka 33 är ett glasyrpass: boka ingen drejskiva, drejningstiden går till att blanda din första egna glasyr. Vecka 34: 6 skålar à 500 g.", "finish": "Första egna glasyren: beprövad basglasyr för verkstadens temperatur (Glasklart), 500 g torrt, sikta, ställ in tjockleken. Fem provplattor 1–5 s. Recept och kod i glasyrloggen." },
-        { "weekFrom": 35, "weekTo": 36, "main": "Vecka 35 är ett glasyrpass: linjeblandningen görs på drejningstiden. Vecka 36: fri form.", "finish": "Linjeblandning: basglasyren med en färggivare i fem steg (0, 1, 2, 4, 8 %). En provplatta per steg." },
-        { "weekFrom": 37, "weekTo": 38, "main": "6 skålar à 500 g, samma form som vecka 29.", "finish": "Utvärdera allt ur ugnen. Välj två ytor att fördjupa, en av verkstadens och en egen. Samma dopptid, samma ordning." },
-        { "weekFrom": 39, "weekTo": 40, "main": "Slutserien: 6 skålar à 500 g.", "finish": "Den egna glasyren på alla sex, exakt lika. Blockutvärdering." }
+        { "weekFrom": 29, "weekTo": 30, "main": "8 skålar à 500 g, snabbt. Provplattor av spillet från beskickningen, 6 per pass.", "finish": "Engobe på läderhårt: två skålar täcks, två sgraffito, två mishima.",
+          "inspiration": [
+            {"type": "read", "title": "CAN: mishima", "url": "https://ceramicartsnetwork.org/daily/pottery-making-techniques/ceramic-decorating-techniques/mishima-ceramics-creating-fine-lines-slip-inlay/", "note": "Rista, fyll med engobe, skrapa."},
+            {"type": "read", "title": "CAN: vaxresist, engobe och glasyr", "url": "https://ceramicartsnetwork.org/daily/pottery-making-techniques/ceramic-decorating-techniques/how-to-create-surface-patterns-with-wax-resist-slip-inlay-and-glaze/"}
+          ] },
+        { "weekFrom": 31, "weekTo": 32, "main": "8 bägare à 400 g.", "finish": "Vaxresist och underglasyr. Fem provplattor i verkstadens glasyr doppade 1–5 s. Två glasyrer i lager, A över B och B över A.",
+          "inspiration": [
+            {"type": "read", "title": "Lakeside Pottery: dopptider och glasyrtjocklek", "url": "https://lakesidepottery.com/HTML%20Text/SUCCESSFUL%20GLAZING%201.2.htm", "note": "Studioföreskrift, inte forskning."},
+            {"type": "read", "title": "PMI: åtta sätt att lägga glasyr", "url": "https://ceramicartsnetwork.org/pottery-making-illustrated/pottery-making-illustrated-article/8-Ways-to-Apply-Glaze"}
+          ] },
+        { "weekFrom": 33, "weekTo": 34, "main": "Vecka 33 är ett glasyrpass: boka ingen drejskiva, drejningstiden går till att blanda din första egna glasyr. Vecka 34: 6 skålar à 500 g.", "finish": "Första egna glasyren: beprövad basglasyr för verkstadens temperatur (Glasklart), 500 g torrt, sikta, ställ in tjockleken. Fem provplattor 1–5 s. Recept och kod i glasyrloggen.",
+          "inspiration": [
+            {"type": "book", "title": "Åsa Lundblad, Glasklart", "note": "Välj en basglasyr för verkstadens temperatur."},
+            {"type": "read", "title": "Glazy: receptdatabas och räknare", "url": "https://glazy.org/", "note": "Slå upp recept och jämför."}
+          ] },
+        { "weekFrom": 35, "weekTo": 36, "main": "Vecka 35 är ett glasyrpass: linjeblandningen görs på drejningstiden. Vecka 36: fri form.", "finish": "Linjeblandning: basglasyren med en färggivare i fem steg (0, 1, 2, 4, 8 %). En provplatta per steg.",
+          "inspiration": [
+            {"type": "read", "title": "Digitalfire: råmaterial och linjeblandning", "url": "https://digitalfire.com/", "note": "Vad färgoxiderna gör."},
+            {"type": "book", "title": "Linda Bloomfield, Colour in Glazes", "note": "Färg i glasyr, steg för steg."}
+          ] },
+        { "weekFrom": 37, "weekTo": 38, "main": "6 skålar à 500 g, samma form som vecka 29.", "finish": "Utvärdera allt ur ugnen. Välj två ytor att fördjupa, en av verkstadens och en egen. Samma dopptid, samma ordning.",
+          "inspiration": [
+            {"type": "book", "title": "Åsa Lundblad, Glasklart", "note": "Felsökningen: varför gjorde glasyren så?"},
+            {"type": "read", "title": "CAN: för bok över glasyrtester", "url": "https://ceramicartsnetwork.org/daily/article/how-to-keep-good-records-when-testing-ceramic-glazes-(and-improve-your-results!)"}
+          ] },
+        { "weekFrom": 39, "weekTo": 40, "main": "Slutserien: 6 skålar à 500 g.", "finish": "Den egna glasyren på alla sex, exakt lika. Blockutvärdering.",
+          "inspiration": [
+            {"type": "book", "title": "Åsa Lundblad, Glasklart", "note": "Samma dopptid, samma ordning."},
+            {"type": "read", "title": "PMI: åtta sätt att lägga glasyr", "url": "https://ceramicartsnetwork.org/pottery-making-illustrated/pottery-making-illustrated-article/8-Ways-to-Apply-Glaze"}
+          ] }
       ],
       "gate": [
         "Glasyrlogg med minst 30 provplattor.",
@@ -158,11 +243,31 @@
       "themeTechnical": "Tekannan, omformning, större gods, drejning i delar.",
       "themeCreative": "Tre ord som beskriver hur dina föremål ska kännas; museum, skiss, sedan 5–8 föremål som hör ihop.",
       "weeks": [
-        { "weekFrom": 41, "weekTo": 42, "main": "Tekannor: 2 kroppar à 1,2–1,4 kg, 3 lock à 300 g, 4 pipar. Vecka 42: sätt ihop på mjukt läderhårt.", "finish": "Lock beskickas på kannan. Hänklar. Torka under plast två veckor." },
-        { "weekFrom": 43, "weekTo": 44, "main": "Omformning. Vecka 43: fasettera 3 bägare, skär ut kilar i 2 skålar och foga ihop dem till ovaler. Vecka 44: tryck 2 fat till kvadrat, fasettera 2 bägare till.", "finish": "Beskicka det som går." },
-        { "weekFrom": 45, "weekTo": 46, "main": "Större gods: 2 kg till en cylinder. Dreja i delar: två delar som sätts ihop läderhårt.", "finish": "Glasera tekannorna. Hälltest." },
-        { "weekFrom": 47, "weekTo": 50, "main": "Egen serie: 5–8 föremål efter dina skisser och dina tre ord.", "finish": "Beskickning och yta i samma takt." },
-        { "weekFrom": 51, "weekTo": 52, "main": "Avsluta serien.", "finish": "Glasera. Ställ upp årets milstolpar på en rad och fotografera. Årsutvärdering och nästa års plan." }
+        { "weekFrom": 41, "weekTo": 42, "main": "Tekannor: 2 kroppar à 1,2–1,4 kg, 3 lock à 300 g, 4 pipar. Vecka 42: sätt ihop på mjukt läderhårt.", "finish": "Lock beskickas på kannan. Hänklar. Torka under plast två veckor.",
+          "inspiration": [
+            {"type": "read", "title": "Geoffrey Whiting: att göra tekannor", "url": "https://mikespots.co.uk/Features/PQ_GeoffreyWhiting_MakingTeapots.htm", "note": "Klassikern om tekannans delar."},
+            {"type": "read", "title": "CAN: en pip som passar", "url": "https://ceramicartsnetwork.org/daily/article/How-to-Make-a-Teapot-Spout-Fit-Perfectly"}
+          ] },
+        { "weekFrom": 43, "weekTo": 44, "main": "Omformning. Vecka 43: fasettera 3 bägare, skär ut kilar i 2 skålar och foga ihop dem till ovaler. Vecka 44: tryck 2 fat till kvadrat, fasettera 2 bägare till.", "finish": "Beskicka det som går.",
+          "inspiration": [
+            {"type": "book", "title": "Ben Carter, Mastering the Potter's Wheel", "note": "Omformning: fasetter, ovaler, fyrkantiga fat."},
+            {"type": "visit", "title": "Nationalmuseum: Kåge och Hamada", "url": "https://www.nationalmuseum.se/", "note": "Till 10 januari 2027. Leta efter dina tre ord."}
+          ] },
+        { "weekFrom": 45, "weekTo": 46, "main": "Större gods: 2 kg till en cylinder. Dreja i delar: två delar som sätts ihop läderhårt.", "finish": "Glasera tekannorna. Hälltest.",
+          "inspiration": [
+            {"type": "book", "title": "Ben Carter, Mastering the Potter's Wheel", "note": "Större gods och att dreja i delar."},
+            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Videon om stora former."}
+          ] },
+        { "weekFrom": 47, "weekTo": 50, "main": "Egen serie: 5–8 föremål efter dina skisser och dina tre ord.", "finish": "Beskickning och yta i samma takt.",
+          "inspiration": [
+            {"type": "read", "title": "Florian Gadsby i Ceramics Monthly", "url": "https://ceramicartsnetwork.org/ceramics-monthly/ceramics-monthly-article/working-artist-florian-gadsby", "note": "En serie som hör ihop."},
+            {"type": "visit", "title": "Gustavsbergs Porslinsmuseum: Stig Lindberg", "url": "https://www.nationalmuseum.se/utst%C3%A4llningar/p%C3%A5-annan-plats/stig-lindbergs-lustfyllda-v%C3%A4rld", "note": "Till maj 2027."}
+          ] },
+        { "weekFrom": 51, "weekTo": 52, "main": "Avsluta serien.", "finish": "Glasera. Ställ upp årets milstolpar på en rad och fotografera. Årsutvärdering och nästa års plan.",
+          "inspiration": [
+            {"type": "read", "title": "Konsthantverkscentrum: keramiker i din region", "url": "https://www.konsthantverkscentrum.se/portfolio", "note": "Se vad andra gör av en serie."},
+            {"type": "visit", "title": "Blås & Knåda, Stockholm", "url": "https://www.blasknada.com/", "note": "Svensk keramik just nu."}
+          ] }
       ],
       "gate": [
         "En tekanna som häller rent och vars lock sitter kvar när du häller.",
@@ -190,7 +295,7 @@
     { "id": "linjeblandning", "name": "Linjeblandning", "how": "Två glasyrer i fem steg: 100/0, 75/25, 50/50, 25/75, 0/100.", "trains": "Glasyrbibliotek" },
     { "id": "ingen-svarv", "name": "Utan beskickning", "how": "Dreja så att bottnen inte behöver beskickas alls.", "trains": "Tunn botten från början" },
     { "id": "20-cm", "name": "20-centimetersregeln", "how": "Allt du gör idag ska vara exakt 20 cm högt.", "trains": "Att växa uppåt" },
-    { "id": "en-ribb", "name": "En ribb", "how": "Bara ett verktyg hela passet.", "trains": "Vad verktyget gör" },
+    { "id": "en-ribb", "name": "En sken", "how": "Bara ett verktyg hela passet.", "trains": "Vad verktyget gör" },
     { "id": "present", "name": "Present", "how": "Gör något till en bestämd person. Tänk på handen som ska hålla det.", "trains": "Funktion, mottagare" }
   ],
   "logbook": {

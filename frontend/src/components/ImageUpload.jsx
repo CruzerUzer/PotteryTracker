@@ -88,7 +88,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
         setHasUserSelectedPhase(false);
         e.target.reset();
         if (onUploaded) {
-          onUploaded();
+          onUploaded({ successCount, errorCount });
         }
       }
       
@@ -184,7 +184,7 @@ function ImageUpload({ pieceId, phases, onUploaded, defaultPhaseId = null }) {
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Laddar upp… ({Object.values(uploadProgress).filter(p => p === 'uploading').length}/{files.length})
+              Laddar upp… ({Math.min(Object.keys(uploadProgress).length, files.length)}/{files.length})
             </>
           ) : (
             <>

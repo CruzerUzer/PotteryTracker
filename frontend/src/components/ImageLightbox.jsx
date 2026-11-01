@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { imagesAPI } from '../services/api';
 import { Button } from './ui/button';
@@ -46,6 +47,8 @@ function ImageLightbox({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Låt en öppen bekräftelsedialog ta tangenterna
+      if (document.querySelector('[role="alertdialog"][data-state="open"]')) return;
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'ArrowLeft' && actualIndex > 0) {
@@ -109,7 +112,7 @@ function ImageLightbox({
   const hasPrev = actualIndex > 0;
   const hasNext = actualIndex < images.length - 1;
 
-  return (
+  return createPortal(
     <div
       className="lightbox fixed inset-0 bg-black bg-opacity-95 z-[9999] flex items-center justify-center"
       onClick={onClose}
@@ -273,7 +276,8 @@ function ImageLightbox({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

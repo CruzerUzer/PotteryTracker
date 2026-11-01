@@ -25,6 +25,10 @@ function MoveSheet({
 }) {
   const navigate = useNavigate();
   const [busy, setBusy] = React.useState(null);
+  // Behåll senaste pjäsen så att arket kan animera ut när piece blir null
+  const last = React.useRef(piece);
+  if (piece) last.current = piece;
+  piece = piece || last.current;
 
   if (!piece) return null;
 

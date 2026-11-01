@@ -69,4 +69,17 @@ describe('KanbanView på mobil', () => {
     await waitFor(() => expect(piecesAPI.updatePhase).toHaveBeenCalledWith(1, 2));
     expect(within(dialog).getByRole('radio', { name: /Skröjbränd/ })).toHaveAttribute('aria-checked', 'true');
   });
+
+  it('rullar tillbaka fasen om servern vägrar flytten', async () => {
+    piecesAPI.updatePhase.mockRejectedValueOnce(new Error('nätverksfel'));
+    const user = userEvent.setup();
+    render(<MemoryRouter><KanbanView /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Testmugg/ }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('radio', { name: 'Skröjbränd' }));
+    await waitFor(() =>
+      expect(within(dialog).getByRole('radio', { name: /På tork/ })).toHaveAttribute('aria-checked', 'true')
+    );
+    expect(screen.getByRole('tab', { name: /På tork/, hidden: true })).toHaveTextContent('2');
+  });
 });

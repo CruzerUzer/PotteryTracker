@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { piecesAPI } from '../services/api';
 import { useToast } from '../components/ui/toast';
 
@@ -13,6 +13,7 @@ import { useToast } from '../components/ui/toast';
  */
 export function usePieceMover({ phases, locations, onPatch }) {
   const toast = useToast();
+  const seq = useRef(new Map()); // senaste anrop per pjäs, så gamla svar inte skriver över nya
 
   const move = useCallback(
     async (piece, { phaseId, locationId }, { silent = false } = {}) => {
@@ -33,16 +34,39 @@ export function usePieceMover({ phases, locations, onPatch }) {
         patch.location_name = locations.find((l) => l.id === locationId)?.name || null;
       }
       onPatch(piece.id, patch);
+      const ticket = (seq.current.get(piece.id) || 0) + 1;
+      seq.current.set(piece.id, ticket);
+      const isLatest = () => seq.current.get(piece.id) === ticket;
 
-      try {
-        const phaseCall = phaseId !== undefined ? piecesAPI.updatePhase(piece.id, phaseId) : null;
-        const locationCall = locationId !== undefined ? piecesAPI.updateLocation(piece.id, locationId || null) : null;
-        const [phaseResult] = await Promise.all([phaseCall, locationCall]);
-        if (phaseResult && typeof phaseResult.done !== 'undefined') {
-          onPatch(piece.id, { done: phaseResult.done ? 1 : 0 });
+      const [phaseRes, locationRes] = await Promise.allSettled([
+        phaseId !== undefined ? piecesAPI.updatePhase(piece.id, phaseId) : Promise.resolve(null),
+        locationId !== undefined ? piecesAPI.updateLocation(piece.id, locationId || null) : Promise.resolve(null),
+      ]);
+
+      // Rulla bara tillbaka det fält som misslyckades, och bara om inget nyare anrop gjorts
+      const failed = [phaseRes, locationRes].find((r) => r.status === 'rejected');
+      if (isLatest()) {
+        const rollback = {};
+        if (phaseRes.status === 'rejected') {
+          rollback.current_phase_id = before.current_phase_id;
+          rollback.phase_name = before.phase_name;
+          rollback.done = before.done;
+        } else if (phaseRes.value && typeof phaseRes.value.done !== 'undefined') {
+          rollback.done = phaseRes.value.done ? 1 : 0;
         }
+        if (locationRes.status === 'rejected') {
+          rollback.current_location_id = before.current_location_id;
+          rollback.location_name = before.location_name;
+        }
+        if (Object.keys(rollback).length) onPatch(piece.id, rollback);
+      }
 
-        if (!silent) {
+      if (failed) {
+        toast.error('Kunde inte flytta pjäsen', failed.reason?.message);
+        return;
+      }
+
+      if (!silent) {
           const target = phaseId !== undefined ? patch.phase_name : patch.location_name || 'Ingen plats';
           const undo = {};
           if (phaseId !== undefined && before.current_phase_id) undo.phaseId = before.current_phase_id;
@@ -52,10 +76,6 @@ export function usePieceMover({ phases, locations, onPatch }) {
               ? { label: 'Ångra', onClick: () => move({ ...piece, ...patch }, undo, { silent: true }) }
               : undefined,
           });
-        }
-      } catch (err) {
-        onPatch(piece.id, before);
-        toast.error('Kunde inte flytta pjäsen', err.message);
       }
     },
     [phases, locations, onPatch, toast]

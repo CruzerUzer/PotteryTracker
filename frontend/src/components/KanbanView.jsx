@@ -179,7 +179,10 @@ function KanbanView() {
         phases={phases}
         locations={locations}
         onMove={movePiece}
-        onOpenImages={(piece) => openImages(piece)}
+        onOpenImages={(piece) => {
+          setSelectedId(null);
+          openImages(piece);
+        }}
       />
 
       {lightbox.isOpen && (

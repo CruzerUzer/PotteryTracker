@@ -87,6 +87,27 @@ function PhasePager({ phases, locations, pieces, onSelectPiece }) {
     }
   };
 
+  // Inaktiva fassidor är inerta: inte i tabbordningen eller för skärmläsare
+  useEffect(() => {
+    pageRefs.current.forEach((el, i) => {
+      if (!el) return;
+      if (i === activeIdx) el.removeAttribute('inert');
+      else el.setAttribute('inert', '');
+    });
+  }, [activeIdx, phases.length]);
+
+  const onTabKeyDown = (e) => {
+    let next = null;
+    if (e.key === 'ArrowRight') next = Math.min(phases.length - 1, activeIdx + 1);
+    else if (e.key === 'ArrowLeft') next = Math.max(0, activeIdx - 1);
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = phases.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    goTo(next);
+    barRef.current?.children[next]?.focus();
+  };
+
   const groupsFor = (phase) => {
     const inPhase = pieces.filter((p) => p.current_phase_id === phase.id);
     const groups = locations
@@ -113,6 +134,8 @@ function PhasePager({ phases, locations, pieces, onSelectPiece }) {
               id={`phase-tab-${phase.id}`}
               aria-selected={selected}
               aria-controls={`phase-page-${phase.id}`}
+              tabIndex={selected ? 0 : -1}
+              onKeyDown={onTabKeyDown}
               className={`phase-tab${selected ? ' phase-tab--active' : ''}`}
               style={{ '--tab-bg': c.bg, '--tab-border': c.border, '--tab-accent': c.accent }}
               onClick={() => goTo(i)}

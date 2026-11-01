@@ -9,6 +9,7 @@ const positions = new Map();
 /** Återställ scroll när innehållet hunnit bli tillräckligt högt (data laddas asynkront). */
 function restore(y) {
   let frames = 0;
+  let raf = 0;
   const tick = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     if (max >= y - 2 || frames > 90) {
@@ -16,9 +17,10 @@ function restore(y) {
       return;
     }
     frames += 1;
-    requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
   };
-  requestAnimationFrame(tick);
+  raf = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(raf);
 }
 
 /**
@@ -53,9 +55,11 @@ export function useScrollMemory() {
     current.current = { key: location.key, path: location.pathname };
     const byKey = positions.get(`key:${location.key}`);
     const byPath = positions.get(`path:${location.pathname}`);
-    if (navType === 'POP' && byKey != null) restore(byKey);
-    else if (TAB_PATHS.has(location.pathname) && byPath != null) restore(byPath);
+    let cancel;
+    if (navType === 'POP' && byKey != null) cancel = restore(byKey);
+    else if (TAB_PATHS.has(location.pathname) && byPath != null) cancel = restore(byPath);
     else window.scrollTo(0, 0);
+    return cancel; // ny navigering avbryter en pågående återställning
   }, [location.key, location.pathname, navType]);
 }
 

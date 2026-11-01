@@ -12,7 +12,7 @@ att läsa om hela kodbasen. Helm-ärende: #150 (redesign), #149 (surfplattebugg)
 | 2. Kanban på mobil | **Klar** | Fassidor med swipe, snabbark, ångra-toast, desktopmatris utan scrollbox |
 | 3. Lista, Färdiga, Detalj, Formulär | **Klar** | Sök + chips + filterark, hero och bildremsa, chips-formulär, swipe i lightbox |
 | 4. Finish | **Klar** | Skelett överallt, tomma tillstånd, tryckåterkoppling, mörkt läge, döda inställningar borta |
-| 5. Verifiering och deploy | Ej påbörjad | Fråga alltid innan prod-deploy |
+| 5. Verifiering och deploy | **Pågår** | Tester, bygge, screenshots och kodgranskning klara. Väntar på telefontest och godkännande; ingen merge eller prod-deploy ännu |
 
 Uppdatera tabellen när en fas blir klar. Branch: `feature/mobile-redesign`.
 
@@ -145,8 +145,20 @@ Filer: `PieceList.jsx`, `DonePieces.jsx`, `PieceDetail.jsx`, `PieceForm.jsx`,
 | Döda inställningar | **Ta bort** `defaultView`, `showImagesInCards`, `showDescriptions`, `phaseColors`. |
 | Bottennav | **Central "+"-knapp** för Ny pjäs. |
 
-Planen är godkänd i sin helhet. Nästa steg är fas 1. Implementationen görs i
-en ny session (användaren bytte modell till Opus 5.5 efter planeringen).
+Planen är godkänd i sin helhet. Fas 1–4 är implementerade 2026-11-01 på
+`feature/mobile-redesign`. Kvar: användaren testar på telefon via testservern,
+sedan merge till `main` och (efter separat OK) prod-deploy.
+
+### Noteringar från implementationen
+
+- Namnbyte i detaljvyn nollställde tidigare beskrivning, fas och plats, eftersom
+  `PUT /api/pieces/:id` skriver över alla fält. Nya detaljvyn skickar hela pjäsen.
+- Flytt av pjäser går via `hooks/usePieceMover.js` (optimistisk, ångra i toasten,
+  rullar bara tillbaka det fält som misslyckades).
+- Lightboxen renderas i `body` via portal; sidövergången får inte ha
+  `animation-fill-mode: both`, det skapar en staplingskontext.
+- Playwrights `dragTo` startar ibland draget på fel kort i matrisen. Testa
+  drag-and-drop med `mouse.down/move/up`.
 
 ## Testserver på Hemmalinux (fas 0, klar)
 

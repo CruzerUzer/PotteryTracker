@@ -67,7 +67,10 @@ const SheetContent = React.forwardRef(
         if (panelRef.current?.dataset.state !== 'open') return;
         if (document.querySelector('[role="alertdialog"][data-state="open"]')) return;
         if (document.querySelector('[role="menu"][data-state="open"]')) return;
-        closeRef.current?.click();
+        // Vänta ut Radix: stängde den redan arket gör vi inget, annars tog en toast tangenten
+        setTimeout(() => {
+          if (panelRef.current?.dataset.state === 'open') closeRef.current?.click();
+        }, 0);
       };
       document.addEventListener('keydown', onKey);
       return () => document.removeEventListener('keydown', onKey);

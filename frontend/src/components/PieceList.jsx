@@ -31,6 +31,7 @@ function PieceList() {
   const [materialQuery, setMaterialQuery] = useState('');
   const [moveId, setMoveId] = useState(null);
   const firstLoad = useRef(true);
+  const requestId = useRef(0);
 
   // Referensdata en gång
   useEffect(() => {
@@ -54,6 +55,7 @@ function PieceList() {
       if (firstLoad.current) setLoading(true);
       else setRefreshing(true);
       setError(null);
+      const myId = ++requestId.current;
       const data = await piecesAPI.getAll({
         phase_id: filters.phase || null,
         material_id: filters.material || null,
@@ -61,6 +63,7 @@ function PieceList() {
         date_from: filters.dateFrom || null,
         date_to: filters.dateTo || null,
       });
+      if (myId !== requestId.current) return; // ett nyare filter hann före
       setPieces(data);
     } catch (err) {
       setError(err.message);

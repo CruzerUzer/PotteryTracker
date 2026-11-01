@@ -172,8 +172,10 @@ function PieceDetail() {
     try {
       await imagesAPI.delete(imageId);
       await loadData({ quiet: true });
+      return true;
     } catch (err) {
       toast.error('Kunde inte ta bort bilden', err.message);
+      return false;
     }
   };
 
@@ -248,7 +250,7 @@ function PieceDetail() {
               <MoreHorizontal size={19} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuContent align="end" className="w-52" onCloseAutoFocus={(e) => e.preventDefault()}>
             <DropdownMenuItem onClick={() => startEditing('name')} className="gap-2">
               <Pencil size={15} /> Byt namn
             </DropdownMenuItem>
@@ -489,10 +491,14 @@ function PieceDetail() {
             pieceId={id}
             phases={phases}
             defaultPhaseId={piece.current_phase_id || null}
-            onUploaded={async () => {
+            onUploaded={async ({ successCount = 1, errorCount = 0 } = {}) => {
               await loadData({ quiet: true });
+              if (errorCount > 0) {
+                toast.error(`${errorCount} ${errorCount === 1 ? 'bild' : 'bilder'} kunde inte laddas upp`, 'Försök igen med dem.');
+                return; // arket står kvar så att användaren ser vilka som misslyckades
+              }
               setUploadOpen(false);
-              toast.success('Bilderna är uppladdade');
+              toast.success(successCount === 1 ? 'Bilden är uppladdad' : `${successCount} bilder uppladdade`);
             }}
           />
         </SheetContent>
@@ -524,9 +530,10 @@ function PieceDetail() {
           onClose={() => setLightboxIndex(null)}
           pieceName={piece.name}
           onDelete={async (imageId) => {
+            const ok = await deleteImage(imageId);
+            if (!ok) return;
             if (images.length === 1) setLightboxIndex(null);
             else if (lightboxIndex >= images.length - 1) setLightboxIndex(images.length - 2);
-            await deleteImage(imageId);
           }}
         />
       )}

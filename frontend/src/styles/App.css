@@ -2753,3 +2753,21 @@ textarea.field-input { resize: vertical; min-height: 110px; }
   .kpi-icon svg { width: 18px; height: 18px; }
   .kpi-value { font-size: 1.6rem; }
 }
+
+/* ═══════════════════════════════════════════════════
+   iOS: ingen oavsiktlig zoom
+   ═══════════════════════════════════════════════════ */
+
+/* Stänger av zoom vid dubbeltryck men behåller nypzoom (tillgänglighet).
+   touch-action ärvs inte och scrollbehållare bryter kedjan, därför på alla
+   element; klasser med touch-action: none (arkets grepp, lightbox) vinner. */
+*, *::before, *::after { touch-action: manipulation; }
+
+/* iOS zoomar in när ett fält med text under 16 px får fokus */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

@@ -8,7 +8,7 @@ att läsa om hela kodbasen. Helm-ärende: #150 (redesign), #149 (surfplattebugg)
 | Fas | Status | Kommentar |
 |-----|--------|-----------|
 | 0. Testserver på Hemmalinux | **Klar** | Se avsnittet *Testserver* nedan |
-| 1. Appskal och navigation | Ej påbörjad | Väntar på OK från användaren |
+| 1. Appskal och navigation | Ej påbörjad | **Nästa.** Planen är godkänd 2026-11-01 |
 | 2. Kanban på mobil | Ej påbörjad | |
 | 3. Lista, Färdiga, Detalj, Formulär | Ej påbörjad | |
 | 4. Finish | Ej påbörjad | |
@@ -123,8 +123,7 @@ Filer: `PieceList.jsx`, `DonePieces.jsx`, `PieceDetail.jsx`, `PieceForm.jsx`,
 - Mikroanimationer: tryckåterkoppling på kort och knappar, sheet-animationer.
 - Tomma tillstånd med en handling ("Lägg till din första pjäs").
 - Mörkt läge finjusteras på de nya ytorna.
-- Inställningar städas: ta bort döda val (rekommendation) eller koppla in dem.
-  Beslut från användaren krävs.
+- Inställningar städas: de döda valen tas bort (beslutat).
 
 ### Fas 5: Verifiering och deploy
 
@@ -137,14 +136,17 @@ Filer: `PieceList.jsx`, `DonePieces.jsx`, `PieceDetail.jsx`, `PieceForm.jsx`,
 6. **Fråga innan prod-deploy.** Frontend via `./deploy-frontend.sh` från en
    maskin med gott om RAM. Backend-ändringar via update-skriptet på prod.
 
-## Beslut som väntar på användaren
+## Beslut (tagna av användaren 2026-11-01)
 
-| Fråga | Rekommendation |
-|-------|----------------|
-| Behålla Galleri Noir-paletten och förfina, eller ny look? | Behåll och förfina |
-| Kanban mobil: swipe mellan faser, eller faser staplade vertikalt? | Swipe med fassväljare |
-| Döda inställningar: ta bort eller bygga klart? | Ta bort |
-| Central "+"-knapp i bottennaven? | Ja |
+| Fråga | Beslut |
+|-------|--------|
+| Palett | **Behåll Galleri Noir och förfina.** Ingen ny look. |
+| Kanban mobil | **Swipe mellan faser** med fast fassväljare, pjäser grupperade per plats inom fasen. |
+| Döda inställningar | **Ta bort** `defaultView`, `showImagesInCards`, `showDescriptions`, `phaseColors`. |
+| Bottennav | **Central "+"-knapp** för Ny pjäs. |
+
+Planen är godkänd i sin helhet. Nästa steg är fas 1. Implementationen görs i
+en ny session (användaren bytte modell till Opus 5.5 efter planeringen).
 
 ## Testserver på Hemmalinux (fas 0, klar)
 

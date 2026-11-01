@@ -12,7 +12,7 @@ att läsa om hela kodbasen. Helm-ärende: #150 (redesign), #149 (surfplattebugg)
 | 2. Kanban på mobil | **Klar** | Fassidor med swipe, snabbark, ångra-toast, desktopmatris utan scrollbox |
 | 3. Lista, Färdiga, Detalj, Formulär | **Klar** | Sök + chips + filterark, hero och bildremsa, chips-formulär, swipe i lightbox |
 | 4. Finish | **Klar** | Skelett överallt, tomma tillstånd, tryckåterkoppling, mörkt läge, döda inställningar borta |
-| 5. Verifiering och deploy | **Pågår** | Tester, bygge, screenshots och kodgranskning klara. Väntar på telefontest och godkännande; ingen merge eller prod-deploy ännu |
+| 5. Verifiering och deploy | **Klar** | Telefontestat och godkänt. Mergat till main (381f91f) och deployat 2026-11-01 |
 
 Uppdatera tabellen när en fas blir klar. Branch: `feature/mobile-redesign`.
 
@@ -145,9 +145,9 @@ Filer: `PieceList.jsx`, `DonePieces.jsx`, `PieceDetail.jsx`, `PieceForm.jsx`,
 | Döda inställningar | **Ta bort** `defaultView`, `showImagesInCards`, `showDescriptions`, `phaseColors`. |
 | Bottennav | **Central "+"-knapp** för Ny pjäs. |
 
-Planen är godkänd i sin helhet. Fas 1–4 är implementerade 2026-11-01 på
-`feature/mobile-redesign`. Kvar: användaren testar på telefon via testservern,
-sedan merge till `main` och (efter separat OK) prod-deploy.
+Planen är genomförd. Alla faser är klara och i produktion sedan 2026-11-01.
+Utöver planen tillkom efter telefontestet: platsfilter, filter i Kanban,
+flerval inom filterkategorier ("någon av") och en fix för oavsiktlig zoom på iOS.
 
 ### Noteringar från implementationen
 

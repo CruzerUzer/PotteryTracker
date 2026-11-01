@@ -33,6 +33,19 @@ BASE_URL=http://hemmalinux.taila35f69.ts.net:4301 SHOT_USER=... SHOT_PASS=... np
 ```
 
 Bilderna hamnar i `out/<tema>/<viewport>/<vy>.png` (gitignorerat).
+Viewports: desktop 1280, surfplatta 900 och mobil 390.
+
+Sessionen sparas i `out/.auth.json` och återanvänds. Backend tillåter bara
+10 inloggningar per 15 minuter, så logga inte in i varje körning.
+
+## Ad hoc-bilder: `shoot.mjs`
+Fotar valfria vägar och kan klicka sig fram först:
+```bash
+node shoot.mjs <ut-katalog> <light|dark> 390x844 kanban=/ 'ark=/!click:.piece-tile' 'lista=/list!overflow'
+```
+Åtgärder efter `!`: `click:<selektor>`, `more` (öppna Mer-arket), `scroll`,
+`wait:<ms>`, `viewport` (bara synlig yta) och `overflow` (skriv ut element som
+gör sidan bredare än skärmen).
 
 ## Vyer som fotas
 kanban, lista, färdiga, statistik, arbetsflöde, material, säkerhetskopia, inställningar.

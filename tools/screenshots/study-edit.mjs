@@ -27,7 +27,7 @@ await page.waitForTimeout(400);
 await click(page.locator('.chapter-edit').first());
 await page.waitForTimeout(600);
 await shot('e2-block');
-await page.locator('[aria-label="Huvudpass"]').first().fill('Cylindrar: 8 à 600 g. Ändrad i testet.');
+await page.locator('[aria-label="Drejning"]').first().fill('Cylindrar: 8 à 600 g. Ändrad i testet.');
 await click(page.locator('button[form="block-edit"]'));
 await page.waitForTimeout(900);
 await shot('e2b-efter-spara');

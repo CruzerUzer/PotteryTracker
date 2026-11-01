@@ -1,5 +1,5 @@
 /**
- * Studie-modulen: plan, pass, alster i passet, grindar och utmaningskort.
+ * Studie-modulen: plan, pass, alster i passet, milstolpar och utmaningskort.
  * Se design/STUDIE_PLAN.md. Alla routes kräver inloggning och study_enabled.
  */
 import express from 'express';
@@ -242,7 +242,7 @@ async function sessionDetail(db, userId, row, plan) {
   };
 }
 
-/** Gods på hyllan: drejat men inte svarvat, och skröjbränt som väntar på glasyr. */
+/** Gods på hyllan: drejat men inte beskickat, och skröjbränt som väntar på glasyr. */
 async function shelf(db, userId, stageMap) {
   const toTrim = await db.all(
     `SELECT ${PIECE_COLUMNS}, MAX(s.date) AS thrown_date
@@ -714,7 +714,7 @@ router.get('/pieces/:pieceId/sessions', handle('hämta alstrets pass', async (re
   })));
 }));
 
-// ─── Grind och kort ─────────────────────────────────────────────────
+// ─── Milstolpe och kort ─────────────────────────────────────────────────
 
 async function validateGate(db, userId, blockId, index) {
   const planRow = await getOrSeedPlan(db, userId);
@@ -724,10 +724,10 @@ async function validateGate(db, userId, blockId, index) {
   return { block, index: i };
 }
 
-router.post('/gates/:blockId/:index', handle('kryssa grinden', async (req, res) => {
+router.post('/gates/:blockId/:index', handle('kryssa milstolpen', async (req, res) => {
   const db = await getDb();
   const gate = await validateGate(db, req.userId, req.params.blockId, req.params.index);
-  if (!gate) return res.status(404).json({ error: 'Grindpunkten finns inte' });
+  if (!gate) return res.status(404).json({ error: 'Punkten i milstolpen finns inte' });
   await db.run(
     'INSERT OR IGNORE INTO study_gate_checks (user_id, plan_block_id, gate_index) VALUES (?, ?, ?)',
     [req.userId, gate.block.id, gate.index]
@@ -735,10 +735,10 @@ router.post('/gates/:blockId/:index', handle('kryssa grinden', async (req, res) 
   res.json({ blockId: gate.block.id, checked: (await gateChecks(db, req.userId))[gate.block.id] || [] });
 }));
 
-router.delete('/gates/:blockId/:index', handle('avkryssa grinden', async (req, res) => {
+router.delete('/gates/:blockId/:index', handle('avkryssa milstolpen', async (req, res) => {
   const db = await getDb();
   const gate = await validateGate(db, req.userId, req.params.blockId, req.params.index);
-  if (!gate) return res.status(404).json({ error: 'Grindpunkten finns inte' });
+  if (!gate) return res.status(404).json({ error: 'Punkten i milstolpen finns inte' });
   await db.run(
     'DELETE FROM study_gate_checks WHERE user_id = ? AND plan_block_id = ? AND gate_index = ?',
     [req.userId, gate.block.id, gate.index]

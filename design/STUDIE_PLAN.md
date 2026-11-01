@@ -37,7 +37,7 @@ Kvar till senare: AI-redigering (beslut 6), linjeblandning i glasyrtester.
 1. **Passet flyttar inte alstrens fas automatiskt.** När ett alster markeras
    som till exempel glaserat i ett pass föreslår appen "Flytta till
    Glasyrbränning?" med en knapp. Ingen flytt utan bekräftelse.
-2. **Bränningsflöde → appens faser:** Drejat, Svarvat → *På gång* ·
+2. **Bränningsflöde → appens faser:** Drejat, Beskickat → *På gång* ·
    Skröjbränt → *Skröjbränd* · Glaserat → *Glasyrbränning* · Ut ur ugnen →
    *Klar*. Mappningen sparas per användare eftersom faserna är egna per
    användare. Ordet **biskvi** byts mot **skröj** överallt i planen
@@ -81,6 +81,14 @@ API (`plan_block_id`), så att de inte blandas ihop med appens faser
 planen. "Session" i briefen heter **pass** i gränssnittet (planen själv
 säger "pass"), `study_sessions` i databasen.
 
+Keramiktermer i gränssnittet och planen (ägarens beslut 2026-11-01, planfil
+v3): **drejskiva** (aldrig bara "skiva"), **beskicka** (inte "svarva";
+`trimmed` i kod), **milstolpe** (inte "grind"; `gate` i kod och API),
+**pass** för hela verkstadsbesöket och **moment** för dess delar
+(Förberedelse, Drejning, Beskickning, Lämna drejskivan, Dekor och glasyr,
+Städning och loggbok; segment-id:n oförändrade). Fals (inte galleri),
+vaxresist, omformning (inte alterering), dreja i delar.
+
 ## Känsla och ton
 
 Studie ska kännas som en lugn, uppmuntrande studiekamrat, inte en
@@ -96,7 +104,7 @@ träningsapp med dåligt samvete. Planens egna regler styr tonen:
   visas som ett citat överst när nästa pass startar. Det är planens
   viktigaste mekanism och ska vara det första ögat landar på.
 - **Tre generationer gods.** Appen vet vilka alster som drejades förra
-  passet och vilka som är skröjbrända, och föreslår dem i Finish- och
+  passet och vilka som är skröjbrända, och föreslår dem i beskicknings- och
   Glasyrsegmenten. Det är här kopplingen pass ↔ alster betalar sig: ingen
   dubbelinmatning, och passet påminner om vad som väntar på hyllan.
 - **Lek är en del av planen.** Utmaningskortet dras som ett riktigt kort
@@ -117,14 +125,14 @@ Startsidan. Innehåll uppifrån och ned:
    framstegsring (4/12) och årets framsteg (pass 8 av 52).
 2. **Förra gången.** Citatkort med förra passets "en förändring" (och
    observationen i mindre stil). Döljs vecka 1.
-3. **Veckans huvudpass** och **Finish**, planens texter för aktuell vecka.
-   Delmålet (redigerbart) föreslås av huvudpassets text.
-4. **Gods på hyllan.** Två rader: "Att svarva: 6 cylindrar (drejade
+3. **Veckans drejning** och **Beskickning och yta**, planens texter för aktuell vecka.
+   Delmålet (redigerbart) föreslås av drejningens text.
+4. **Gods på hyllan.** Två rader: "Att beskicka: 6 cylindrar (drejade
    24 okt)" och "Att glasera: 4 bägare (skröjbrända)". Hämtas från
    `study_session_pieces` + alstrens aktuella fas. Klick öppnar listan.
 5. **Starta passet**, stor primärknapp. Under den: *Fritt pass* (räknar inte
    upp veckan) och *Logga ett pass i efterhand*.
-6. **Blockets grind** som checklista. Kryssas i av användaren när den
+6. **Blockets milstolpe** som checklista. Kryssas i av användaren när den
    klarats, sparas på blocket (`study_gate_checks`).
 7. **Utmaningskort.** "Dra ett kort" (blockets lek eller hela). Kortet kan
    fästas vid dagens pass.
@@ -140,11 +148,11 @@ Ett pass går genom tre lägen på samma URL:
   klockslag / ren nedräkning), kopplat utmaningskort.
 - **Pågår** (modul 2): timern. Stora siffror, aktuellt segment med
   beskrivning, tid kvar i segment och i passet, nästa segment. Ett
-  mässingsband visar skivtiden (`wheelBooking`). Segment med skiva har
+  mässingsband visar tiden på drejskivan (`wheelBooking`). Moment med drejskiva har
   skivikon. Knappar: *Nästa segment*, *+10 min*, *Avsluta passet*. Under
   timern ligger segmentets **snabbåtgärder**:
-  - Huvudpass: "Lägg till nya alster" → serieformulär (se *Alster i passet*).
-  - Finish: lista på gods att svarva/hänkla, bocka av.
+  - Drejning: "Lägg till nya alster" → serieformulär (se *Alster i passet*).
+  - Beskickning: lista på gods att beskicka/hänkla, bocka av.
   - Yta och glasyr: lista på skröjbränt gods, bocka av som glaserat.
   - Städ och logg ut: loggboken öppnas inline.
 - **Avslutat** (modul 3): loggboken för passet, sedan sammanfattning.
@@ -159,7 +167,7 @@ segmentbyte bara om tillåtet och sidan är öppen; annars tyst.
 
 Årets fem block som kapitel i en tidslinje med blockfärger. Aktuellt block
 är utfällt, aktuell vecka markerad. Varje block visar tema (tekniskt och
-kreativt), veckor (huvudpass och finish), grind och lek. Flik **Om planen**
+kreativt), veckor (drejning samt beskickning och yta), milstolpe och lek. Flik **Om planen**
 renderar `studieplan.md` (syfte, forskning, bränningsflöde, resurser).
 Modul 5 lägger till *Redigera* här.
 
@@ -174,7 +182,7 @@ och CSV.
 ### Alstrets detaljsida (befintlig)
 
 Får en rad "Pass" med de pass alstret varit med i och vad som gjordes
-("Drejat pass 7 · Svarvat pass 8 · Glaserat pass 10"). Ingen annan
+("Drejat pass 7 · Beskickat pass 8 · Glaserat pass 10"). Ingen annan
 ändring i alsterflödet.
 
 ## Alster i passet
@@ -185,12 +193,12 @@ Får en rad "Pass" med de pass alstret varit med i och vad som gjordes
   `thrown`, och sätter serienummer. Serienumret räknas upp per användare och
   visas i loggboken som "Märk: S12" för ristningen i foten.
 - **Koppla befintliga.** Sök bland egna alster som inte är klara och välj
-  åtgärd: drejat, svarvat, hänklat, dekorerat, glaserat.
+  åtgärd: drejat, beskickat, hänklat, dekorerat, glaserat.
 - **Fasförslag.** När åtgärden motsvarar ett steg i bränningsflödet visas
   "Flytta till Glasyrbränning?" med knapp (beslut 1). Flytten görs via
   befintlig `PATCH /api/pieces/:id/phase`.
 - **Gods på hyllan** på Idag-sidan bygger på samma data: alster kopplade
-  som `thrown` utan `trimmed` → att svarva; alster i fasen *Skröjbränd* →
+  som `thrown` utan `trimmed` → att beskicka; alster i fasen *Skröjbränd* →
   att glasera.
 
 ## Datamodell
@@ -273,7 +281,7 @@ POST   /sessions/:id/end            sätter ended_at
 POST   /sessions/:id/pieces         koppla alster {piece_id, action} eller serie {count, name, weight, clay}
 DELETE /sessions/:id/pieces/:spId
 GET    /pieces/:pieceId/sessions    för alstrets detaljsida
-POST   /gates/:blockId/:index  DELETE …   grindkryss
+POST   /gates/:blockId/:index  DELETE …   milstolpekryss
 GET    /cards/draw?block=…          slumpa kort
 ```
 
@@ -311,7 +319,7 @@ växel "Studie".
 
 **Modul 1** – flagga + admin-växel, planfil med schema och biskvi→skröj,
 seed, stage-map, `/today`, pass (skapa, förbereda, avsluta utan timer),
-serieformulär, koppla alster, fasförslag, grind, kort, Idag-sidan, Planen,
+serieformulär, koppla alster, fasförslag, milstolpe, kort, Idag-sidan, Planen,
 Pass-sidan i förberedelse- och avslutat-läge (utan logg), rad på alstrets
 detaljsida, export/arkiv/copy-user utökade, migration + rad i
 `update-potterytracker.sh`, tester.
@@ -343,8 +351,8 @@ pass och Material. Linjeblandning senare.
   drejade, med löpande serienummer.
 - "Glaserat" på ett alster visar fasförslaget; alstret flyttas bara efter
   klick.
-- Timern startad 09:47 med starttid 10:00 visar "In, utan skiva" till 10:15,
-  sedan "Huvudpass, på skivan"; samma läge efter omladdning.
+- Timern startad 09:47 med starttid 10:00 visar "Förberedelse" till 10:15,
+  sedan "Drejning"; samma läge efter omladdning.
 - Loggboken sparar tre rader och ett foto på under en minut på mobil.
 - Alla texter på svenska. Ordet biskvi förekommer inte.
 - Befintliga alsterflöden oförändrade utöver raden "Pass" på detaljsidan.

@@ -213,7 +213,7 @@
 .study-start-alt .link-btn:disabled { opacity: 0.45; cursor: default; }
 .study-start-hint { text-align: center; margin: 0; }
 
-/* ── Grind ── */
+/* ── Milstolpe ── */
 .gate-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .gate-item {
   width: 100%;

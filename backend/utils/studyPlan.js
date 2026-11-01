@@ -25,7 +25,7 @@ export const ACTION_TO_STAGE = {
 
 export const ACTION_LABELS = {
   thrown: 'Drejat',
-  trimmed: 'Svarvat',
+  trimmed: 'Beskickat',
   handled: 'Hänklat',
   decorated: 'Dekorerat',
   glazed: 'Glaserat',
@@ -84,7 +84,7 @@ export function validatePlan(plan) {
     prevTo = s.toMinute;
   }
   if (t.wheelBooking && t.wheelBooking.toMinute <= t.wheelBooking.fromMinute) {
-    errors.push('Skivbokningen slutar innan den börjar');
+    errors.push('Bokningen av drejskivan slutar innan den börjar');
   }
 
   const cardIds = new Set();

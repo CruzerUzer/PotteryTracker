@@ -102,7 +102,7 @@ function PiecePicker({ open, onOpenChange, sessionId, initialAction = 'trimmed',
 
         {!query && suggested.length > 0 && (
           <>
-            <h3 className="pick-heading">{action === 'glazed' ? 'Skröjbränt, att glasera' : 'Drejat, att svarva'}</h3>
+            <h3 className="pick-heading">{action === 'glazed' ? 'Skröjbränt, att glasera' : 'Drejat, att beskicka'}</h3>
             <ul className="pick-list">{suggested.map(row)}</ul>
           </>
         )}

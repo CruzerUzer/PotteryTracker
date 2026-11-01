@@ -434,7 +434,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
       }
     }
 
-    // Studie: plan, pass, kopplingar till alster, grindar, serier
+    // Studie: plan, pass, kopplingar till alster, milstolpar, serier
     const studyCounts = await importStudyData(db, studyData, targetUserId, {
       pieces: pieceIdMap,
       phases: phaseIdMap,

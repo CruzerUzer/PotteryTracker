@@ -481,7 +481,7 @@ function StudySession() {
       {!backdated && !running && !ended && (
         <section className="study-section">
           <div className="study-section-head">
-            <h2 className="study-h2">Dagens segment</h2>
+            <h2 className="study-h2">Dagens moment</h2>
             <span className="study-muted">{minutesLabel(totalMin)}</span>
           </div>
           <ol className="segment-list">
@@ -491,7 +491,7 @@ function StudySession() {
                 <li key={seg.id} className={`segment-row${on ? '' : ' is-off'}`}>
                   <div className="segment-text">
                     <span className="segment-name">
-                      {seg.wheel && <Disc3 size={14} className="segment-wheel" aria-label="På skivan" />}
+                      {seg.wheel && <Disc3 size={14} className="segment-wheel" aria-label="På drejskivan" />}
                       {seg.name}
                     </span>
                     {on && seg.description && <span className="segment-desc">{seg.description}</span>}
@@ -578,12 +578,12 @@ function StudySession() {
               <span className="field-sublabel">Passet börjar</span>
               <input type="time" className="field-input field-input--lg" value={startTime} step={300}
                 onChange={(e) => setStartTime(e.target.value)} />
-              <span className="field-hint">Skivan är bokad från {(session.wheel_booking?.fromMinute ?? 15)} minuter in i passet.</span>
+              <span className="field-hint">Drejskivan är bokad från {(session.wheel_booking?.fromMinute ?? 15)} minuter in i passet.</span>
             </label>
           )}
           <p className="study-muted">
             {startMode === 'now' && `Klockan börjar nu. Passet är ${minutesLabel(totalMin)}.`}
-            {startMode === 'clock' && 'Segmenten följer klockan, så att skivtiden stämmer med bokningen.'}
+            {startMode === 'clock' && 'Momenten följer klockan, så att tiden på drejskivan stämmer med bokningen.'}
             {startMode === 'countdown' && 'Bara nedräkning, utan klockslag och skivband.'}
           </p>
         </section>

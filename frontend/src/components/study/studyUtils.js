@@ -2,7 +2,7 @@
 
 export const ACTIONS = [
   { id: 'thrown', label: 'Drejat' },
-  { id: 'trimmed', label: 'Svarvat' },
+  { id: 'trimmed', label: 'Beskickat' },
   { id: 'handled', label: 'Hänklat' },
   { id: 'decorated', label: 'Dekorerat' },
   { id: 'glazed', label: 'Glaserat' },

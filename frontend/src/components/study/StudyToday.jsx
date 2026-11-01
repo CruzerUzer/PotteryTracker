@@ -138,7 +138,7 @@ function StudyToday() {
       const res = checked ? await studyAPI.uncheckGate(blockId, index) : await studyAPI.checkGate(blockId, index);
       setData((d) => ({ ...d, gate: { ...d.gate, checked: res.checked } }));
     } catch (err) {
-      toast.error('Kunde inte spara grinden', err.message);
+      toast.error('Kunde inte spara milstolpen', err.message);
       load();
     }
   };
@@ -212,7 +212,7 @@ function StudyToday() {
         </div>
         {entry?.finish && (
           <div className="study-week-item">
-            <span className="study-label">Finish</span>
+            <span className="study-label">Beskickning och yta</span>
             <p>{entry.finish}</p>
           </div>
         )}
@@ -222,7 +222,7 @@ function StudyToday() {
         <section className="study-section">
           <h2 className="study-h2">Gods på hyllan</h2>
           <ul className="shelf">
-            <ShelfRow icon={Hammer} title="Att svarva" pieces={shelf.toTrim} dateLabel={firstThrown ? `drejade ${formatDay(firstThrown)}` : ''} />
+            <ShelfRow icon={Hammer} title="Att beskicka" pieces={shelf.toTrim} dateLabel={firstThrown ? `drejade ${formatDay(firstThrown)}` : ''} />
             <ShelfRow icon={Paintbrush} title="Att glasera" pieces={shelf.toGlaze} dateLabel="skröjbrända" />
           </ul>
         </section>
@@ -255,7 +255,7 @@ function StudyToday() {
 
       {gate && gate.items.length > 0 && (
         <section className="study-section">
-          <h2 className="study-h2">Blockets grind</h2>
+          <h2 className="study-h2">Blockets milstolpe</h2>
           <ul className="gate-list">
             {gate.items.map((text, i) => {
               const checked = gate.checked.includes(i);

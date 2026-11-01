@@ -1,57 +1,58 @@
 {
   "$schema": "./studieplan.schema.json",
   "id": "studieplan-2026",
-  "version": 2,
+  "version": 3,
   "title": "Studieplan i keramik – från drejning till färdigt alster",
   "language": "sv",
   "createdAt": "2026-11-01",
   "source": "https://claude.ai/artifact/PTWnLk4KpnTx63pbuKvzCw",
   "changes": [
+    { "version": 3, "date": "2026-11-01", "summary": "Mindre per pass (serier om sex, färre tunga föremål), två glasyrpass i block 3, hänklar dras i beskickningen. Svensk terminologi: drejskiva, beskicka, milstolpe, pass och moment." },
     { "version": 2, "date": "2026-11-01", "summary": "Huvudpasset 65 minuter, Lämna skivan 15 minuter." }
   ],
   "goals": [
-    "Teknisk säkerhet i hela kedjan: centrera och dra upp på första försöket, svarva rent, hänklar och lock som sitter, glasyr utan överraskningar.",
+    "Teknisk säkerhet i hela kedjan: centrera och dra upp på första försöket, beskicka rent, hänklar och lock som sitter, glasyr utan överraskningar.",
     "Ett eget formspråk: i slutet av året kunna peka på en serie föremål och säga 'det där är mitt'.",
-    "En vana som håller: varje session har ett tydligt syfte, ett mätbart delmål och minst en stund av ren lek."
+    "En vana som håller: varje pass har ett tydligt syfte, ett mätbart delmål och minst en stund av ren lek."
   ],
   "rules": [
-    "Kvantitet före perfektion: fler föremål, kortare tid per föremål, skär itu minst ett varje session.",
+    "Kvantitet före perfektion: fler föremål, kortare tid per föremål, skär itu minst ett varje pass.",
     "Varje block avslutas med något färdigt och glaserat, aldrig bara med övningar.",
     "Missade veckor är normalt. Fortsätt där planen står; hoppa inte tillbaka.",
-    "En fri session räknas inte som en av blockets tolv. Skriv de tre raderna i loggboken ändå.",
-    "Korta hellre serien till fyra än att hoppa över städ och logg."
+    "Ett fritt pass räknas inte som ett av blockets tolv. Skriv de tre raderna i loggboken ändå.",
+    "Korta hellre serien till fyra än att hoppa över städning och loggbok."
   ],
   "sessionTemplate": {
     "totalMinutes": 180,
     "wheelBooking": { "fromMinute": 15, "toMinute": 135 },
     "segments": [
-      { "id": "in", "fromMinute": 0, "toMinute": 15, "name": "In, utan skiva", "wheel": false,
-        "description": "Läs förra veckans tre rader, skriv dagens delmål. Knåda och väg lera till hela passet. Ta fram läderhårt gods. Dra hänklar och låt dem vila." },
-      { "id": "main", "fromMinute": 15, "toMinute": 80, "name": "Huvudpass, på skivan", "wheel": true,
-        "description": "Blockets övning, oftast en serie om 6–10. De två första är uppvärmning: skär itu en av dem och titta på väggen innan du fortsätter. Sista föremålet får bli en fri variant." },
-      { "id": "finish", "fromMinute": 80, "toMinute": 120, "name": "Finish, på skivan", "wheel": true,
-        "description": "Svarva förra veckans läderhårda gods. Sätt de vilade hänklarna, passa lock." },
-      { "id": "leave-wheel", "fromMinute": 120, "toMinute": 135, "name": "Lämna skivan", "wheel": true,
-        "description": "Torka av skiva och stänkskydd. Täck det nya godset tätt." },
-      { "id": "surface", "fromMinute": 135, "toMinute": 160, "name": "Yta och glasyr, utan skiva", "wheel": false,
+      { "id": "in", "fromMinute": 0, "toMinute": 15, "name": "Förberedelse", "wheel": false,
+        "description": "Läs förra passets tre rader, skriv dagens delmål. Väg och knåda leran till dagens serie. Ta fram det läderhårda godset." },
+      { "id": "main", "fromMinute": 15, "toMinute": 80, "name": "Drejning", "wheel": true,
+        "description": "Blockets övning, oftast en serie om 4–6. De två första är uppvärmning: skär itu en av dem och titta på väggen innan du fortsätter. Sista föremålet får bli en fri variant." },
+      { "id": "finish", "fromMinute": 80, "toMinute": 120, "name": "Beskickning", "wheel": true,
+        "description": "Dra hänklar först och låt dem styvna. Beskicka förra passets läderhårda gods, passa lock. Sätt hänklarna sist." },
+      { "id": "leave-wheel", "fromMinute": 120, "toMinute": 135, "name": "Lämna drejskivan", "wheel": true,
+        "description": "Torka av drejskivan och stänkskyddet. Täck det nya godset tätt." },
+      { "id": "surface", "fromMinute": 135, "toMinute": 160, "name": "Dekor och glasyr", "wheel": false,
         "description": "Dekorera läderhårt eller torrt gods. Glasera skröjbränt gods och provplattor." },
-      { "id": "out", "fromMinute": 160, "toMinute": 180, "name": "Städ och logg ut", "wheel": false,
+      { "id": "out", "fromMinute": 160, "toMinute": 180, "name": "Städning och loggbok", "wheel": false,
         "description": "Städa bord och verktyg, 15 minuter. Märk gods. Tre rader och ett foto i loggboken, 5 minuter." }
     ],
     "mainPassRules": [
       "Väg leran. Samma vikt i hela serien.",
       "Sätt ett mått innan du börjar: höjd, diameter eller antal drag. Mät efteråt.",
-      "Skär itu minst ett föremål per session och fotografera snittet.",
+      "Skär itu minst ett föremål per pass och fotografera snittet.",
       "Avsluta med något lekfullt: fri variant, en form du inte kan, ett utmaningskort."
     ],
-    "whenShort": "Finish går före nytt gods. Glasyr går före finish om bränningen är på gång. Korta serien hellre än städ och logg.",
+    "whenShort": "Beskickningen går före nytt gods. Glasyr går före beskickning om bränningen är på gång. Korta hellre serien än städning och loggbok.",
     "betweenSessions": "Tio minuters mental repetition av veckans form hemma, gärna med skiss. En teknikvideo med just den form du ska dreja nästa gång."
   },
   "firingPipeline": {
     "description": "Ett föremål tar fyra till fem veckor från lerklump till glaserat. Tre generationer gods är alltid igång.",
     "stages": [
       { "id": "thrown", "week": 1, "name": "Drejat", "action": "Täck tätt eller lägg i fuktlåda. Läderhårt om en vecka." },
-      { "id": "trimmed", "week": 2, "name": "Svarvat och ihopsatt", "action": "Svarva fot, hänklar, lock. Dekor som kräver läderhårt gods. Torka långsamt under lös plast." },
+      { "id": "trimmed", "week": 2, "name": "Beskickat och ihopsatt", "action": "Beskicka fot, sätt hänklar och lock. Dekor som kräver läderhårt gods. Torka långsamt under lös plast." },
       { "id": "bisque", "week": 3, "name": "Skröjbränt", "action": "Enligt verkstadens schema." },
       { "id": "glazed", "week": 4, "name": "Glaserat", "action": "Glasera gods och provplattor. Glasyrbränning." },
       { "id": "done", "week": 5, "name": "Ut ur ugnen", "action": "Fotografera, logga, jämför med skiss och avsikt." }
@@ -69,10 +70,10 @@
       "themeTechnical": "Få tillbaka händerna, få rutinen att sitta, få igång flödet med provplattor och fuktlåda.",
       "themeCreative": null,
       "weeks": [
-        { "weekFrom": 1, "weekTo": 1, "main": "Centrera 10 klumpar à 1 kg, skär av, centrera om. Sedan 5 cylindrar à 500 g; skär itu alla.", "finish": "Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda." },
-        { "weekFrom": 2, "weekTo": 2, "main": "8 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste.", "finish": "Gör 10 provplattor av spillet." },
-        { "weekFrom": 3, "weekTo": 3, "main": "8 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4.", "finish": "Svarva vecka 2:s cylindrar till bägare." },
-        { "weekFrom": 4, "weekTo": 4, "main": "6 skålar à 500 g: öppna cylindern till skål med ribb. Behåll 4.", "finish": "Svarva. Glasera provplattorna, en glasyr per platta, skriv upp." }
+        { "weekFrom": 1, "weekTo": 1, "main": "Centrera 6 klumpar à 1 kg, skär av, centrera om. Sedan 4 cylindrar à 500 g; skär itu alla.", "finish": "Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda." },
+        { "weekFrom": 2, "weekTo": 2, "main": "6 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste.", "finish": "Gör 6 provplattor av spillet." },
+        { "weekFrom": 3, "weekTo": 3, "main": "6 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4.", "finish": "Beskicka vecka 2:s cylindrar till bägare." },
+        { "weekFrom": 4, "weekTo": 4, "main": "6 skålar à 500 g: öppna cylindern till skål med ribb. Behåll 4.", "finish": "Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp." }
       ],
       "gate": [
         "Ett kilo lera centrerat på första försöket.",
@@ -86,15 +87,15 @@
       "name": "Block 1 · Grundformer i serie",
       "weekFrom": 5, "weekTo": 16,
       "sessions": 12,
-      "themeTechnical": "Serien: samma form, samma vikt, åtta stycken, mät och jämför. Cylinder, skål, mugg med dragen hänkel, svarvad fot.",
+      "themeTechnical": "Serien: samma form, samma vikt, sex stycken, mät och jämför. Cylinder, skål, mugg med dragen hänkel, beskickad fot.",
       "themeCreative": "Att se: varje serie får ett medvetet val av mynning, övergång och fot (Clary Illian, A Potter's Workbook).",
       "weeks": [
-        { "weekFrom": 5, "weekTo": 6, "main": "Cylindrar: 8 à 600 g, mål 15 × 8 cm. Mät alla, skriv spridningen. Vecka 6: blicken på kanten, inte händerna.", "finish": "Svarva. Provplattor." },
-        { "weekFrom": 7, "weekTo": 8, "main": "Bägare: 8 à 400 g, samma form. Två får en medvetet annan mynning (rak, utåt, inåt).", "finish": "Svarva fotringar: foten en tredjedel till hälften av mynningen. Dra 20 hänklar och kasta alla." },
-        { "weekFrom": 9, "weekTo": 10, "main": "Muggar: 8 à 450 g. Dra hänklar i slutet av passet, låt vila, sätt nästa vecka. Hänkel för ett, två och tre fingrar.", "finish": "Hänkla läderhårda muggar. Täck noga första dygnet." },
-        { "weekFrom": 11, "weekTo": 12, "main": "Skålar: 8 à 600 g i tre kurvor: öppen, rund, djup. Tänk på insidans linje.", "finish": "Svarva. Första engobetest på två skålar." },
-        { "weekFrom": 13, "weekTo": 14, "main": "Blandat pass: 3 cylindrar, 3 skålar, 3 bägare i samma session. Jämför med serierna.", "finish": "Glasera blockets första serier." },
-        { "weekFrom": 15, "weekTo": 16, "main": "Grindserien: 6 muggar à 450 g, samma form och hänkel.", "finish": "Svarva, hänkla, glasera. Blockutvärdering." }
+        { "weekFrom": 5, "weekTo": 6, "main": "Cylindrar: 6 à 600 g, mål 15 × 8 cm. Mät alla, skriv spridningen. Vecka 6: blicken på kanten, inte händerna.", "finish": "Beskicka. Provplattor." },
+        { "weekFrom": 7, "weekTo": 8, "main": "Bägare: 6 à 400 g, samma form. Två får en medvetet annan mynning (rak, utåt, inåt).", "finish": "Beskicka fotringar: foten en tredjedel till hälften av mynningen. Dra 10 hänklar och kasta alla." },
+        { "weekFrom": 9, "weekTo": 10, "main": "Muggar: 6 à 450 g. Hänkel för ett, två och tre fingrar.", "finish": "Dra hänklar först i beskickningen, låt dem styvna, sätt dem på de läderhårda muggarna sist. Täck noga första dygnet." },
+        { "weekFrom": 11, "weekTo": 12, "main": "Skålar: 6 à 600 g i tre kurvor: öppen, rund, djup. Tänk på insidans linje.", "finish": "Beskicka. Första engobetest på två skålar." },
+        { "weekFrom": 13, "weekTo": 14, "main": "Blandat pass: 2 cylindrar, 2 skålar, 2 bägare i samma pass. Jämför med serierna.", "finish": "Glasera blockets första serier." },
+        { "weekFrom": 15, "weekTo": 16, "main": "Slutserien: 6 muggar à 450 g, samma form och hänkel.", "finish": "Beskicka, hänkla, glasera. Blockutvärdering." }
       ],
       "gate": [
         "Sex muggar där högsta och lägsta skiljer högst 5 mm, hänklar som sitter efter bränning, glaserade.",
@@ -111,11 +112,11 @@
       "themeTechnical": "Funktion: tallriken som inte spricker, locket som passar, flaskan som snörps, kannan som häller.",
       "themeCreative": "Mottagaren: varje serie görs till en bestämd hand, mun eller matsituation (Robin Hopper, Functional Pottery).",
       "weeks": [
-        { "weekFrom": 17, "weekTo": 18, "main": "Tallrikar: 6 à 1–1,3 kg, 24–26 cm. Komprimera bottnen med ribb, torka upp och ned under plast.", "finish": "Svarva fot. Insidan av fotringen ska vara tunnaste stället, annars S-sprickor." },
-        { "weekFrom": 19, "weekTo": 21, "main": "Burkar med lock: 6 burkar à 800 g, galleri med ribb, mät med skjutmått. Lock à 250 g som låg cylinder med fläns. Vecka 21: locken svarvas på sina burkar.", "finish": "Lock och burk torkar tillsammans, en vecka. Vaxa galleri och fläns före glasering." },
-        { "weekFrom": 22, "weekTo": 23, "main": "Flaskor och vaser: 6 à 800 g. Dra upp cylinder, snörp halsen i tre steg.", "finish": "Svarva. Sgraffito på två." },
-        { "weekFrom": 24, "weekTo": 26, "main": "Kannor: 4 à 900 g plus 12 pipar. Pip på mjukt läderhårt gods, spetsen ovanför mynningen, en aning motsols.", "finish": "Hänklar. Glasera flaskor och burkar." },
-        { "weekFrom": 27, "weekTo": 28, "main": "Grindserien: ett set, t.ex. kanna med fyra bägare, eller burk med lock och skål i samma formspråk.", "finish": "Glasera. Hälltest i diskhon. Blockutvärdering." }
+        { "weekFrom": 17, "weekTo": 18, "main": "Tallrikar: 4 à 1–1,3 kg, 24–26 cm. Komprimera bottnen med ribb, torka upp och ned under plast.", "finish": "Beskicka fot. Insidan av fotringen ska vara tunnaste stället, annars S-sprickor." },
+        { "weekFrom": 19, "weekTo": 21, "main": "Burkar med lock: 4 burkar à 800 g per pass, fals med ribb, mät med skjutmått. Lock à 250 g som låg cylinder med kant som passar i falsen. Vecka 21: locken beskickas på sina burkar.", "finish": "Lock och burk torkar tillsammans, en vecka. Vaxa fals och lockkant före glasering." },
+        { "weekFrom": 22, "weekTo": 23, "main": "Flaskor och vaser: 4 à 800 g. Dra upp cylinder, snörp halsen i tre steg.", "finish": "Beskicka. Sgraffito på två." },
+        { "weekFrom": 24, "weekTo": 26, "main": "Kannor: 3 à 900 g plus 6 pipar. Pip på mjukt läderhårt gods, spetsen ovanför mynningen, en aning motsols.", "finish": "Hänklar. Glasera flaskor och burkar." },
+        { "weekFrom": 27, "weekTo": 28, "main": "Slutserien: ett set, t.ex. kanna med fyra bägare, eller burk med lock och skål i samma formspråk.", "finish": "Glasera. Hälltest i diskhon. Blockutvärdering." }
       ],
       "gate": [
         "Ett lock som passar efter glasyrbränning.",
@@ -133,12 +134,12 @@
       "themeTechnical": "Lära känna verkstadens glasyrer systematiskt och blanda din första egna, så att resultatet beror på dig och inte på tur.",
       "themeCreative": "Variation: en form, tjugo ytor, sedan två ytor som fördjupas.",
       "weeks": [
-        { "weekFrom": 29, "weekTo": 30, "main": "12 skålar à 500 g, snabbt. 20 provplattor.", "finish": "Engobe på läderhårt: fyra skålar täcks, två sgraffito, två mishima." },
-        { "weekFrom": 31, "weekTo": 32, "main": "12 bägare à 400 g.", "finish": "Vaxreserv och underglasyr. Fem provplattor i verkstadens glasyr doppade 1–5 s. Två glasyrer i lager, A över B och B över A." },
-        { "weekFrom": 33, "weekTo": 34, "main": "8 skålar à 500 g.", "finish": "Första egna glasyren: beprövad basglasyr för verkstadens temperatur (Glasklart), 500 g torrt, sikta, ställ in tjockleken. Fem provplattor 1–5 s. Recept och kod i glasyrloggen." },
-        { "weekFrom": 35, "weekTo": 36, "main": "Fri form.", "finish": "Linjeblandning: basglasyren med en färggivare i fem steg (0, 1, 2, 4, 8 %). En provplatta per steg." },
-        { "weekFrom": 37, "weekTo": 38, "main": "8 skålar à 500 g, samma form som vecka 29.", "finish": "Utvärdera allt ur ugnen. Välj två ytor att fördjupa, en av verkstadens och en egen. Samma dopptid, samma ordning." },
-        { "weekFrom": 39, "weekTo": 40, "main": "Grindserien: 6 skålar à 500 g.", "finish": "Den egna glasyren på alla sex, exakt lika. Blockutvärdering." }
+        { "weekFrom": 29, "weekTo": 30, "main": "8 skålar à 500 g, snabbt. Provplattor av spillet från beskickningen, 6 per pass.", "finish": "Engobe på läderhårt: två skålar täcks, två sgraffito, två mishima." },
+        { "weekFrom": 31, "weekTo": 32, "main": "8 bägare à 400 g.", "finish": "Vaxresist och underglasyr. Fem provplattor i verkstadens glasyr doppade 1–5 s. Två glasyrer i lager, A över B och B över A." },
+        { "weekFrom": 33, "weekTo": 34, "main": "Vecka 33 är ett glasyrpass: boka ingen drejskiva, drejningstiden går till att blanda din första egna glasyr. Vecka 34: 6 skålar à 500 g.", "finish": "Första egna glasyren: beprövad basglasyr för verkstadens temperatur (Glasklart), 500 g torrt, sikta, ställ in tjockleken. Fem provplattor 1–5 s. Recept och kod i glasyrloggen." },
+        { "weekFrom": 35, "weekTo": 36, "main": "Vecka 35 är ett glasyrpass: linjeblandningen görs på drejningstiden. Vecka 36: fri form.", "finish": "Linjeblandning: basglasyren med en färggivare i fem steg (0, 1, 2, 4, 8 %). En provplatta per steg." },
+        { "weekFrom": 37, "weekTo": 38, "main": "6 skålar à 500 g, samma form som vecka 29.", "finish": "Utvärdera allt ur ugnen. Välj två ytor att fördjupa, en av verkstadens och en egen. Samma dopptid, samma ordning." },
+        { "weekFrom": 39, "weekTo": 40, "main": "Slutserien: 6 skålar à 500 g.", "finish": "Den egna glasyren på alla sex, exakt lika. Blockutvärdering." }
       ],
       "gate": [
         "Glasyrlogg med minst 30 provplattor.",
@@ -154,14 +155,14 @@
       "name": "Block 4 · Eget uttryck",
       "weekFrom": 41, "weekTo": 52,
       "sessions": 12,
-      "themeTechnical": "Tekannan, alterering, större gods, sektionsdrejning.",
+      "themeTechnical": "Tekannan, omformning, större gods, drejning i delar.",
       "themeCreative": "Tre ord som beskriver hur dina föremål ska kännas; museum, skiss, sedan 5–8 föremål som hör ihop.",
       "weeks": [
-        { "weekFrom": 41, "weekTo": 42, "main": "Tekannor: 3 kroppar à 1,2–1,4 kg, 8 pipar, 3 lock à 300 g. Vecka 42: sätt ihop på mjukt läderhårt.", "finish": "Lock svarvas på kannan. Hänklar. Torka under plast två veckor." },
-        { "weekFrom": 43, "weekTo": 44, "main": "Alterering: fasettera 4 bägare, darta 2 skålar till oval, tryck 2 fat till kvadrat.", "finish": "Svarva det som går." },
-        { "weekFrom": 45, "weekTo": 46, "main": "Större gods: 2 kg till en cylinder. Sektionsdrejning: två delar som sätts ihop läderhårt.", "finish": "Glasera tekannorna. Hälltest." },
-        { "weekFrom": 47, "weekTo": 50, "main": "Egen serie: 5–8 föremål efter dina skisser och dina tre ord.", "finish": "Finish och yta i samma takt." },
-        { "weekFrom": 51, "weekTo": 52, "main": "Avsluta serien.", "finish": "Glasera. Ställ upp årets grindföremål på en rad och fotografera. Årsutvärdering och nästa års plan." }
+        { "weekFrom": 41, "weekTo": 42, "main": "Tekannor: 2 kroppar à 1,2–1,4 kg, 3 lock à 300 g, 4 pipar. Vecka 42: sätt ihop på mjukt läderhårt.", "finish": "Lock beskickas på kannan. Hänklar. Torka under plast två veckor." },
+        { "weekFrom": 43, "weekTo": 44, "main": "Omformning. Vecka 43: fasettera 3 bägare, skär ut kilar i 2 skålar och foga ihop dem till ovaler. Vecka 44: tryck 2 fat till kvadrat, fasettera 2 bägare till.", "finish": "Beskicka det som går." },
+        { "weekFrom": 45, "weekTo": 46, "main": "Större gods: 2 kg till en cylinder. Dreja i delar: två delar som sätts ihop läderhårt.", "finish": "Glasera tekannorna. Hälltest." },
+        { "weekFrom": 47, "weekTo": 50, "main": "Egen serie: 5–8 föremål efter dina skisser och dina tre ord.", "finish": "Beskickning och yta i samma takt." },
+        { "weekFrom": 51, "weekTo": 52, "main": "Avsluta serien.", "finish": "Glasera. Ställ upp årets milstolpar på en rad och fotografera. Årsutvärdering och nästa års plan." }
       ],
       "gate": [
         "En tekanna som häller rent och vars lock sitter kvar när du häller.",
@@ -173,23 +174,23 @@
   "challengeCards": [
     { "id": "tre-drag", "name": "Tre drag", "how": "Dra upp en cylinder på exakt tre drag. Skär itu och se var väggen är ojämn.", "trains": "Tryck, rytm, effektivitet" },
     { "id": "blind", "name": "Blindcentrering", "how": "Centrera med slutna ögon. Öppna och kontrollera.", "trains": "Känsel före syn" },
-    { "id": "klockan", "name": "Klockan går", "how": "Tio muggar på sextio minuter. Ingen får svarvas.", "trains": "Beslutsamhet, tunna bottnar" },
+    { "id": "klockan", "name": "Klockan går", "how": "Tio muggar på sextio minuter. Ingen får beskickas.", "trains": "Beslutsamhet, tunna bottnar" },
     { "id": "vikt-hojd", "name": "Vikt mot höjd", "how": "500 g lera ska bli en cylinder på 15 cm. Mät och skriv upp.", "trains": "Väggtjocklek" },
     { "id": "rita-snittet", "name": "Rita snittet", "how": "Skär itu, rita profilen, dreja om tills snittet matchar ritningen.", "trains": "Form i tre dimensioner" },
     { "id": "mallen", "name": "Mallen", "how": "Rita en profil på papp. Dreja mot mallen tills den passar.", "trains": "Precision, serietänk" },
     { "id": "museikopian", "name": "Museikopian", "how": "Välj en form av Friberg, Stålhane eller Persson-Melin. Dreja den så nära du kan.", "trains": "Att se på form" },
-    { "id": "fem-fotter", "name": "Fem fötter", "how": "Samma skål fem gånger, fem helt olika fötter.", "trains": "Svarvning, proportion" },
+    { "id": "fem-fotter", "name": "Fem fötter", "how": "Samma skål fem gånger, fem helt olika fötter.", "trains": "Beskickning, proportion" },
     { "id": "fem-mynningar", "name": "Fem mynningar", "how": "Samma skål fem gånger, fem olika kanter: rak, utåt, inåt, förtjockad, tunn.", "trains": "Detaljen som avgör" },
     { "id": "en-hand", "name": "En hand", "how": "Öppna och dra upp med bara en hand.", "trains": "Känsla för leran" },
     { "id": "tarningen", "name": "Tärningen", "how": "1 kopp, 2 skål, 3 vas, 4 tallrik, 5 burk, 6 valfritt. Slå igen för dekoren.", "trains": "Slump som motor" },
     { "id": "fem-pa-fem", "name": "Fem på fem", "how": "Fem föremål på fem minuter var. Inga två får likna varandra.", "trains": "Snabba beslut" },
-    { "id": "fel-med-flit", "name": "Fel med flit", "how": "Dreja en skål och förstör den med avsikt: oval, fasetter, bucklor.", "trains": "Alterering, mod" },
+    { "id": "fel-med-flit", "name": "Fel med flit", "how": "Dreja en skål och förstör den med avsikt: oval, fasetter, bucklor.", "trains": "Omformning, mod" },
     { "id": "monokrom", "name": "Monokrom månad", "how": "En enda glasyr i fyra veckor. Variera bara formen.", "trains": "Form före färg" },
     { "id": "fem-dopp", "name": "Fem dopp", "how": "Fem provplattor, samma glasyr, doppade 1 till 5 sekunder.", "trains": "Glasyrtjocklek" },
     { "id": "linjeblandning", "name": "Linjeblandning", "how": "Två glasyrer i fem steg: 100/0, 75/25, 50/50, 25/75, 0/100.", "trains": "Glasyrbibliotek" },
-    { "id": "ingen-svarv", "name": "Ingen svarv", "how": "Dreja så att bottnen inte behöver svarvas alls.", "trains": "Tunn botten från början" },
+    { "id": "ingen-svarv", "name": "Utan beskickning", "how": "Dreja så att bottnen inte behöver beskickas alls.", "trains": "Tunn botten från början" },
     { "id": "20-cm", "name": "20-centimetersregeln", "how": "Allt du gör idag ska vara exakt 20 cm högt.", "trains": "Att växa uppåt" },
-    { "id": "en-ribb", "name": "En ribb", "how": "Bara ett verktyg hela sessionen.", "trains": "Vad verktyget gör" },
+    { "id": "en-ribb", "name": "En ribb", "how": "Bara ett verktyg hela passet.", "trains": "Vad verktyget gör" },
     { "id": "present", "name": "Present", "how": "Gör något till en bestämd person. Tänk på handen som ska hålla det.", "trains": "Funktion, mottagare" }
   ],
   "logbook": {

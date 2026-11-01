@@ -100,7 +100,7 @@ function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdi
                   <span className="week-num">{weekLabel(w)}{here && <span className="week-here">nu</span>}</span>
                   <div className="week-text">
                     <p>{w.main}</p>
-                    {w.finish && <p className="week-finish"><span>Finish:</span> {w.finish}</p>}
+                    {w.finish && <p className="week-finish"><span>Beskickning och yta:</span> {w.finish}</p>}
                   </div>
                 </li>
               );
@@ -108,7 +108,7 @@ function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdi
           </ol>
           {block.gate?.length > 0 && (
             <>
-              <h4 className="chapter-sub">Grind</h4>
+              <h4 className="chapter-sub">Milstolpe</h4>
               <ul className="chapter-gate">
                 {block.gate.map((g, i) => (
                   <li key={i} className={checked.includes(i) ? 'is-checked' : ''}>
@@ -293,7 +293,7 @@ function StudyPlan() {
                 <li key={s.id} className="segment-row">
                   <div className="segment-text">
                     <span className="segment-name">
-                      {s.wheel && <Disc3 size={14} className="segment-wheel" aria-label="På skivan" />}
+                      {s.wheel && <Disc3 size={14} className="segment-wheel" aria-label="På drejskivan" />}
                       {s.name}
                     </span>
                     <span className="segment-desc">{s.description}</span>

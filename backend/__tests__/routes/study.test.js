@@ -330,14 +330,14 @@ describe('Study API', () => {
     });
   });
 
-  describe('grind och kort', () => {
-    it('kryssar en grindpunkt', async () => {
+  describe('milstolpe och kort', () => {
+    it('kryssar en punkt i milstolpen', async () => {
       setupDb();
       await request(app).post('/api/study/gates/block-1/1').expect(200);
       expect(runCalls('INSERT OR IGNORE INTO study_gate_checks')[0][1]).toEqual([1, 'block-1', 1]);
     });
 
-    it('ger 404 för en grindpunkt utanför blocket', async () => {
+    it('ger 404 för en punkt utanför blocket', async () => {
       setupDb();
       await request(app).post('/api/study/gates/block-1/5').expect(404);
     });

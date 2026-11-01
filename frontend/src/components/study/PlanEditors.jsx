@@ -150,8 +150,8 @@ export function BlockEditor({ open, onOpenChange, plan, blockId, onSaved }) {
                   <Trash2 size={15} />
                 </button>
               </div>
-              <textarea className="field-input" rows={2} value={w.main} placeholder="Huvudpass" aria-label="Huvudpass" onChange={(e) => setWeek(i, 'main', e.target.value)} />
-              <textarea className="field-input" rows={2} value={w.finish || ''} placeholder="Finish" aria-label="Finish" onChange={(e) => setWeek(i, 'finish', e.target.value)} />
+              <textarea className="field-input" rows={2} value={w.main} placeholder="Drejning" aria-label="Drejning" onChange={(e) => setWeek(i, 'main', e.target.value)} />
+              <textarea className="field-input" rows={2} value={w.finish || ''} placeholder="Beskickning och yta" aria-label="Beskickning och yta" onChange={(e) => setWeek(i, 'finish', e.target.value)} />
             </div>
           ))}
           <button type="button" className="link-btn edit-add" onClick={() => {
@@ -162,8 +162,8 @@ export function BlockEditor({ open, onOpenChange, plan, blockId, onSaved }) {
             <Plus size={14} /> Lägg till vecka
           </button>
 
-          <h3 className="edit-h3">Grind</h3>
-          <TextList items={draft.gate || []} onChange={(v) => set('gate', v)} placeholder="Vad ska du klara?" addLabel="Lägg till grindpunkt" />
+          <h3 className="edit-h3">Milstolpe</h3>
+          <TextList items={draft.gate || []} onChange={(v) => set('gate', v)} placeholder="Vad ska du klara?" addLabel="Lägg till punkt" />
 
           <h3 className="edit-h3">Lek</h3>
           <div className="chip-row">
@@ -243,7 +243,7 @@ export function TemplateEditor({ open, onOpenChange, plan, onSaved }) {
           {draft.segments.map((s, i) => (
             <div key={s.id || i} className="edit-week">
               <div className="edit-week-head">
-                <input className="field-input" value={s.name} aria-label="Segmentets namn" onChange={(e) => setSeg(i, 'name', e.target.value)} />
+                <input className="field-input" value={s.name} aria-label="Momentets namn" onChange={(e) => setSeg(i, 'name', e.target.value)} />
                 <input className="field-input edit-num" inputMode="numeric" value={s.minutes} aria-label="Minuter"
                   onChange={(e) => setSeg(i, 'minutes', e.target.value.replace(/\D/g, ''))} />
                 <span className="field-hint">min</span>
@@ -253,12 +253,12 @@ export function TemplateEditor({ open, onOpenChange, plan, onSaved }) {
               <div className="edit-seg-tools">
                 <label className="study-check">
                   <input type="checkbox" checked={!!s.wheel} onChange={(e) => setSeg(i, 'wheel', e.target.checked)} />
-                  <Disc3 size={14} aria-hidden="true" /> På skivan
+                  <Disc3 size={14} aria-hidden="true" /> På drejskivan
                 </label>
                 <span className="edit-seg-move">
                   <button type="button" className="icon-btn icon-btn--ghost" aria-label="Flytta upp" onClick={() => move(i, -1)} disabled={i === 0}><ArrowUp size={15} /></button>
                   <button type="button" className="icon-btn icon-btn--ghost" aria-label="Flytta ned" onClick={() => move(i, 1)} disabled={i === draft.segments.length - 1}><ArrowDown size={15} /></button>
-                  <button type="button" className="icon-btn icon-btn--ghost" aria-label="Ta bort segmentet" disabled={draft.segments.length <= 1}
+                  <button type="button" className="icon-btn icon-btn--ghost" aria-label="Ta bort momentet" disabled={draft.segments.length <= 1}
                     onClick={() => setDraft((d) => ({ ...d, segments: d.segments.filter((_, j) => j !== i) }))}><Trash2 size={15} /></button>
                 </span>
               </div>
@@ -266,7 +266,7 @@ export function TemplateEditor({ open, onOpenChange, plan, onSaved }) {
           ))}
           <button type="button" className="link-btn edit-add" onClick={() => setDraft((d) => ({
             ...d,
-            segments: [...d.segments, { id: `segment-${Date.now().toString(36)}`, name: 'Nytt segment', minutes: 10, wheel: false, description: '' }],
+            segments: [...d.segments, { id: `segment-${Date.now().toString(36)}`, name: 'Nytt moment', minutes: 10, wheel: false, description: '' }],
           }))}>
             <Plus size={14} /> Lägg till segment
           </button>

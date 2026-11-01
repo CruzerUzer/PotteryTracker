@@ -7,14 +7,14 @@ function WheelBand({ wheel }) {
   if (!wheel) return null;
   const range = `${clockTime(wheel.fromMs)}–${clockTime(wheel.toMs)}`;
   let text;
-  if (wheel.state === 'before') text = `Skivan börjar om ${formatDuration(wheel.secondsToChange)}`;
-  else if (wheel.state === 'on') text = `På skivan, ${formatDuration(wheel.secondsToChange)} kvar`;
-  else text = 'Skivtiden är slut';
+  if (wheel.state === 'before') text = `Drejskivan börjar om ${formatDuration(wheel.secondsToChange)}`;
+  else if (wheel.state === 'on') text = `På drejskivan, ${formatDuration(wheel.secondsToChange)} kvar`;
+  else text = 'Tiden på drejskivan är slut';
   return (
     <div className={`wheel-band wheel-band--${wheel.state}`} role="status">
       <Disc3 size={16} aria-hidden="true" className={wheel.state === 'on' ? 'wheel-spin' : ''} />
       <span className="wheel-text">{text}</span>
-      <span className="wheel-range">Skivan {range}</span>
+      <span className="wheel-range">Drejskivan {range}</span>
     </div>
   );
 }
@@ -51,15 +51,15 @@ export function QuickActions({ segmentId, shelf, session, onSeries, onToggle, on
     const pieces = shelf?.toTrim || [];
     return (
       <div className="quick">
-        <h3 className="quick-title">Att svarva och hänkla</h3>
+        <h3 className="quick-title">Att beskicka och hänkla</h3>
         {pieces.length ? (
           <ul className="quick-list">
             {pieces.map((p) => (
-              <QuickPiece key={p.id} piece={p} done={trimmed.has(p.id)} label="Svarvat" busy={busyId === p.id} onToggle={(x) => onToggle(x, 'trimmed', trimmed.has(x.id))} />
+              <QuickPiece key={p.id} piece={p} done={trimmed.has(p.id)} label="Beskickat" busy={busyId === p.id} onToggle={(x) => onToggle(x, 'trimmed', trimmed.has(x.id))} />
             ))}
           </ul>
         ) : (
-          <p className="study-muted">Inget drejat gods väntar. Koppla alster nedan om du svarvar något annat.</p>
+          <p className="study-muted">Inget drejat gods väntar. Koppla alster nedan om du beskickar något annat.</p>
         )}
       </div>
     );
@@ -119,7 +119,7 @@ function SegmentTimer({ clock, mode, onNext, onPlus10, onEnd, busy, notify, onEn
             {before ? `Passet börjar ${clockTime(clock.startMs)}` : `Segment ${clock.index + 1} av ${clock.timeline.length}`}
           </span>
           <h2 className="timer-seg-name">
-            {current?.wheel && <Disc3 size={20} aria-label="På skivan" className="timer-seg-wheel" />}
+            {current?.wheel && <Disc3 size={20} aria-label="På drejskivan" className="timer-seg-wheel" />}
             {current?.name}
           </h2>
           <div className="timer-digits" role="timer" aria-label={`${formatDuration(clock.segRemainingSec)} kvar i segmentet`}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +17,19 @@ import {
 function AppHeader() {
   const { user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  const ref = useRef(null);
+
+  // Exponera headerns höjd som CSS-variabel så att fasta element kan lägga sig under den
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const set = () =>
+      document.documentElement.style.setProperty('--app-header-h', `${el.getBoundingClientRect().height}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -26,7 +39,7 @@ function AppHeader() {
   }, []);
 
   return (
-    <header className={`app-header${scrolled ? ' app-header--scrolled' : ''}`}>
+    <header ref={ref} className={`app-header${scrolled ? ' app-header--scrolled' : ''}`}>
       <div className="app-header-inner">
         <Link to="/" className="app-header-brand" aria-label="PotteryTracker, till Kanban">
           <Logo size={scrolled ? 22 : 26} />

@@ -1,34 +1,29 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { piecesAPI, phasesAPI, locationsAPI, materialsAPI } from '../services/api';
 import { Button } from './ui/button';
-import { Sheet, SheetContent } from './ui/sheet';
 import { PieceLinkTile } from './kanban/PieceCard';
 import { phaseColor } from './kanban/phaseColors';
 import MoveSheet from './kanban/MoveSheet';
 import EmptyState from './EmptyState';
-import { MATERIAL_TYPE_LABELS } from './MaterialPicker';
 import { usePieceMover } from '../hooks/usePieceMover';
+import { usePieceFilters } from '../hooks/usePieceFilters';
+import { FilterButton, ActiveFilterChips, PieceFilterSheet, sheetFilterCount } from './PieceFilters';
 
 const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
-const EMPTY_FILTERS = { phase: '', material: '', search: '', dateFrom: '', dateTo: '' };
-
-const formatDate = (iso) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' });
 
 function PieceList() {
   const [pieces, setPieces] = useState([]);
   const [phases, setPhases] = useState([]);
   const [locations, setLocations] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [searchInput, setSearchInput] = useState('');
+  const { filters, set, clearAll, searchInput, setSearchInput, apiParams, anyFilter } =
+    usePieceFilters('list-filters');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [materialQuery, setMaterialQuery] = useState('');
   const [moveId, setMoveId] = useState(null);
   const firstLoad = useRef(true);
   const requestId = useRef(0);
@@ -44,25 +39,13 @@ function PieceList() {
       .catch((err) => setError(err.message));
   }, []);
 
-  // Sökning med liten fördröjning så att varje tangenttryck inte laddar om
-  useEffect(() => {
-    const t = setTimeout(() => setFilters((f) => (f.search === searchInput ? f : { ...f, search: searchInput })), 250);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
   const loadPieces = useCallback(async () => {
     try {
       if (firstLoad.current) setLoading(true);
       else setRefreshing(true);
       setError(null);
       const myId = ++requestId.current;
-      const data = await piecesAPI.getAll({
-        phase_id: filters.phase || null,
-        material_id: filters.material || null,
-        search: filters.search || null,
-        date_from: filters.dateFrom || null,
-        date_to: filters.dateTo || null,
-      });
+      const data = await piecesAPI.getAll(apiParams);
       if (myId !== requestId.current) return; // ett nyare filter hann före
       setPieces(data);
     } catch (err) {
@@ -72,7 +55,7 @@ function PieceList() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filters]);
+  }, [apiParams]);
 
   useEffect(() => {
     loadPieces();
@@ -84,22 +67,10 @@ function PieceList() {
   );
   const movePiece = usePieceMover({ phases, locations, onPatch: patchPiece });
 
-  const set = (key, value) => setFilters((f) => ({ ...f, [key]: value }));
-  const clearAll = () => {
-    setFilters(EMPTY_FILTERS);
-    setSearchInput('');
-  };
-
-  const sheetFilterCount = [filters.material, filters.dateFrom, filters.dateTo].filter(Boolean).length;
-  const anyFilter = Object.values(filters).some(Boolean) || !!searchInput;
+  const filterCount = sheetFilterCount(filters);
   const phaseIndex = (id) => phases.findIndex((p) => p.id === id);
-  const material = materials.find((m) => String(m.id) === String(filters.material));
   const movingPiece = pieces.find((p) => p.id === moveId) || null;
-
-  const filteredMaterials = useMemo(() => {
-    const q = materialQuery.trim().toLowerCase();
-    return materials.filter((m) => !q || m.name.toLowerCase().includes(q));
-  }, [materials, materialQuery]);
+  const hasChipFilters = !!(filters.location || filters.material || filters.dateFrom || filters.dateTo);
 
   const phaseChips = [
     { value: '', label: 'Alla' },
@@ -178,40 +149,14 @@ function PieceList() {
               </button>
             )}
           </label>
-          <button
-            type="button"
-            className={`filter-button${sheetFilterCount ? ' filter-button--active' : ''}`}
-            onClick={() => setFilterOpen(true)}
-            aria-label={`Filter${sheetFilterCount ? `, ${sheetFilterCount} aktiva` : ''}`}
-          >
-            <SlidersHorizontal size={17} />
-            <span className="filter-button-label">Filter</span>
-            {sheetFilterCount > 0 && <span className="filter-badge">{sheetFilterCount}</span>}
-          </button>
+          <FilterButton count={filterCount} onClick={() => setFilterOpen(true)} />
         </div>
         <div className="chip-scroller">
           {renderPhaseChips('chip-row--nowrap')}
-          {(material || filters.dateFrom || filters.dateTo) && (
+          {hasChipFilters && (
             <div className="chip-row chip-row--nowrap">
               <span className="chip-divider" aria-hidden="true" />
-              {material && (
-                <button type="button" className="chip chip--active" onClick={() => set('material', '')}>
-                  {material.name}
-                  <X size={13} aria-label="Ta bort filter" />
-                </button>
-              )}
-              {filters.dateFrom && (
-                <button type="button" className="chip chip--active" onClick={() => set('dateFrom', '')}>
-                  Från {formatDate(filters.dateFrom)}
-                  <X size={13} aria-label="Ta bort filter" />
-                </button>
-              )}
-              {filters.dateTo && (
-                <button type="button" className="chip chip--active" onClick={() => set('dateTo', '')}>
-                  Till {formatDate(filters.dateTo)}
-                  <X size={13} aria-label="Ta bort filter" />
-                </button>
-              )}
+              <ActiveFilterChips filters={filters} set={set} locations={locations} materials={materials} />
             </div>
           )}
         </div>
@@ -254,95 +199,18 @@ function PieceList() {
         </div>
       )}
 
-      <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-        <SheetContent
-          title="Filter"
-          footer={
-            <>
-              <button type="button" className="btn btn-secondary" onClick={clearAll} disabled={!anyFilter}>
-                Rensa allt
-              </button>
-              <button type="button" className="btn btn-primary" onClick={() => setFilterOpen(false)}>
-                Visa {pieces.length} {pieces.length === 1 ? 'pjäs' : 'pjäser'}
-              </button>
-            </>
-          }
-        >
-          <section className="move-section">
-            <h3 className="move-section-title">Fas</h3>
-            {renderPhaseChips()}
-          </section>
-
-          <section className="move-section">
-            <h3 className="move-section-title">Material</h3>
-            {materials.length > 8 && (
-              <label className="search-field">
-                <Search size={16} aria-hidden="true" />
-                <input
-                  type="search"
-                  placeholder="Sök material…"
-                  value={materialQuery}
-                  onChange={(e) => setMaterialQuery(e.target.value)}
-                  aria-label="Sök material"
-                />
-              </label>
-            )}
-            <div className="chip-row" role="radiogroup" aria-label="Material">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={!filters.material}
-                className={`chip${!filters.material ? ' chip--active' : ''}`}
-                onClick={() => set('material', '')}
-              >
-                Alla
-              </button>
-              {filteredMaterials.map((m) => {
-                const active = String(filters.material) === String(m.id);
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    className={`chip${active ? ' chip--active' : ''}`}
-                    onClick={() => set('material', String(m.id))}
-                  >
-                    {m.name}
-                    <span className="chip-note">{MATERIAL_TYPE_LABELS[m.type] || m.type}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="move-section">
-            <h3 className="move-section-title">Skapad</h3>
-            <div className="date-range">
-              <label className="field">
-                <span className="field-sublabel">Från</span>
-                <input
-                  type="date"
-                  className="field-input"
-                  value={filters.dateFrom}
-                  max={filters.dateTo || undefined}
-                  onChange={(e) => set('dateFrom', e.target.value)}
-                />
-              </label>
-              <label className="field">
-                <span className="field-sublabel">Till</span>
-                <input
-                  type="date"
-                  className="field-input"
-                  value={filters.dateTo}
-                  min={filters.dateFrom || undefined}
-                  onChange={(e) => set('dateTo', e.target.value)}
-                />
-              </label>
-            </div>
-          </section>
-        </SheetContent>
-      </Sheet>
+      <PieceFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        filters={filters}
+        set={set}
+        clearAll={clearAll}
+        anyFilter={anyFilter}
+        resultCount={pieces.length}
+        phases={phases}
+        locations={locations}
+        materials={materials}
+      />
 
       <MoveSheet
         open={!!movingPiece}

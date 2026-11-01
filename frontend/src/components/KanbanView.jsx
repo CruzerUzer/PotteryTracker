@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { piecesAPI, phasesAPI, locationsAPI, imagesAPI } from '../services/api';
+import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI } from '../services/api';
 import { Button } from './ui/button';
 import { useToast } from './ui/toast';
 import ImageLightbox from './ImageLightbox';
@@ -11,6 +11,8 @@ import MoveSheet from './kanban/MoveSheet';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePieceMover } from '../hooks/usePieceMover';
 import EmptyState from './EmptyState';
+import { usePieceFilters } from '../hooks/usePieceFilters';
+import { FilterButton, ActiveFilterChips, PieceFilterSheet, sheetFilterCount } from './PieceFilters';
 
 const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
 
@@ -26,29 +28,51 @@ function KanbanView() {
   const [pieces, setPieces] = useState([]);
   const [phases, setPhases] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { filters, set, clearAll, searchInput, setSearchInput, apiParams, anyFilter } =
+    usePieceFilters('kanban-filters');
+  const requestId = useRef(0);
+  const [loadedKey, setLoadedKey] = useState(null); // filtret som visade pjäser hör till
+  const firstLoad = useRef(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [lightbox, setLightbox] = useState(CLOSED_LIGHTBOX);
 
-  const loadData = useCallback(async ({ quiet = false } = {}) => {
-    try {
-      if (!quiet) setLoading(true);
-      setError(null);
-      const [piecesData, phasesData, locationsData] = await Promise.all([
-        piecesAPI.getAll(),
-        phasesAPI.getAll(),
-        locationsAPI.getAll(),
-      ]);
-      setPieces(piecesData);
-      setPhases([...phasesData].sort(byOrder));
-      setLocations([...locationsData].sort(byOrder));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  // Faser, platser och material en gång
+  useEffect(() => {
+    Promise.all([phasesAPI.getAll(), locationsAPI.getAll(), materialsAPI.getAll()])
+      .then(([ph, loc, mat]) => {
+        setPhases([...ph].sort(byOrder));
+        setLocations([...loc].sort(byOrder));
+        setMaterials(mat);
+      })
+      .catch((err) => setError(err.message));
   }, []);
+
+  // Pjäserna laddas om när filtret ändras (fasen styrs av tavlan, inte filtret)
+  const loadData = useCallback(async () => {
+    const myId = ++requestId.current;
+    try {
+      if (firstLoad.current) setLoading(true);
+      else setRefreshing(true);
+      setError(null);
+      const data = await piecesAPI.getAll({ ...apiParams, phase_id: null });
+      if (myId !== requestId.current) return;
+      setPieces(data);
+      setLoadedKey(JSON.stringify(apiParams));
+    } catch (err) {
+      if (myId === requestId.current) setError(err.message);
+    } finally {
+      if (myId === requestId.current) {
+        firstLoad.current = false;
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
+  }, [apiParams]);
 
   useEffect(() => {
     loadData();
@@ -81,7 +105,7 @@ function KanbanView() {
       if (images.length === 0) setLightbox(CLOSED_LIGHTBOX);
       else
         setLightbox((prev) => ({ ...prev, images, currentIndex: Math.min(prev.currentIndex, images.length - 1) }));
-      loadData({ quiet: true });
+      loadData();
     } catch (err) {
       toast.error('Kunde inte ta bort bilden', err.message);
     }
@@ -111,25 +135,49 @@ function KanbanView() {
   }
 
   const activeCount = pieces.filter((p) => p.done !== 1).length;
+  const filterCount = sheetFilterCount(filters, { includeSearch: true });
 
   return (
     <div className="kanban-view">
       <div className="actions-row">
         <div>
           <h2 className="page-title">Kanban</h2>
-          <p className="page-subtitle">
-            {pieces.length === 0
-              ? 'Inga pjäser ännu'
-              : `${pieces.length} pjäser · ${activeCount} pågående`}
+          <p className="page-subtitle" aria-live="polite">
+            {anyFilter
+              ? `${pieces.length} ${pieces.length === 1 ? 'pjäs matchar' : 'pjäser matchar'}`
+              : pieces.length === 0
+                ? 'Inga pjäser ännu'
+                : `${pieces.length} pjäser · ${activeCount} pågående`}
           </p>
         </div>
-        <Button asChild className="hide-below-lg">
-          <Link to="/pieces/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Ny pjäs
-          </Link>
-        </Button>
+        <div className="actions-row-buttons">
+          <FilterButton count={filterCount} onClick={() => setFilterOpen(true)} />
+          <Button asChild className="hide-below-lg">
+            <Link to="/pieces/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Ny pjäs
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      {filterCount > 0 && (
+        <div className="chip-scroller kanban-active-filters">
+          <div className="chip-row chip-row--nowrap">
+            <ActiveFilterChips
+              filters={filters}
+              set={set}
+              locations={locations}
+              materials={materials}
+              includeSearch
+              onClearSearch={() => setSearchInput('')}
+            />
+            <button type="button" className="chip chip--muted" onClick={clearAll}>
+              Rensa alla
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="error" role="alert">
@@ -140,7 +188,15 @@ function KanbanView() {
         </div>
       )}
 
-      {!error && pieces.length === 0 ? (
+      {!error && pieces.length === 0 && anyFilter ? (
+        <EmptyState
+          title="Inget matchar"
+          text="Inga pjäser passar filtret. Prova att rensa det."
+          actionLabel="Rensa filter"
+          onAction={clearAll}
+          plus={false}
+        />
+      ) : !error && pieces.length === 0 ? (
         <EmptyState
           title="Din ateljé är tom"
           text="Lägg till din första pjäs så följer du den från drejskiva till färdig bränning."
@@ -156,21 +212,40 @@ function KanbanView() {
           plus={false}
         />
       ) : isMobile ? (
+        <div className={refreshing ? 'is-refreshing' : undefined}>
         <PhasePager
           phases={phases}
           locations={locations}
           pieces={pieces}
           onSelectPiece={(piece) => setSelectedId(piece.id)}
+          jumpKey={loadedKey}
         />
+        </div>
       ) : (
+        <div className={refreshing ? 'is-refreshing' : undefined}>
         <KanbanMatrix
           phases={phases}
           locations={locations}
           pieces={pieces}
           onMove={movePiece}
           onOpenImages={openImages}
+          hideEmptyLanes={anyFilter}
         />
+        </div>
       )}
+
+      <PieceFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        filters={filters}
+        set={set}
+        clearAll={clearAll}
+        anyFilter={anyFilter}
+        resultCount={pieces.length}
+        locations={locations}
+        materials={materials}
+        search={{ value: searchInput, onChange: setSearchInput }}
+      />
 
       <MoveSheet
         open={!!selectedPiece}

@@ -33,7 +33,7 @@ function useStoredSet(key) {
  * Sidan scrollar vertikalt; rubrikraden fäster under headern och
  * följer matrisen i sidled om den är bredare än skärmen.
  */
-function KanbanMatrix({ phases, locations, pieces, onMove, onOpenImages }) {
+function KanbanMatrix({ phases, locations, pieces, onMove, onOpenImages, hideEmptyLanes = false }) {
   const [collapsedLanes, toggleLane] = useStoredSet('kanban-collapsed-lanes');
   const [collapsedColumns, toggleColumn] = useStoredSet('kanban-collapsed-columns');
   const [dragged, setDragged] = useState(null);
@@ -68,7 +68,9 @@ function KanbanMatrix({ phases, locations, pieces, onMove, onOpenImages }) {
     if (Object.keys(patch).length) await onMove(piece, patch);
   };
 
-  const lanes = [...locations.map((l) => ({ id: l.id, name: l.name })), { id: null, name: 'Ingen plats' }];
+  const lanes = [...locations.map((l) => ({ id: l.id, name: l.name })), { id: null, name: 'Ingen plats' }].filter(
+    (lane) => !hideEmptyLanes || pieces.some((p) => (p.current_location_id ?? null) === lane.id)
+  );
 
   return (
     <div className="kanban-matrix">

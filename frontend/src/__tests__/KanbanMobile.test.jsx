@@ -8,6 +8,7 @@ vi.mock('../services/api', () => ({
   piecesAPI: { getAll: vi.fn(), updatePhase: vi.fn(), updateLocation: vi.fn() },
   phasesAPI: { getAll: vi.fn() },
   locationsAPI: { getAll: vi.fn() },
+  materialsAPI: { getAll: vi.fn(() => Promise.resolve([])) },
   imagesAPI: { getByPiece: vi.fn(), getFileUrl: vi.fn((id) => `/api/images/${id}`), delete: vi.fn() },
 }));
 
@@ -28,6 +29,7 @@ const originalMatchMedia = window.matchMedia;
 describe('KanbanView på mobil', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     window.matchMedia = vi.fn().mockImplementation((query) => ({
       matches: query.includes('max-width: 1023px'),
       media: query,
@@ -81,5 +83,16 @@ describe('KanbanView på mobil', () => {
       expect(within(dialog).getByRole('radio', { name: /På tork/ })).toHaveAttribute('aria-checked', 'true')
     );
     expect(screen.getByRole('tab', { name: /På tork/, hidden: true })).toHaveTextContent('2');
+  });
+
+  it('filtrerar på plats via filterarket', async () => {
+    const user = userEvent.setup();
+    render(<MemoryRouter><KanbanView /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /^Filter/ }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('radio', { name: 'Atelje' }));
+    await waitFor(() =>
+      expect(piecesAPI.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ location_id: '1', phase_id: null }))
+    );
   });
 });

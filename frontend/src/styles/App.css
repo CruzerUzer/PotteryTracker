@@ -424,16 +424,19 @@ header h1 .wordmark-accent,
   font-weight: 600;
 }
 
-/* Liten mässingsprick ovanför aktiv flik */
-.nav-item.active::before {
+/* Kort mässingsstreck under aktiv flik */
+.nav-item::after {
   content: '';
   position: absolute;
-  top: 2px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  bottom: 1px;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
   background: var(--color-primary);
+  transform: scaleX(0);
+  transition: transform var(--transition-base);
 }
+.nav-item.active::after { transform: scaleX(1); }
 
 .nav-icon { transition: transform var(--transition-spring); }
 .nav-item.active .nav-icon { transform: translateY(-1px); }
@@ -2771,3 +2774,11 @@ textarea.field-input { resize: vertical; min-height: 110px; }
     font-size: 16px !important;
   }
 }
+
+/* ── Filter i Kanban ── */
+.actions-row-buttons { display: flex; gap: 8px; align-items: center; }
+.kanban-active-filters { margin-top: calc(-1 * var(--spacing-sm)); margin-bottom: var(--spacing-sm); padding-top: 0; }
+@media (min-width: 1024px) {
+  .kanban-active-filters { margin-left: 0; margin-right: 0; padding-left: 0; }
+}
+.is-refreshing { opacity: 0.55; transition: opacity var(--transition-base); }

@@ -12,7 +12,7 @@ const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)
  * Fassväljaren under headern visar antal och följer med vid scroll.
  * Inom fasen grupperas pjäserna per plats.
  */
-function PhasePager({ phases, locations, pieces, onSelectPiece }) {
+function PhasePager({ phases, locations, pieces, onSelectPiece, jumpKey }) {
   const trackRef = useRef(null);
   const barRef = useRef(null);
   const rootRef = useRef(null);
@@ -120,6 +120,17 @@ function PhasePager({ phases, locations, pieces, onSelectPiece }) {
 
   const data = phases.map(groupsFor);
 
+  // Nytt filter: står vi på en tom fas men andra har träffar, gå till första med träffar
+  const lastJumpKey = useRef(jumpKey);
+  useEffect(() => {
+    if (lastJumpKey.current === jumpKey) return;
+    lastJumpKey.current = jumpKey;
+    if (data[activeIdx]?.total > 0) return;
+    const first = data.findIndex((d) => d.total > 0);
+    if (first >= 0) goTo(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpKey]);
+
   return (
     <div className="phase-pager" ref={rootRef}>
       <div className="phase-bar" role="tablist" aria-label="Faser" ref={barRef}>
@@ -183,7 +194,6 @@ function PhasePager({ phases, locations, pieces, onSelectPiece }) {
                     <h3 className="phase-group-title">
                       <MapPin size={13} aria-hidden="true" />
                       {g.name}
-                      <span className="phase-group-count">{g.items.length}</span>
                     </h3>
                     <div className="tile-grid">
                       {g.items.map((piece) => (

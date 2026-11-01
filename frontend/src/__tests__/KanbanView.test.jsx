@@ -16,6 +16,9 @@ vi.mock('../services/api', () => ({
   locationsAPI: {
     getAll: vi.fn(),
   },
+  materialsAPI: {
+    getAll: vi.fn(() => Promise.resolve([])),
+  },
   imagesAPI: {
     getByPiece: vi.fn(),
     getFileUrl: vi.fn((id, thumb) => `/api/images/${id}/file?thumbnail=${thumb}`),
@@ -42,6 +45,7 @@ const mockLocations = [
 describe('KanbanView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     piecesAPI.getAll.mockResolvedValue(mockPieces);
     phasesAPI.getAll.mockResolvedValue(mockPhases);
     locationsAPI.getAll.mockResolvedValue(mockLocations);

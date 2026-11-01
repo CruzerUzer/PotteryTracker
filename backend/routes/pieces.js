@@ -34,10 +34,10 @@ async function isFinalPhase(db, phaseId, userId) {
   return Number(phaseResult.display_order) === Number(maxOrder);
 }
 
-// GET /api/pieces - Get all pieces (optional query params: phase_id, search, material_id, date_from, date_to, done)
+// GET /api/pieces - Get all pieces (optional query params: phase_id, location_id, search, material_id, date_from, date_to, done)
 router.get('/', async (req, res) => {
   try {
-    const { phase_id, search, material_id, date_from, date_to, done } = req.query;
+    const { phase_id, location_id, search, material_id, date_from, date_to, done } = req.query;
     const db = await getDb();
 
     let query = `
@@ -82,6 +82,16 @@ router.get('/', async (req, res) => {
       }
     }
     
+    // Filter by location ('no-location' = pieces without a location)
+    if (location_id) {
+      if (location_id === 'no-location') {
+        query += ' AND p.current_location_id IS NULL';
+      } else {
+        query += ' AND p.current_location_id = ?';
+        params.push(location_id);
+      }
+    }
+
     // Filter by material
     if (material_id) {
       query += ` AND p.id IN (

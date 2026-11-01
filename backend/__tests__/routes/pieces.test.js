@@ -82,6 +82,32 @@ describe('Pieces API', () => {
       );
     });
 
+    it('should filter by location_id when provided', async () => {
+      mockDb.all.mockResolvedValue([]);
+
+      await request(app)
+        .get('/api/pieces?location_id=3')
+        .expect(200);
+
+      expect(mockDb.all).toHaveBeenCalledWith(
+        expect.stringContaining('AND p.current_location_id = ?'),
+        expect.arrayContaining([1, '3'])
+      );
+    });
+
+    it('should filter pieces without location', async () => {
+      mockDb.all.mockResolvedValue([]);
+
+      await request(app)
+        .get('/api/pieces?location_id=no-location')
+        .expect(200);
+
+      expect(mockDb.all).toHaveBeenCalledWith(
+        expect.stringContaining('AND p.current_location_id IS NULL'),
+        expect.any(Array)
+      );
+    });
+
     it('should search by name or description', async () => {
       mockDb.all.mockResolvedValue([]);
 

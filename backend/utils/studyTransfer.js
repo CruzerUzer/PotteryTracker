@@ -97,12 +97,12 @@ export async function importStudyData(db, data, targetUserId, maps = {}) {
     const r = await db.run(
       `INSERT INTO study_sessions
          (user_id, plan_id, plan_block_id, week_number, date, is_free, goal, planned_start,
-          started_at, ended_at, segments_json, challenge_card_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          started_at, ended_at, segments_json, challenge_card_id, created_at, timer_mode)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         targetUserId, planMap.get(s.plan_id) ?? existingPlan?.id ?? null, s.plan_block_id, s.week_number,
         s.date, s.is_free, s.goal, s.planned_start, s.started_at, s.ended_at, s.segments_json,
-        s.challenge_card_id, s.created_at,
+        s.challenge_card_id, s.created_at, s.timer_mode ?? null,
       ]
     );
     sessionMap.set(s.id, r.lastID);

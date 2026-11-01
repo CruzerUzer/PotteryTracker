@@ -196,6 +196,36 @@ describe('Study API', () => {
     });
   });
 
+  describe('POST /api/study/sessions/:id/start', () => {
+    it('startar nu och sparar läget', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      await request(app).post('/api/study/sessions/3/start').send({ mode: 'now' }).expect(200);
+      const params = runCalls('UPDATE study_sessions SET started_at')[0][1];
+      expect(params[0]).toBe(params[1]); // planned_start = started_at
+      expect(params[2]).toBe('now');
+    });
+
+    it('startar med angiven starttid', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      const planned = new Date(Date.now() + 13 * 60 * 1000).toISOString();
+      await request(app).post('/api/study/sessions/3/start').send({ mode: 'clock', planned_start: planned }).expect(200);
+      const params = runCalls('UPDATE study_sessions SET started_at')[0][1];
+      expect(params[1]).toBe(planned);
+      expect(params[2]).toBe('clock');
+    });
+
+    it('avvisar starttid långt bort och okänt läge', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      const far = new Date(Date.now() + 20 * 3600 * 1000).toISOString();
+      await request(app).post('/api/study/sessions/3/start').send({ mode: 'clock', planned_start: far }).expect(400);
+      await request(app).post('/api/study/sessions/3/start').send({ mode: 'paus' }).expect(400);
+      await request(app).post('/api/study/sessions/3/start').send({ mode: 'clock' }).expect(400);
+    });
+  });
+
   describe('POST /api/study/sessions/:id/end', () => {
     it('sätter ended_at och ögonblicksbild av vecka och block', async () => {
       const s = setupDb({ completed: 4 });

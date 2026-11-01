@@ -28,6 +28,7 @@ import {
   writeLocal,
   sessionTitle,
 } from './studyUtils';
+import { useStudyClock, formatDuration } from '../../hooks/useStudyClock';
 import '../../styles/study.css';
 
 const CARD_KEY = 'study.drawnCard';
@@ -75,6 +76,9 @@ function StudyToday() {
   const [lateOpen, setLateOpen] = useState(false);
   const [lateDate, setLateDate] = useState(todayIso());
   const [lateFree, setLateFree] = useState(false);
+
+  const activeRunning = data?.activeSession?.status === 'running' ? data.activeSession : null;
+  const liveClock = useStudyClock(activeRunning, { active: !!activeRunning });
 
   const load = useCallback(async () => {
     try {
@@ -209,6 +213,14 @@ function StudyToday() {
           <Play size={20} />
           {activeSession ? `Fortsätt ${sessionTitle(activeSession).toLowerCase()}` : starting ? 'Förbereder…' : 'Starta passet'}
         </button>
+        {liveClock && (
+          <p className="study-start-note study-live">
+            <span className="study-live-dot" aria-hidden="true" />
+            {liveClock.over
+              ? 'Passet är slut, avsluta och skriv i loggboken'
+              : `${liveClock.current?.name} · ${formatDuration(liveClock.segRemainingSec)} kvar`}
+          </p>
+        )}
         {card && !activeSession && <p className="study-start-note">Kortet "{card.name}" följer med passet.</p>}
         <div className="study-start-alt">
           <button type="button" className="link-btn" onClick={() => startSession({ isFree: true })} disabled={starting || !!activeSession}>

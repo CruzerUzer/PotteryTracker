@@ -10,6 +10,9 @@ import ChallengeCard from './ChallengeCard';
 import SeriesForm from './SeriesForm';
 import PiecePicker from './PiecePicker';
 import SessionPieces from './SessionPieces';
+import SegmentTimer, { QuickActions } from './SegmentTimer';
+import { useStudyClock } from '../../hooks/useStudyClock';
+import { useWakeLock } from '../../hooks/useWakeLock';
 import {
   blockStyle,
   formatDay,
@@ -18,7 +21,35 @@ import {
   sessionTitle,
   shortBlockName,
   todayIso,
+  readLocal,
+  writeLocal,
 } from './studyUtils';
+
+const CACHE_KEY = 'study.activeSession';
+const START_TIME_KEY = 'study.startTime';
+
+/** Nästa hela kvart som HH:MM, förval för "ange starttid". */
+function nextQuarter(d = new Date()) {
+  const t = new Date(d);
+  t.setSeconds(0, 0);
+  t.setMinutes(Math.ceil((t.getMinutes() + 1) / 15) * 15);
+  return t.toTimeString().slice(0, 5);
+}
+
+/** HH:MM i dag (eller i morgon om det redan passerat med mer än tolv timmar). */
+function timeToIso(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  if (d.getTime() - Date.now() < -12 * 3600 * 1000) d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
+
+const START_MODES = [
+  { id: 'now', label: 'Starta nu' },
+  { id: 'clock', label: 'Ange starttid' },
+  { id: 'countdown', label: 'Nedräkning' },
+];
 import '../../styles/study.css';
 
 const SINGULAR = {
@@ -48,9 +79,22 @@ function StudySession() {
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
-  const [session, setSession] = useState(null);
+  // localStorage är bara cache för att visa rätt läge direkt vid omladdning
+  const [session, setSessionState] = useState(() => {
+    const cached = readLocal(CACHE_KEY);
+    return cached && String(cached.id) === String(id) ? cached : null;
+  });
+  const setSession = useCallback((s) => {
+    setSessionState(s);
+    if (s?.status === 'running') writeLocal(CACHE_KEY, s);
+    else if (s && String(readLocal(CACHE_KEY)?.id) === String(s.id)) writeLocal(CACHE_KEY, null);
+  }, []);
+  const [startMode, setStartMode] = useState('now');
+  const [startTime, setStartTime] = useState(() => readLocal(START_TIME_KEY) || nextQuarter());
+  const [busyPiece, setBusyPiece] = useState(null);
+  const [notifyPerm, setNotifyPerm] = useState(() => (typeof Notification === 'undefined' ? 'unsupported' : Notification.permission));
   const [error, setError] = useState(null);
-  const [goal, setGoal] = useState('');
+  const [goal, setGoal] = useState(() => session?.goal || '');
   const [seriesOpen, setSeriesOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [shelf, setShelf] = useState(null);
@@ -69,11 +113,36 @@ function StudySession() {
     } catch (err) {
       setError(err.message);
     }
-  }, [id]);
+  }, [id, setSession]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const running = session?.status === 'running';
+  const clock = useStudyClock(running ? session : null, { active: running });
+  useWakeLock(running);
+
+  // Notis och vibration vid segmentbyte, bara om tillåtet och sidan är öppen
+  const lastIndex = useRef(null);
+  useEffect(() => {
+    if (!clock) return;
+    const key = clock.over ? 'over' : clock.index;
+    if (lastIndex.current !== null && lastIndex.current !== key && !clock.before) {
+      const title = clock.over ? 'Passet är slut' : clock.current?.name;
+      const body = clock.over ? 'Skriv tre rader i loggboken.' : clock.current?.description?.split('. ')[0];
+      toast.info(title, body);
+      try {
+        navigator.vibrate?.([120, 80, 120]);
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState === 'visible') {
+          new Notification(title, { body, tag: 'studie-segment', icon: '/favicon.svg' });
+        }
+      } catch {
+        /* tyst */
+      }
+    }
+    lastIndex.current = key;
+  }, [clock?.index, clock?.over, clock?.before]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     studyAPI.getToday().then((t) => setShelf(t.shelf)).catch(() => {});
@@ -102,11 +171,56 @@ function StudySession() {
     update({ segments });
   };
 
+  /** Ändra segment medan passet pågår: nästa segment / +10 min. */
+  const adjustCurrent = async (fn) => {
+    if (!clock?.current) return;
+    const segId = clock.current.id;
+    const segments = session.segments.map((seg) => (seg.id === segId ? fn(seg) : seg));
+    setSession({ ...session, segments });
+    setBusy(true);
+    await update({ segments });
+    setBusy(false);
+  };
+  const nextSegment = () =>
+    adjustCurrent((seg) => ({ ...seg, minutes: Math.max(0, Math.floor((clock.elapsedSec - clock.current.startSec) / 60)) }));
+  const plusTen = () => adjustCurrent((seg) => ({ ...seg, minutes: seg.minutes + 10 }));
+
+  const toggleQuick = async (piece, action, isDone) => {
+    setBusyPiece(piece.id);
+    try {
+      if (isDone) {
+        const link = session.pieces.find((p) => p.id === piece.id && p.action === action);
+        if (link) setSession(await studyAPI.unlinkPiece(id, link.session_piece_id));
+      } else {
+        const res = await studyAPI.linkPiece(id, piece.id, action);
+        setSession(res.session);
+      }
+    } catch (err) {
+      toast.error('Kunde inte spara', err.message);
+    } finally {
+      setBusyPiece(null);
+    }
+  };
+
+  const enableNotify = async () => {
+    try {
+      setNotifyPerm(await Notification.requestPermission());
+    } catch {
+      setNotifyPerm('denied');
+    }
+  };
+
   const start = async () => {
     setBusy(true);
     try {
       await saveGoal();
-      setSession(await studyAPI.startSession(id));
+      const body = { mode: startMode };
+      if (startMode === 'clock') {
+        body.planned_start = timeToIso(startTime);
+        writeLocal(START_TIME_KEY, startTime);
+      }
+      setSession(await studyAPI.startSession(id, body));
+      window.scrollTo({ top: 0 });
     } catch (err) {
       toast.error('Kunde inte starta passet', err.message);
     } finally {
@@ -181,6 +295,13 @@ function StudySession() {
   const card = drawn || session.challenge_card;
   const blockOrder = session.block_order ?? 0;
   const editableSegments = status === 'prepared';
+  const previousQuote = session.previous?.goal ? (
+    <section className="study-quote">
+      <Quote size={18} className="study-quote-mark" aria-hidden="true" />
+      <span className="study-quote-label">Förra gången · {formatDay(session.previous.date)}</span>
+      <p className="study-quote-text">{session.previous.goal}</p>
+    </section>
+  ) : null;
 
   return (
     <div className="study study-session" style={blockStyle(blockOrder)}>
@@ -209,7 +330,7 @@ function StudySession() {
         <h1 className="study-title">{sessionTitle(session)}</h1>
         <p className="session-status">
           {status === 'prepared' && (backdated ? 'Loggas i efterhand' : 'Förberedelse')}
-          {status === 'running' && `Pågår sedan ${formatTime(session.started_at)}`}
+          {status === 'running' && (session.timer_mode === 'countdown' ? 'Nedräkning' : `Pågår · start ${formatTime(session.planned_start)}`)}
           {status === 'ended' && (
             <>
               <CheckCircle2 size={15} aria-hidden="true" /> Klart{session.started_at ? ` · ${formatTime(session.started_at)}–${formatTime(session.ended_at)}` : ''}
@@ -218,13 +339,33 @@ function StudySession() {
         </p>
       </div>
 
-      {status !== 'ended' && session.previous?.goal && (
-        <section className="study-quote">
-          <Quote size={18} className="study-quote-mark" aria-hidden="true" />
-          <span className="study-quote-label">Förra gången · {formatDay(session.previous.date)}</span>
-          <p className="study-quote-text">{session.previous.goal}</p>
-        </section>
+      {running && (
+        <SegmentTimer
+          clock={clock}
+          mode={session.timer_mode}
+          onNext={nextSegment}
+          onPlus10={plusTen}
+          onEnd={end}
+          busy={busy}
+          notify={notifyPerm}
+          onEnableNotify={enableNotify}
+        >
+          {clock?.current?.id === 'in' && previousQuote}
+          {!clock?.over && (
+            <QuickActions
+              segmentId={clock?.current?.id}
+              shelf={shelf}
+              session={session}
+              onSeries={() => setSeriesOpen(true)}
+              onToggle={toggleQuick}
+              onEnd={end}
+              busyId={busyPiece}
+            />
+          )}
+        </SegmentTimer>
       )}
+
+      {status === 'prepared' && previousQuote}
 
       <section className="study-section">
         <label className="field">
@@ -246,7 +387,7 @@ function StudySession() {
         )}
       </section>
 
-      {!backdated && (
+      {!backdated && !running && (
         <section className="study-section">
           <div className="study-section-head">
             <h2 className="study-h2">Dagens segment</h2>
@@ -316,16 +457,43 @@ function StudySession() {
         {status === 'ended' && !card && <p className="study-muted">Inget kort drogs.</p>}
       </section>
 
-      {status !== 'ended' && (
+      {status === 'prepared' && !backdated && (
+        <section className="study-section start-panel">
+          <h2 className="study-h2">Starta</h2>
+          <div className="segmented segmented--wrap" role="radiogroup" aria-label="Hur passet startar">
+            {START_MODES.map((m) => (
+              <button key={m.id} type="button" role="radio" aria-checked={startMode === m.id}
+                className={`segmented-item ${startMode === m.id ? 'active' : ''}`} onClick={() => setStartMode(m.id)}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+          {startMode === 'clock' && (
+            <label className="field start-time">
+              <span className="field-sublabel">Passet börjar</span>
+              <input type="time" className="field-input field-input--lg" value={startTime} step={300}
+                onChange={(e) => setStartTime(e.target.value)} />
+              <span className="field-hint">Skivan är bokad från {(session.wheel_booking?.fromMinute ?? 15)} minuter in i passet.</span>
+            </label>
+          )}
+          <p className="study-muted">
+            {startMode === 'now' && `Klockan börjar nu. Passet är ${minutesLabel(totalMin)}.`}
+            {startMode === 'clock' && 'Segmenten följer klockan, så att skivtiden stämmer med bokningen.'}
+            {startMode === 'countdown' && 'Bara nedräkning, utan klockslag och skivband.'}
+          </p>
+        </section>
+      )}
+
+      {status !== 'ended' && !running && (
         <div className="session-footer">
           {status === 'prepared' && !backdated && (
-            <button type="button" className="btn btn-primary study-start-btn" onClick={start} disabled={busy}>
+            <button type="button" className="btn btn-primary study-start-btn" onClick={start} disabled={busy || (startMode === 'clock' && !startTime)}>
               <Play size={20} /> Starta passet
             </button>
           )}
-          {(status === 'running' || backdated) && (
+          {backdated && (
             <button type="button" className="btn btn-primary study-start-btn" onClick={end} disabled={busy}>
-              <Flag size={20} /> {backdated ? 'Spara passet' : 'Avsluta passet'}
+              <Flag size={20} /> Spara passet
             </button>
           )}
           {status === 'prepared' && !backdated && (

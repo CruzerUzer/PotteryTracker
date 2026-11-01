@@ -8,7 +8,7 @@ och ägarens svar. Uppdatera statustabellen när en modul blir klar.
 | Modul | Branch | Status |
 |-------|--------|--------|
 | 1. Plan och pass | `feature/studie-1-plan` | Klar 2026-11-01, väntar på ägarens test |
-| 2. Timer | `feature/studie-2-timer` | Planerad |
+| 2. Timer | `feature/studie-2-timer` | Klar 2026-11-01, väntar på ägarens test |
 | 3. Loggbok, blockutvärdering, mått | `feature/studie-3-loggbok` | Planerad |
 | 5. Versionerad plan och manuell redigering | `feature/studie-5-plan-redigering` | Planerad |
 | 4. Glasyrtester, minsta version | `feature/studie-4-glasyr` | Planerad |

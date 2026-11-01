@@ -121,5 +121,11 @@ export async function ensureStudySchema(db) {
     addedColumn = true;
   }
   await db.exec(STUDY_TABLES_SQL);
+
+  // Modul 2: hur timern startades ('now' | 'clock' | 'countdown')
+  const sessionCols = await db.all('PRAGMA table_info(study_sessions)');
+  if (!sessionCols.some((c) => c.name === 'timer_mode')) {
+    await db.run('ALTER TABLE study_sessions ADD COLUMN timer_mode TEXT');
+  }
   return { addedColumn };
 }

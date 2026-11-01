@@ -121,6 +121,7 @@ function formatSession(row, plan) {
     is_free: row.is_free === 1,
     goal: row.goal,
     planned_start: row.planned_start,
+    timer_mode: row.timer_mode || null,
     started_at: row.started_at,
     ended_at: row.ended_at,
     segments: parseJson(row.segments_json, []),
@@ -200,6 +201,7 @@ async function sessionDetail(db, userId, row, plan) {
     })),
     series,
     previous: previous ? formatSession(previous, plan) : null,
+    wheel_booking: plan.sessionTemplate?.wheelBooking || null,
   };
 }
 
@@ -465,19 +467,34 @@ router.patch('/sessions/:id', handle('spara passet', async (req, res) => {
   res.json(await sessionDetail(db, req.userId, updated, planRow.plan));
 }));
 
+const TIMER_MODES = ['now', 'clock', 'countdown'];
+
+/**
+ * Startar passet. Läget räknas alltid fram från planned_start och klockan:
+ *   now        planned_start = nu
+ *   clock      planned_start = angivet klockslag (t.ex. 10:00 för skivbokningen)
+ *   countdown  ren nedräkning från nu, utan klockslag
+ */
 router.post('/sessions/:id/start', handle('starta passet', async (req, res) => {
   const db = await getDb();
   const row = await getSessionRow(db, req.userId, req.params.id);
   if (!row) return res.status(404).json({ error: 'Passet hittades inte' });
   if (row.ended_at) return res.status(400).json({ error: 'Passet är redan avslutat' });
-  const { planned_start } = req.body || {};
-  if (planned_start && Number.isNaN(Date.parse(planned_start))) {
-    return res.status(400).json({ error: 'Ogiltig starttid' });
+  const { planned_start, mode = 'now' } = req.body || {};
+  if (!TIMER_MODES.includes(mode)) return res.status(400).json({ error: 'Ogiltigt startsätt' });
+  const now = new Date();
+  let start = now.toISOString();
+  if (mode === 'clock') {
+    const t = Date.parse(planned_start);
+    if (!planned_start || Number.isNaN(t)) return res.status(400).json({ error: 'Ange en giltig starttid' });
+    if (Math.abs(t - now.getTime()) > 12 * 3600 * 1000) {
+      return res.status(400).json({ error: 'Starttiden ska ligga inom tolv timmar från nu' });
+    }
+    start = new Date(t).toISOString();
   }
-  const now = new Date().toISOString();
   await db.run(
-    'UPDATE study_sessions SET started_at = ?, planned_start = ? WHERE id = ? AND user_id = ?',
-    [now, planned_start || now, row.id, req.userId]
+    'UPDATE study_sessions SET started_at = ?, planned_start = ?, timer_mode = ? WHERE id = ? AND user_id = ?',
+    [now.toISOString(), start, mode, row.id, req.userId]
   );
   const planRow = await getOrSeedPlan(db, req.userId);
   res.json(await sessionDetail(db, req.userId, await getSessionRow(db, req.userId, row.id), planRow.plan));

@@ -1,0 +1,20 @@
+# Testserver på Hemmalinux (systemd user-enhet). Backend i dev-läge på 4300.
+# Porten är claimad via Helm: helmctl port claim potterytracker-backend
+# Installera:
+#   cp deploy/hemmalinux/potterytracker-*.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now potterytracker-backend potterytracker-frontend
+[Unit]
+Description=PotteryTracker TEST backend (dev, port 4300, bakom Vite-proxyn på 4301)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/programmering/potterytracker/backend
+EnvironmentFile=-%h/programmering/potterytracker/backend/.env
+# EnvironmentFile (.env har PORT=3001) vinner över Environment=, därför sätts porten i ExecStart
+ExecStart=/usr/bin/env PORT=4300 node --watch server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

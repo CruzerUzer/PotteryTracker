@@ -22,6 +22,9 @@ import AdminPanel from './components/AdminPanel';
 import ResetPassword from './components/ResetPassword';
 import InstallPrompt from './components/InstallPrompt';
 const StatsDashboard = lazy(() => import('./components/StatsDashboard'));
+const StudyToday = lazy(() => import('./components/study/StudyToday'));
+const StudySession = lazy(() => import('./components/study/StudySession'));
+const StudyPlan = lazy(() => import('./components/study/StudyPlan'));
 import { ToastProvider } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/confirm-dialog';
 import { useScrollMemory } from './hooks/useScrollMemory';
@@ -56,6 +59,22 @@ function AdminRoute({ children }) {
   }
 
   return children;
+}
+
+/** Studie finns bara för användare med flaggan på (sätts i Admin). */
+function StudyRoute({ children }) {
+  const { user, loading, studyEnabled } = useAuth();
+
+  if (loading) {
+    return <div className="card loading">Laddar…</div>;
+  }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!studyEnabled) {
+    return <Navigate to="/" replace />;
+  }
+  return <Suspense fallback={<div className="card loading">Laddar Studie…</div>}>{children}</Suspense>;
 }
 
 function AppContent() {
@@ -164,6 +183,9 @@ function AppContent() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/studie" element={<StudyRoute><StudyToday /></StudyRoute>} />
+              <Route path="/studie/plan" element={<StudyRoute><StudyPlan /></StudyRoute>} />
+              <Route path="/studie/pass/:id" element={<StudyRoute><StudySession /></StudyRoute>} />
               <Route
                 path="/admin"
                 element={

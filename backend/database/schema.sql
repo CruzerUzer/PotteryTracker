@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_admin INTEGER DEFAULT 0,
     last_login TEXT,
     must_change_password INTEGER DEFAULT 0,
+    study_enabled INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -122,6 +123,9 @@ CREATE TABLE IF NOT EXISTS user_archives (
     created_at TEXT DEFAULT (datetime('now')),
     file_size INTEGER
 );
+
+-- Studie-modulens tabeller (study_*) skapas av database/studySchema.js,
+-- som körs av migrate_study.js och vid serverstart.
 
 -- Initialize system settings
 INSERT OR IGNORE INTO system_settings (key, value) VALUES ('registration_enabled', '1');

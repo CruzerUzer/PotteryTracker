@@ -48,9 +48,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = user?.is_admin === true;
+  const studyEnabled = user?.study_enabled === true;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, isAdmin, studyEnabled }}>
       {children}
     </AuthContext.Provider>
   );

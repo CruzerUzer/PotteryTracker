@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -14,8 +14,10 @@ import {
   ImagePlus,
   Package,
   ChevronDown,
+  GraduationCap,
 } from 'lucide-react';
-import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { piecesAPI, phasesAPI, locationsAPI, materialsAPI, imagesAPI, studyAPI } from '../services/api';
 import ImageUpload from './ImageUpload';
 import ImageLightbox from './ImageLightbox';
 import MaterialPicker, { MATERIAL_TYPE_LABELS } from './MaterialPicker';
@@ -52,6 +54,8 @@ function PieceDetail() {
   const toast = useToast();
   const confirm = useConfirm();
   const goBack = useBackNavigation('/');
+  const { studyEnabled } = useAuth();
+  const [studySessions, setStudySessions] = useState([]);
 
   const [piece, setPiece] = useState(null);
   const [phases, setPhases] = useState([]);
@@ -96,6 +100,19 @@ function PieceDetail() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Studie: de pass alstret varit med i (bara när Studie är på)
+  useEffect(() => {
+    if (!studyEnabled) return undefined;
+    let cancelled = false;
+    studyAPI
+      .getPieceSessions(id)
+      .then((rows) => !cancelled && setStudySessions(rows))
+      .catch(() => !cancelled && setStudySessions([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [id, studyEnabled]);
 
   // Nyss skapad pjäs: öppna bilduppladdningen direkt
   useEffect(() => {
@@ -463,6 +480,25 @@ function PieceDetail() {
               </button>
             )}
           </section>
+
+          {studySessions.length > 0 && (
+            <section className="detail-section">
+              <div className="detail-section-head">
+                <h2>Pass</h2>
+                <GraduationCap size={15} aria-hidden="true" className="opacity-60" />
+              </div>
+              <p className="detail-study-row">
+                {studySessions.map((s, i) => (
+                  <React.Fragment key={s.id}>
+                    {i > 0 && <span aria-hidden="true"> · </span>}
+                    <Link to={`/studie/pass/${s.session_id}`} className="detail-study-link">
+                      {s.action_label} {s.is_free ? 'fritt pass' : s.week_number ? `pass ${s.week_number}` : 'pass'}
+                    </Link>
+                  </React.Fragment>
+                ))}
+              </p>
+            </section>
+          )}
 
           {(created || updated) && (
             <p className="detail-meta">

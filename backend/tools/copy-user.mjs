@@ -13,7 +13,7 @@
  *   node tools/copy-user.mjs Adam stitchbot --wipe     # rensa målets data först (re-sync)
  *
  * Flaggor:
- *   --wipe   Radera målanvändarens befintliga pjäser/faser/platser/material först.
+ *   --wipe   Radera målanvändarens befintliga pjäser/faser/platser/material och studiedata först.
  *   --yes    Hoppa över bekräftelsefrågan (för icke-interaktiv körning).
  *
  * Noter:
@@ -29,6 +29,8 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
+import { exportStudyData, importStudyData, deleteStudyData } from '../utils/studyTransfer.js';
+import { ensureStudySchema } from '../database/studySchema.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = process.env.DB_PATH || join(__dirname, '..', 'database', 'database.db');
@@ -61,6 +63,7 @@ function confirm(question) {
 
 async function main() {
   const db = await open({ filename: dbPath, driver: sqlite3.Database });
+  await ensureStudySchema(db);
 
   const source = await db.get('SELECT id, username FROM users WHERE username = ?', sourceName);
   const target = await db.get('SELECT id, username FROM users WHERE username = ?', targetName);
@@ -88,6 +91,7 @@ async function main() {
   await db.exec('BEGIN');
   try {
     if (doWipe) {
+      await deleteStudyData(db, target.id);
       // ceramic_pieces-radering tar bort piece_images/piece_materials via app-logik,
       // men FK är av här — radera junction/bild-rader explicit i beroendeordning.
       await db.run(
@@ -198,6 +202,13 @@ async function main() {
       links++;
     }
 
+    // 8. Studie: plan, pass, alsterkopplingar, grindar, serier
+    const study = await importStudyData(db, await exportStudyData(db, source.id), target.id, {
+      pieces: pieceMap,
+      phases: phaseMap,
+      materials: materialMap,
+    });
+
     await db.exec('COMMIT');
     console.log('Klart. Kopierat:');
     console.log(`  faser: ${phaseMap.size}`);
@@ -207,6 +218,7 @@ async function main() {
     console.log(`  bilder: ${imageMap.size}${orphanImages ? ` (varav ${orphanImages} föräldralösa → första fasen)` : ''}`);
     console.log(`  default-bilder satta: ${defaultsFixed}`);
     console.log(`  material-kopplingar: ${links}`);
+    console.log(`  studie: ${study.plans} plan, ${study.sessions} pass, ${study.sessionPieces} alsterkopplingar, ${study.series} serier, ${study.gateChecks} grindkryss`);
   } catch (err) {
     await db.exec('ROLLBACK');
     throw err;

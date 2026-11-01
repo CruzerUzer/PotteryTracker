@@ -12,12 +12,13 @@ import {
   Shield,
   BarChart2,
   Workflow,
-  Plus
+  Plus,
+  GraduationCap
 } from 'lucide-react';
 
 function Sidebar() {
   const location = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, studyEnabled } = useAuth();
 
   const handleLogout = async () => {
     await logout();
@@ -26,6 +27,7 @@ function Sidebar() {
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Kanban' },
     { path: '/list', icon: List, label: 'Lista' },
+    ...(studyEnabled ? [{ path: '/studie', icon: GraduationCap, label: 'Studie' }] : []),
     { path: '/done', icon: CheckCircle, label: 'Färdiga' },
     { path: '/stats', icon: BarChart2, label: 'Statistik' },
     { path: '/workflow', icon: Workflow, label: 'Arbetsflöde' },

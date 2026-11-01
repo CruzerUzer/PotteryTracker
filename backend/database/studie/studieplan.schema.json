@@ -1,0 +1,206 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://potterytracker.faris.se/schemas/studieplan.schema.json",
+  "title": "Studieplan",
+  "description": "Studieplanen i PotteryTracker: passmall, bränningsflöde, block med veckor och grindar, utmaningskort, loggbok och mått. Planens 'phases' heter block i appens kod.",
+  "type": "object",
+  "required": ["id", "version", "title", "sessionTemplate", "firingPipeline", "phases", "challengeCards", "logbook"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "$ref": "#/definitions/slug" },
+    "version": { "type": "integer", "minimum": 1 },
+    "title": { "$ref": "#/definitions/text" },
+    "language": { "type": "string", "minLength": 2 },
+    "createdAt": { "type": "string" },
+    "source": { "type": "string" },
+    "goals": { "type": "array", "items": { "$ref": "#/definitions/text" } },
+    "rules": { "type": "array", "items": { "$ref": "#/definitions/text" } },
+
+    "sessionTemplate": {
+      "type": "object",
+      "required": ["totalMinutes", "segments"],
+      "additionalProperties": false,
+      "properties": {
+        "totalMinutes": { "type": "integer", "minimum": 1, "maximum": 720 },
+        "wheelBooking": {
+          "type": "object",
+          "required": ["fromMinute", "toMinute"],
+          "additionalProperties": false,
+          "properties": {
+            "fromMinute": { "$ref": "#/definitions/minute" },
+            "toMinute": { "$ref": "#/definitions/minute" }
+          }
+        },
+        "segments": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/segment" }
+        },
+        "mainPassRules": { "type": "array", "items": { "$ref": "#/definitions/text" } },
+        "whenShort": { "type": "string" },
+        "betweenSessions": { "type": "string" }
+      }
+    },
+
+    "firingPipeline": {
+      "type": "object",
+      "required": ["stages"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "stages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "enum": ["thrown", "trimmed", "bisque", "glazed", "done"] },
+              "week": { "type": "integer", "minimum": 1 },
+              "name": { "$ref": "#/definitions/text" },
+              "action": { "type": "string" }
+            }
+          }
+        },
+        "labeling": { "type": "string" },
+        "testTilesPerSession": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "phases": {
+      "description": "Blocken (Återstart, Block 1–4). Heter 'phases' i filen av historiska skäl.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/block" }
+    },
+
+    "challengeCards": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/card" }
+    },
+
+    "logbook": {
+      "type": "object",
+      "required": ["perSession"],
+      "additionalProperties": false,
+      "properties": {
+        "perSession": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "label": { "$ref": "#/definitions/text" },
+              "prompt": { "type": "string" },
+              "example": { "type": "string" }
+            }
+          }
+        },
+        "perSessionExtra": { "type": "array", "items": { "type": "string" } },
+        "blockReview": {
+          "type": "object",
+          "required": ["everyNSessions", "questions"],
+          "additionalProperties": false,
+          "properties": {
+            "everyNSessions": { "type": "integer", "minimum": 1 },
+            "questions": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/text" } },
+            "output": { "type": "string" }
+          }
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "name": { "$ref": "#/definitions/text" },
+              "unit": { "type": "string" },
+              "how": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "glazeTest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fields": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+
+  "definitions": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "text": { "type": "string", "minLength": 1 },
+    "minute": { "type": "integer", "minimum": 0, "maximum": 720 },
+    "week": { "type": "integer", "minimum": 1, "maximum": 52 },
+
+    "segment": {
+      "type": "object",
+      "required": ["id", "fromMinute", "toMinute", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/slug" },
+        "fromMinute": { "$ref": "#/definitions/minute" },
+        "toMinute": { "$ref": "#/definitions/minute" },
+        "name": { "$ref": "#/definitions/text" },
+        "wheel": { "type": "boolean" },
+        "description": { "type": "string" }
+      }
+    },
+
+    "block": {
+      "type": "object",
+      "required": ["id", "order", "name", "weekFrom", "weekTo", "weeks"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/slug" },
+        "order": { "type": "integer", "minimum": 0 },
+        "name": { "$ref": "#/definitions/text" },
+        "weekFrom": { "$ref": "#/definitions/week" },
+        "weekTo": { "$ref": "#/definitions/week" },
+        "sessions": { "type": "integer", "minimum": 1 },
+        "themeTechnical": { "type": ["string", "null"] },
+        "themeCreative": { "type": ["string", "null"] },
+        "weeks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["weekFrom", "weekTo", "main"],
+            "additionalProperties": false,
+            "properties": {
+              "weekFrom": { "$ref": "#/definitions/week" },
+              "weekTo": { "$ref": "#/definitions/week" },
+              "main": { "$ref": "#/definitions/text" },
+              "finish": { "type": "string" }
+            }
+          }
+        },
+        "gate": { "type": "array", "items": { "$ref": "#/definitions/text" } },
+        "playCards": { "type": "array", "items": { "$ref": "#/definitions/slug" } },
+        "safety": { "type": "string" }
+      }
+    },
+
+    "card": {
+      "type": "object",
+      "required": ["id", "name", "how"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/slug" },
+        "name": { "$ref": "#/definitions/text" },
+        "how": { "$ref": "#/definitions/text" },
+        "trains": { "type": "string" }
+      }
+    }
+  }
+}

@@ -246,6 +246,7 @@ if [ -f "$DB_PATH" ]; then
         "database/migrate_add_done.js"
         "database/migration-add-locations.js"
         "database/migrate_add_material_description.js"
+        "database/migrate_study.js"
     )
     for migration in "${MIGRATIONS[@]}"; do
         if [ -f "$migration" ]; then

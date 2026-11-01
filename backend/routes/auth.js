@@ -113,7 +113,7 @@ router.post('/login', async (req, res) => {
     const db = await getDb();
 
     // Find user
-    const user = await db.get('SELECT id, username, password_hash, is_admin FROM users WHERE username = ?', [username.trim()]);
+    const user = await db.get('SELECT id, username, password_hash, is_admin, study_enabled FROM users WHERE username = ?', [username.trim()]);
     
     if (!user) {
       logger.warn('Login attempt failed: User not found', { username: username.trim() });
@@ -147,6 +147,7 @@ router.post('/login', async (req, res) => {
       id: user.id,
       username: user.username,
       is_admin: user.is_admin === 1,
+      study_enabled: user.study_enabled === 1,
       message: 'Login successful'
     });
   } catch (error) {
@@ -181,12 +182,13 @@ router.get('/me', async (req, res) => {
   if (req.session && req.session.userId) {
     try {
       const db = await getDb();
-      const user = await db.get('SELECT id, username, is_admin FROM users WHERE id = ?', [req.session.userId]);
+      const user = await db.get('SELECT id, username, is_admin, study_enabled FROM users WHERE id = ?', [req.session.userId]);
       if (user) {
         res.json({
           id: user.id,
           username: user.username,
-          is_admin: user.is_admin === 1
+          is_admin: user.is_admin === 1,
+          study_enabled: user.study_enabled === 1
         });
       } else {
         res.status(401).json({ error: 'User not found' });

@@ -300,6 +300,7 @@ export const adminAPI = {
     return response.json();
   },
   toggleAdmin: (userId) => apiCall(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
+  toggleStudy: (userId) => apiCall(`/admin/users/${userId}/toggle-study`, { method: 'POST' }),
   getArchives: () => apiCall('/admin/archives'),
   downloadArchive: (archiveId) => {
     return fetch(`${API_BASE}/admin/archives/${archiveId}/download`, {
@@ -334,6 +335,37 @@ export const adminAPI = {
     method: 'POST',
     body: JSON.stringify({ enabled, message }),
   }),
+};
+
+// Studie API (bara för användare med study_enabled)
+const json = (data) => JSON.stringify(data);
+export const studyAPI = {
+  getToday: () => apiCall('/study/today'),
+  getPlan: () => apiCall('/study/plan'),
+  getPlanDocument: () => apiCall('/study/plan/document'),
+  getStageMap: () => apiCall('/study/stage-map'),
+  updateStageMap: (map) => apiCall('/study/stage-map', { method: 'PUT', body: json(map) }),
+  listSessions: () => apiCall('/study/sessions'),
+  getSession: (id) => apiCall(`/study/sessions/${id}`),
+  createSession: (data = {}) => apiCall('/study/sessions', { method: 'POST', body: json(data) }),
+  updateSession: (id, data) => apiCall(`/study/sessions/${id}`, { method: 'PATCH', body: json(data) }),
+  startSession: (id, data = {}) => apiCall(`/study/sessions/${id}/start`, { method: 'POST', body: json(data) }),
+  endSession: (id) => apiCall(`/study/sessions/${id}/end`, { method: 'POST' }),
+  deleteSession: (id) => apiCall(`/study/sessions/${id}`, { method: 'DELETE' }),
+  linkPiece: (id, pieceId, action) =>
+    apiCall(`/study/sessions/${id}/pieces`, { method: 'POST', body: json({ piece_id: pieceId, action }) }),
+  createSeries: (id, series) => apiCall(`/study/sessions/${id}/pieces`, { method: 'POST', body: json({ series }) }),
+  unlinkPiece: (id, sessionPieceId) => apiCall(`/study/sessions/${id}/pieces/${sessionPieceId}`, { method: 'DELETE' }),
+  getPieceSessions: (pieceId) => apiCall(`/study/pieces/${pieceId}/sessions`),
+  checkGate: (blockId, index) => apiCall(`/study/gates/${blockId}/${index}`, { method: 'POST' }),
+  uncheckGate: (blockId, index) => apiCall(`/study/gates/${blockId}/${index}`, { method: 'DELETE' }),
+  drawCard: (block, exclude) => {
+    const params = new URLSearchParams();
+    if (block) params.set('block', block);
+    if (exclude) params.set('exclude', exclude);
+    const q = params.toString();
+    return apiCall(`/study/cards/draw${q ? `?${q}` : ''}`);
+  },
 };
 
 // Version API

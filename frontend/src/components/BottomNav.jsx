@@ -19,6 +19,7 @@ import {
   Moon,
   MonitorSmartphone,
   ChevronRight,
+  GraduationCap,
 } from 'lucide-react';
 import { Sheet, SheetContent } from './ui/sheet';
 import { FRONTEND_VERSION } from '../version';
@@ -45,7 +46,7 @@ export function isPathActive(pathname, path) {
 function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, studyEnabled, logout } = useAuth();
   const { settings, updateSettings } = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -66,6 +67,7 @@ function BottomNav() {
     { path: '/list', icon: List, label: 'Lista' },
     { path: '/done', icon: CheckCircle, label: 'Färdiga' },
   ];
+  const studyTab = { path: '/studie', icon: GraduationCap, label: 'Studie' };
 
   const onTabClick = (e, path) => {
     // Tryck på aktiv flik = scrolla till toppen
@@ -98,7 +100,7 @@ function BottomNav() {
 
   return (
     <>
-      <nav className="bottom-nav" aria-label="Huvudmeny">
+      <nav className={`bottom-nav${studyEnabled ? ' bottom-nav--six' : ''}`} aria-label="Huvudmeny">
         {renderTab(tabs[0])}
         {renderTab(tabs[1])}
         <div className="nav-fab-slot">
@@ -110,6 +112,7 @@ function BottomNav() {
             <Plus size={26} strokeWidth={2.2} />
           </Link>
         </div>
+        {studyEnabled && renderTab(studyTab)}
         {renderTab(tabs[2])}
         <button
           type="button"

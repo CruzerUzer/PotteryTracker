@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PageSkeleton from './PageSkeleton';
+import EmptyState from './EmptyState';
 import { phasesAPI, locationsAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -305,13 +307,7 @@ function WorkflowManager() {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Laddar…</div>
-        </CardContent>
-      </Card>
-    );
+    return <PageSkeleton rows={4} label="Laddar arbetsflöde" />;
   }
 
   return (
@@ -406,11 +402,20 @@ function WorkflowManager() {
       <Card>
         <CardContent className="pt-6">
           {currentItems.length === 0 ? (
-            <p className="text-center text-[var(--color-text-tertiary)]">
-              {activeTab === 'phases'
-                ? 'Inga faser ännu. Skapa stegen som dina pjäser går igenom – till exempel På tork, Skröjbränd och Glaserad.'
-                : 'Inga platser ännu. Lägg till hyllor och platser i verkstaden så ser du var varje pjäs står.'}
-            </p>
+            <EmptyState
+              title={activeTab === 'phases' ? 'Inga faser ännu' : 'Inga platser ännu'}
+              text={
+                activeTab === 'phases'
+                  ? 'Skapa stegen som dina pjäser går igenom, till exempel På tork, Skröjbränd och Glaserad.'
+                  : 'Lägg till hyllor och platser i verkstaden så ser du var varje pjäs står.'
+              }
+              actionLabel={activeTab === 'phases' ? 'Lägg till första fasen' : 'Lägg till första platsen'}
+              onAction={() => {
+                setShowForm(true);
+                setEditingId(null);
+                setFormData({ name: '', display_order: 0 });
+              }}
+            />
           ) : (
             <div className="space-y-2">
               {currentItems.map((item, index) => (
@@ -458,8 +463,10 @@ function WorkflowManager() {
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="ghost"
                       size="sm"
+                      className="text-[var(--color-error)] hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)]"
+                      aria-label={`Ta bort ${item.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(item.id);

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import PageSkeleton from './PageSkeleton';
+import EmptyState from './EmptyState';
 import { materialsAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -91,13 +93,7 @@ function MaterialManager() {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">Laddar…</div>
-        </CardContent>
-      </Card>
-    );
+    return <PageSkeleton rows={4} label="Laddar material" />;
   }
 
   const materialsByType = {
@@ -180,8 +176,8 @@ function MaterialManager() {
                 {editingId && (
                   <Button
                     type="button"
-                    variant="destructive"
-                    className="ml-auto"
+                    variant="outline"
+                    className="ml-auto text-[var(--color-error)] hover:text-[var(--color-error)]"
                     onClick={() => handleDelete(editingId)}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
@@ -193,11 +189,16 @@ function MaterialManager() {
           </CardContent>
         </Card>
       ) : materials.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-[var(--color-text-tertiary)]">Inga material ännu. Lägg upp dina leror och glasyrer, så kan du koppla dem till pjäserna.</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          title="Inga material ännu"
+          text="Lägg upp dina leror och glasyrer, så kan du koppla dem till pjäserna."
+          actionLabel="Lägg till första materialet"
+          onAction={() => {
+            setShowForm(true);
+            setEditingId(null);
+            setFormData({ name: '', type: 'clay', description: '' });
+          }}
+        />
       ) : (
         <div className="space-y-4">
           {Object.entries(materialsByType).map(

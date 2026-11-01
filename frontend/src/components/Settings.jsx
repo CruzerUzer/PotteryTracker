@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
@@ -7,13 +6,14 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ArrowLeft, Save, Palette, Lock, Smartphone, Download, Check } from 'lucide-react';
+import { ArrowLeft, Save, Lock, Smartphone, Download, Check, Info } from 'lucide-react';
+import { FRONTEND_VERSION } from '../version';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import IOSInstallHelp from './IOSInstallHelp';
 
 function Settings() {
-  const navigate = useNavigate();
+  const goBack = useBackNavigation('/');
   const { settings, updateSettings } = useTheme();
   const { user, checkAuth } = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
@@ -36,17 +36,6 @@ function Settings() {
     updateSettings(localSettings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handlePhaseColorChange = (phaseName, color) => {
-    setLocalSettings((prev) => ({
-      ...prev,
-      phaseColors: {
-        ...prev.phaseColors,
-        [phaseName]: color,
-      },
-    }));
-    setSaved(false);
   };
 
   useEffect(() => {
@@ -90,7 +79,7 @@ function Settings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="page-title">Inställningar</h2>
-        <Button variant="secondary" onClick={() => navigate(-1)}>
+        <Button variant="secondary" onClick={goBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Tillbaka
         </Button>
@@ -278,90 +267,30 @@ function Settings() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Visning</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="default-view">Standardvy</Label>
-            <Select
-              value={localSettings.defaultView}
-              onValueChange={(value) => handleChange('defaultView', value)}
-            >
-              <SelectTrigger id="default-view">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kanban">Kanban</SelectItem>
-                <SelectItem value="list">Lista</SelectItem>
-                <SelectItem value="grid">Rutnät</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-4">
-            <label className="flex items-center justify-between cursor-pointer">
-              <span>Visa bilder på korten</span>
-              <input
-                type="checkbox"
-                checked={localSettings.showImagesInCards}
-                onChange={(e) => handleChange('showImagesInCards', e.target.checked)}
-                className="w-4 h-4"
-              />
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <span>Visa beskrivningar</span>
-              <input
-                type="checkbox"
-                checked={localSettings.showDescriptions}
-                onChange={(e) => handleChange('showDescriptions', e.target.checked)}
-                className="w-4 h-4"
-              />
-            </label>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Fasfärger
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {Object.entries(localSettings.phaseColors).map(([phaseName, color]) => (
-            <div key={phaseName} className="space-y-2">
-              <Label>{phaseName}</Label>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-lg border-2 border-[var(--color-border)]"
-                  style={{ backgroundColor: color }}
-                />
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => handlePhaseColorChange(phaseName, e.target.value)}
-                  className="w-16 h-12 cursor-pointer rounded border border-[var(--color-border)]"
-                />
-                <span className="text-sm text-[var(--color-text-secondary)] font-mono">{color}</span>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardFooter className="gap-2">
           <Button onClick={handleSave} className="flex-1">
             <Save className="mr-2 h-4 w-4" />
             Spara inställningar
           </Button>
-          <Button variant="secondary" onClick={() => navigate(-1)}>
+          <Button variant="secondary" onClick={goBack}>
             Avbryt
           </Button>
         </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            Om appen
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            PotteryTracker v{FRONTEND_VERSION}
+            {user?.username && <> · inloggad som {user.username}</>}
+          </p>
+        </CardContent>
       </Card>
 
       <IOSInstallHelp open={showIOSHelp} onOpenChange={setShowIOSHelp} />

@@ -11,7 +11,7 @@ att läsa om hela kodbasen. Helm-ärende: #150 (redesign), #149 (surfplattebugg)
 | 1. Appskal och navigation | **Klar** | Header, bottennav med +, Mer-ark, toasts, ConfirmDialog, scrollminne, #149 |
 | 2. Kanban på mobil | **Klar** | Fassidor med swipe, snabbark, ångra-toast, desktopmatris utan scrollbox |
 | 3. Lista, Färdiga, Detalj, Formulär | **Klar** | Sök + chips + filterark, hero och bildremsa, chips-formulär, swipe i lightbox |
-| 4. Finish | Ej påbörjad | |
+| 4. Finish | **Klar** | Skelett överallt, tomma tillstånd, tryckåterkoppling, mörkt läge, döda inställningar borta |
 | 5. Verifiering och deploy | Ej påbörjad | Fråga alltid innan prod-deploy |
 
 Uppdatera tabellen när en fas blir klar. Branch: `feature/mobile-redesign`.

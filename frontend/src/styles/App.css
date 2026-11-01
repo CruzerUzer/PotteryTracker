@@ -2673,3 +2673,82 @@ textarea.field-input { resize: vertical; min-height: 110px; }
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* ═══════════════════════════════════════════════════
+   FINISH (fas 4): tryckåterkoppling och touch
+   ═══════════════════════════════════════════════════ */
+
+.btn { -webkit-tap-highlight-color: transparent; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
+/* På touch fastnar hover-lägen; ta bort lyft och skuggor där */
+@media (hover: none) {
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-danger:hover,
+  .btn-success:hover,
+  .card:hover,
+  .piece-card:hover,
+  .matrix-card:hover,
+  .piece-tile:hover {
+    transform: none;
+    box-shadow: var(--shadow-xs);
+  }
+  .card:hover { box-shadow: var(--shadow-md); border-color: var(--color-border); }
+}
+
+/* Skelett i mörkt läge: mjukare kontrast */
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-hover) 50%, var(--color-surface) 75%);
+  background-size: 800px 100%;
+}
+
+/* Mörkt läge: glasytor och chips på nya ytor */
+[data-theme="dark"] .bottom-nav { box-shadow: 0 -10px 30px -12px rgba(0, 0, 0, 0.7); }
+[data-theme="dark"] .sheet-panel { background: var(--color-background-alt); }
+[data-theme="dark"] .sheet-close { background: var(--color-surface-hover); }
+[data-theme="dark"] .chip { background: var(--color-surface); }
+[data-theme="dark"] .chip--active { background: var(--color-primary); color: #111013; }
+[data-theme="dark"] .chip--phase { background: var(--chip-bg); }
+[data-theme="dark"] .chip--phase.chip--active { background: var(--chip-accent); }
+[data-theme="dark"] .chip--selected { background: var(--color-primary-light); color: var(--color-primary); }
+[data-theme="dark"] .piece-tile { box-shadow: none; }
+[data-theme="dark"] .toast { background: #F2EFE9; color: #111013; }
+[data-theme="dark"] .toast--success .toast-icon { color: #3E7A52; }
+[data-theme="dark"] .toast--error .toast-icon { color: #A83C3C; }
+[data-theme="dark"] .toast-action { color: #7E651F; }
+[data-theme="dark"] .detail-hero--empty,
+[data-theme="dark"] .empty-state { background: var(--color-surface); }
+
+/* ── Statistik: nyckeltal ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  min-height: 100px;
+}
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-label { font-size: 0.72rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.kpi-value { font-size: 1.75rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.kpi-sub { font-size: 0.78rem; color: var(--color-text-secondary); }
+@media (max-width: 1023px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .kpi-card { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 16px; min-height: 0; box-shadow: var(--shadow-xs); }
+  .kpi-icon { width: 36px; height: 36px; }
+  .kpi-icon svg { width: 18px; height: 18px; }
+  .kpi-value { font-size: 1.6rem; }
+}

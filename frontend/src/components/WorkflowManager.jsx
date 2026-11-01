@@ -5,8 +5,12 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { GripVertical, Edit, Trash2, Plus, Layers, MapPin } from 'lucide-react';
+import { useToast } from './ui/toast';
+import { useConfirm } from './ui/confirm-dialog';
 
 function WorkflowManager() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState('phases');
   const [phases, setPhases] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -269,15 +273,19 @@ function WorkflowManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm(`Vill du ta bort den här ${itemLabel}en?`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Ta bort ${itemLabel}en?`,
+      description: 'Det går inte att ångra.',
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       await currentAPI.delete(id);
       loadData();
     } catch (err) {
-      alert(`Kunde inte ta bort ${itemLabel}en: ` + err.message);
+      toast.error(`Kunde inte ta bort ${itemLabel}en`, err.message);
     }
   };
 

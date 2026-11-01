@@ -3,6 +3,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { imagesAPI } from '../services/api';
 import { Button } from './ui/button';
 import { X, Trash2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { useConfirm } from './ui/confirm-dialog';
 
 function ImageLightbox({
   images,
@@ -15,6 +16,7 @@ function ImageLightbox({
 }) {
   const [internalIndex, setInternalIndex] = useState(currentIndex);
   const [isZoomed, setIsZoomed] = useState(false);
+  const confirm = useConfirm();
 
   // Use internal state for navigation if no external handler
   const actualIndex = onNavigate ? currentIndex : internalIndex;
@@ -201,10 +203,14 @@ function ImageLightbox({
           {/* Delete button */}
           {showDelete && onDelete && (
             <Button
-              onClick={() => {
-                if (window.confirm('Vill du ta bort den här bilden?')) {
-                  onDelete(currentImage.id);
-                }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Ta bort bilden?',
+                  description: 'Bilden raderas permanent.',
+                  confirmLabel: 'Ta bort',
+                  destructive: true,
+                });
+                if (ok) onDelete(currentImage.id);
               }}
               variant="ghost"
               size="icon"

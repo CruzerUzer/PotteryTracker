@@ -9,11 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { useToast } from './ui/toast';
+import { useConfirm } from './ui/confirm-dialog';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { Trash2, ArrowLeft, Package, Image as ImageIcon, Edit2, X, Check, Plus, MapPin, Star } from 'lucide-react';
 
 function PieceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const goBack = useBackNavigation('/');
 
   const [piece, setPiece] = useState(null);
   const [phases, setPhases] = useState([]);
@@ -66,7 +72,7 @@ function PieceDetail() {
       setSelectedPhase(value);
       await loadData();
     } catch (err) {
-      alert('Kunde inte byta fas: ' + err.message);
+      toast.error('Kunde inte byta fas', err.message);
     } finally {
       setUpdating(false);
     }
@@ -79,22 +85,27 @@ function PieceDetail() {
       setSelectedLocation(value);
       await loadData();
     } catch (err) {
-      alert('Kunde inte byta plats: ' + err.message);
+      toast.error('Kunde inte byta plats', err.message);
     } finally {
       setUpdating(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Vill du ta bort den här pjäsen? Alla bilder följer med och kan inte återskapas.')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Ta bort pjäsen?',
+      description: 'Alla bilder följer med och kan inte återskapas.',
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       await piecesAPI.delete(id);
-      navigate('/kanban');
+      toast.success('Pjäsen är borttagen');
+      goBack();
     } catch (err) {
-      alert('Kunde inte ta bort pjäsen: ' + err.message);
+      toast.error('Kunde inte ta bort pjäsen', err.message);
     }
   };
 
@@ -102,17 +113,23 @@ function PieceDetail() {
     loadData();
   };
 
-  const handleImageDelete = async (imageId) => {
-    if (!window.confirm('Vill du ta bort den här bilden?')) {
-      return;
-    }
-
+  const deleteImage = async (imageId) => {
     try {
       await imagesAPI.delete(imageId);
       loadData();
     } catch (err) {
-      alert('Kunde inte ta bort bilden: ' + err.message);
+      toast.error('Kunde inte ta bort bilden', err.message);
     }
+  };
+
+  const handleImageDelete = async (imageId) => {
+    const ok = await confirm({
+      title: 'Ta bort bilden?',
+      description: 'Bilden raderas permanent.',
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (ok) await deleteImage(imageId);
   };
 
   const handleSetDefaultImage = async (imageId) => {
@@ -122,7 +139,7 @@ function PieceDetail() {
       await piecesAPI.setDefaultImage(id, newDefaultId);
       loadData();
     } catch (err) {
-      alert('Kunde inte välja omslagsbild: ' + err.message);
+      toast.error('Kunde inte välja omslagsbild', err.message);
     }
   };
 
@@ -155,7 +172,7 @@ function PieceDetail() {
       
       if (editingField === 'name') {
         if (!editValue.trim()) {
-          alert('Pjäsen behöver ett namn');
+          toast.error('Pjäsen behöver ett namn');
           setSaving(false);
           return;
         }
@@ -172,7 +189,7 @@ function PieceDetail() {
       setEditValue('');
       setEditMaterials([]);
     } catch (err) {
-      alert('Kunde inte spara: ' + err.message);
+      toast.error('Kunde inte spara', err.message);
     } finally {
       setSaving(false);
     }
@@ -203,7 +220,7 @@ function PieceDetail() {
           <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm mb-4">
             {error || 'Pjäsen hittades inte'}
           </div>
-          <Button variant="secondary" onClick={() => navigate('/kanban')}>
+          <Button variant="secondary" onClick={goBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Tillbaka
           </Button>
@@ -219,7 +236,7 @@ function PieceDetail() {
       {/* Header with actions */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/kanban')}>
+          <Button variant="ghost" size="icon" onClick={goBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           {editingField === 'name' ? (
@@ -538,7 +555,7 @@ function PieceDetail() {
                   currentIndex={lightboxIndex}
                   onClose={() => setLightboxIndex(null)}
                   onDelete={(imageId) => {
-                    handleImageDelete(imageId);
+                    deleteImage(imageId);
                     if (piece.images.length === 1) {
                       setLightboxIndex(null);
                     } else if (lightboxIndex === piece.images.length - 1) {

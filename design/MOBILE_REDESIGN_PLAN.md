@@ -8,7 +8,7 @@ att läsa om hela kodbasen. Helm-ärende: #150 (redesign), #149 (surfplattebugg)
 | Fas | Status | Kommentar |
 |-----|--------|-----------|
 | 0. Testserver på Hemmalinux | **Klar** | Se avsnittet *Testserver* nedan |
-| 1. Appskal och navigation | Ej påbörjad | **Nästa.** Planen är godkänd 2026-11-01 |
+| 1. Appskal och navigation | **Klar** | Header, bottennav med +, Mer-ark, toasts, ConfirmDialog, scrollminne, #149 |
 | 2. Kanban på mobil | Ej påbörjad | |
 | 3. Lista, Färdiga, Detalj, Formulär | Ej påbörjad | |
 | 4. Finish | Ej påbörjad | |

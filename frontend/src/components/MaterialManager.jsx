@@ -7,8 +7,12 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
+import { useToast } from './ui/toast';
+import { useConfirm } from './ui/confirm-dialog';
 
 function MaterialManager() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,9 +63,13 @@ function MaterialManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Vill du ta bort det här materialet?')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Ta bort materialet?',
+      description: 'Materialet tas bort från alla pjäser som använder det.',
+      confirmLabel: 'Ta bort',
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       await materialsAPI.delete(id);
@@ -71,7 +79,7 @@ function MaterialManager() {
       setShowForm(false);
       loadMaterials();
     } catch (err) {
-      alert('Kunde inte ta bort materialet: ' + err.message);
+      toast.error('Kunde inte ta bort materialet', err.message);
     }
   };
 

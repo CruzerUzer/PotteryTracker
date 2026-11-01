@@ -54,6 +54,10 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', actualTheme);
     document.documentElement.setAttribute('data-density', settings.layoutDensity);
     document.documentElement.style.fontSize = `${settings.fontSize}%`;
+    // Statusfältet i mobilwebbläsaren följer temat
+    const bg = actualTheme === 'dark' ? '#111013' : '#F4F1EA';
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', bg));
+    document.documentElement.style.colorScheme = actualTheme;
   }, [actualTheme, settings.layoutDensity, settings.fontSize]);
 
   const updateSettings = (newSettings) => {

@@ -343,6 +343,27 @@ export const studyAPI = {
   getToday: () => apiCall('/study/today'),
   getPlan: () => apiCall('/study/plan'),
   getPlanDocument: () => apiCall('/study/plan/document'),
+  getRevisions: () => apiCall('/study/plan/revisions'),
+  getRevision: (revId) => apiCall(`/study/plan/revisions/${revId}`),
+  restoreRevision: (revId) => apiCall(`/study/plan/revisions/${revId}/restore`, { method: 'POST' }),
+  getFileVersion: () => apiCall('/study/plan/file-version'),
+  adoptFile: () => apiCall('/study/plan/adopt-file', { method: 'POST' }),
+  /** Sparar planen. Vid valideringsfel bär felet listan i err.errors. */
+  savePlan: async (plan, summary) => {
+    const response = await fetch(`${API_BASE}/study/plan`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: json({ plan, summary }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(body.error || 'Kunde inte spara planen');
+      err.errors = body.errors || [];
+      throw err;
+    }
+    return body;
+  },
   getStageMap: () => apiCall('/study/stage-map'),
   updateStageMap: (map) => apiCall('/study/stage-map', { method: 'PUT', body: json(map) }),
   listSessions: () => apiCall('/study/sessions'),

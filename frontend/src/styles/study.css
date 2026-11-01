@@ -1048,3 +1048,72 @@
 .review-question { gap: 8px; }
 .review-card-toggle { align-self: flex-start; }
 .review-newcard { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--radius-md); border: 1px dashed var(--color-primary); }
+
+/* ═══ Planredigering (modul 5) ═══ */
+.study-plan .session-head { position: relative; }
+.plan-edit-toggle { position: absolute; right: 0; bottom: 0; min-height: 40px; }
+.chapter-edit { margin-top: 14px; min-height: 44px; }
+.deck-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 6px; }
+@media (min-width: 640px) { .deck-list { grid-template-columns: 1fr 1fr; } }
+.deck-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 34px 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.deck-item:disabled { cursor: default; }
+.deck-item:not(:disabled) { cursor: pointer; border-color: var(--color-border-hover); }
+.deck-name { font-weight: 600; font-size: 0.9rem; }
+.deck-how { font-size: 0.8rem; color: var(--color-text-secondary); line-height: 1.4; }
+.deck-edit { position: absolute; top: 12px; right: 12px; color: var(--color-primary); }
+
+.edit-h3 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-secondary); margin: 8px 0 0; }
+.edit-week { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.edit-week-head { display: flex; align-items: center; gap: 6px; }
+.edit-week-head > .field-input:first-child { flex: 1; min-width: 0; }
+.edit-num { width: 64px; flex-shrink: 0; text-align: center; padding-left: 6px; padding-right: 6px; }
+.edit-week textarea { min-height: 56px; }
+.edit-seg-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.edit-seg-move { display: flex; gap: 2px; }
+.edit-list { display: flex; flex-direction: column; gap: 6px; }
+.edit-list-row { display: flex; gap: 6px; align-items: flex-start; }
+.edit-list-row textarea { min-height: 52px; }
+.edit-add { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 40px; text-decoration: none; }
+.edit-danger { color: var(--color-error); display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; text-decoration: none; min-height: 40px; }
+.edit-errors { margin: 6px 0 0; padding-left: 18px; font-weight: 400; }
+
+.rev-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rev-row { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.rev-row.is-current { border-color: var(--color-primary); }
+.rev-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rev-meta { font-size: 0.72rem; font-weight: 600; color: var(--color-text-tertiary); letter-spacing: 0.04em; }
+.rev-summary { font-size: 0.9rem; }
+.rev-now { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-primary); }
+.rev-btn { min-height: 40px; padding: 6px 12px; }
+
+.file-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary-light);
+}
+.file-banner-icon { color: var(--color-primary); flex-shrink: 0; }
+.file-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.88rem; }
+.file-banner-text span { color: var(--color-text-secondary); }
+.file-banner-actions { display: flex; align-items: center; gap: 4px; }
+.file-banner-actions .btn { min-height: 40px; padding: 6px 14px; }
+
+.study-tabs { flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.study-tabs::-webkit-scrollbar { display: none; }
+.study-tabs .segmented-item { white-space: nowrap; flex-shrink: 0; }

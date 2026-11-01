@@ -76,11 +76,11 @@ export function validatePlan(plan) {
   let prevTo = 0;
   const segIds = new Set();
   for (const s of t.segments) {
-    if (segIds.has(s.id)) errors.push(`Segmentet ${s.id} finns två gånger`);
+    if (segIds.has(s.id)) errors.push(`Segmentet ${s.name} finns två gånger`);
     segIds.add(s.id);
-    if (s.toMinute <= s.fromMinute) errors.push(`Segmentet ${s.id} slutar innan det börjar`);
-    if (s.fromMinute < prevTo) errors.push(`Segmentet ${s.id} överlappar föregående segment`);
-    if (s.toMinute > t.totalMinutes) errors.push(`Segmentet ${s.id} går längre än passet`);
+    if (s.toMinute <= s.fromMinute) errors.push(`Segmentet ${s.name} är tomt`);
+    if (s.fromMinute < prevTo) errors.push(`Segmentet ${s.name} överlappar föregående segment`);
+    if (s.toMinute > t.totalMinutes) errors.push(`Segmentet ${s.name} går längre än passet`);
     prevTo = s.toMinute;
   }
   if (t.wheelBooking && t.wheelBooking.toMinute <= t.wheelBooking.fromMinute) {
@@ -95,22 +95,23 @@ export function validatePlan(plan) {
 
   const blockIds = new Set();
   const covered = new Map();
+  const label = (b) => String(b.name || b.id).split('·')[0].trim();
   for (const b of plan.phases) {
-    if (blockIds.has(b.id)) errors.push(`Blocket ${b.id} finns två gånger`);
+    if (blockIds.has(b.id)) errors.push(`${label(b)} finns två gånger`);
     blockIds.add(b.id);
-    if (b.weekTo < b.weekFrom) errors.push(`Blocket ${b.id} slutar innan det börjar`);
+    if (b.weekTo < b.weekFrom) errors.push(`${label(b)} slutar innan det börjar`);
     for (let w = b.weekFrom; w <= b.weekTo; w++) {
-      if (covered.has(w)) errors.push(`Vecka ${w} finns i både ${covered.get(w)} och ${b.id}`);
-      covered.set(w, b.id);
+      if (covered.has(w)) errors.push(`Vecka ${w} finns i både ${covered.get(w)} och ${label(b)}`);
+      covered.set(w, label(b));
     }
     for (const wk of b.weeks) {
-      if (wk.weekTo < wk.weekFrom) errors.push(`${b.id}: vecka ${wk.weekFrom}–${wk.weekTo} slutar innan den börjar`);
+      if (wk.weekTo < wk.weekFrom) errors.push(`${label(b)}: vecka ${wk.weekFrom}–${wk.weekTo} slutar innan den börjar`);
       if (wk.weekFrom < b.weekFrom || wk.weekTo > b.weekTo) {
-        errors.push(`${b.id}: vecka ${wk.weekFrom}–${wk.weekTo} ligger utanför blocket`);
+        errors.push(`${label(b)}: vecka ${wk.weekFrom}–${wk.weekTo} ligger utanför blocket (v. ${b.weekFrom}–${b.weekTo})`);
       }
     }
     for (const id of b.playCards || []) {
-      if (!cardIds.has(id)) errors.push(`${b.id}: kortet ${id} finns inte i leken`);
+      if (!cardIds.has(id)) errors.push(`${label(b)}: kortet ${id} finns inte i leken`);
     }
   }
 
@@ -294,4 +295,16 @@ export function nextBlock(plan, blockId) {
   const blocks = sortedBlocks(plan);
   const i = blocks.findIndex((b) => b.id === blockId);
   return i >= 0 && i + 1 < blocks.length ? blocks[i + 1] : null;
+}
+
+/** Filens version jämfört med användarens plan, med senaste ändringsnoteringen. */
+export function fileUpdateInfo(planRow, file = loadPlanFile()) {
+  const fileVersion = file.version;
+  const change = (file.changes || []).filter((c) => c.version === fileVersion).pop() || null;
+  return {
+    fileVersion,
+    userVersion: planRow.version,
+    newer: fileVersion > (planRow.version || 0),
+    summary: change?.summary || null,
+  };
 }

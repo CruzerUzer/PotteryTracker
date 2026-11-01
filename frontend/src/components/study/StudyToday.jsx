@@ -29,6 +29,7 @@ import {
   sessionTitle,
 } from './studyUtils';
 import { useStudyClock, formatDuration } from '../../hooks/useStudyClock';
+import FileUpdateBanner from './FileUpdateBanner';
 import '../../styles/study.css';
 
 const CARD_KEY = 'study.drawnCard';
@@ -152,7 +153,7 @@ function StudyToday() {
   }
   if (!data) return <PageSkeleton rows={5} label="Hämtar dagens pass" />;
 
-  const { progress, activeSession, lastSession, shelf, gate, blockCards, betweenSessions, reviewDue } = data;
+  const { progress, activeSession, lastSession, shelf, gate, blockCards, betweenSessions, reviewDue, fileUpdate } = data;
   const block = progress.block;
   const entry = progress.weekEntry;
   const theme = blockTheme(block?.name);
@@ -178,6 +179,8 @@ function StudyToday() {
         </div>
         <ProgressRing value={progress.doneInBlock} max={progress.blockLength} label={`${progress.doneInBlock} av ${progress.blockLength} pass i blocket`} />
       </div>
+
+      <FileUpdateBanner info={fileUpdate} onAdopted={load} />
 
       {reviewDue && (
         <Link to={`/studie/utvardering/${reviewDue.blockId}`} className="review-due" style={blockStyle(reviewDue.order)}>

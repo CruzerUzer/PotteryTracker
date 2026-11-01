@@ -1,24 +1,79 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronDown, Disc3 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Disc3, Pencil, Plus, RotateCcw } from 'lucide-react';
+import { useConfirm } from '../ui/confirm-dialog';
+import { BlockEditor, TemplateEditor, CardEditor } from './PlanEditors';
+import FileUpdateBanner from './FileUpdateBanner';
 import { phasesAPI, studyAPI } from '../../services/api';
 import { useToast } from '../ui/toast';
 import PageSkeleton from '../PageSkeleton';
 import Markdown from './Markdown';
-import { blockStyle, shortBlockName, blockTheme, minutesLabel } from './studyUtils';
+import { blockStyle, shortBlockName, blockTheme, minutesLabel, formatDay } from './studyUtils';
 import '../../styles/study.css';
 
 const TABS = [
   { id: 'plan', label: 'Planen' },
   { id: 'about', label: 'Om planen' },
   { id: 'firing', label: 'Bränningsflöde' },
+  { id: 'versions', label: 'Versioner' },
 ];
+
+const AUTHOR_LABEL = { seed: 'Startversion', file: 'Från planfilen', user: 'Du', ai: 'AI-förslag' };
+
+function VersionsTab({ onRestored }) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [data, setData] = useState(null);
+  const load = () => studyAPI.getRevisions().then(setData).catch((err) => toast.error('Kunde inte hämta versionerna', err.message));
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const restore = async (rev) => {
+    const ok = await confirm({
+      title: 'Återställ den här versionen?',
+      description: `Planen blir som den var ${formatDay(rev.created_at, { year: 'numeric' })}. Det sparas som en ny version, så inget försvinner.`,
+      confirmLabel: 'Återställ',
+    });
+    if (!ok) return;
+    try {
+      await studyAPI.restoreRevision(rev.id);
+      toast.success('Versionen är återställd');
+      await load();
+      onRestored?.();
+    } catch (err) {
+      toast.error('Kunde inte återställa', err.message);
+    }
+  };
+
+  if (!data) return <PageSkeleton rows={3} title={false} />;
+  return (
+    <div className="study-section">
+      <p className="study-muted">Varje sparad ändring blir en version. Återställning skapar en ny version, så historiken finns alltid kvar.</p>
+      <ol className="rev-list">
+        {data.revisions.map((r, i) => (
+          <li key={r.id} className={`rev-row${i === 0 ? ' is-current' : ''}`}>
+            <div className="rev-text">
+              <span className="rev-meta">{AUTHOR_LABEL[r.author] || r.author} · {formatDay(r.created_at, { year: 'numeric' })}</span>
+              <span className="rev-summary">{r.summary || 'Ingen beskrivning'}</span>
+            </div>
+            {i === 0 ? (
+              <span className="rev-now">Nu</span>
+            ) : (
+              <button type="button" className="btn btn-secondary rev-btn" onClick={() => restore(r)}>
+                <RotateCcw size={14} /> Återställ
+              </button>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 function weekLabel(w) {
   return w.weekFrom === w.weekTo ? `v. ${w.weekFrom}` : `v. ${w.weekFrom}–${w.weekTo}`;
 }
 
-function BlockChapter({ block, current, week, cards, checked, defaultOpen }) {
+function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdit }) {
   const [open, setOpen] = useState(defaultOpen);
   const theme = blockTheme(block.name);
   const isPast = week > block.weekTo;
@@ -75,6 +130,11 @@ function BlockChapter({ block, current, week, cards, checked, defaultOpen }) {
             </>
           )}
           {block.safety && <p className="chapter-safety">{block.safety}</p>}
+          {onEdit && (
+            <button type="button" className="btn btn-secondary chapter-edit" onClick={onEdit}>
+              <Pencil size={14} /> Redigera {shortBlockName(block.name)}
+            </button>
+          )}
         </div>
       )}
     </li>
@@ -146,10 +206,19 @@ function StudyPlan() {
   const [data, setData] = useState(null);
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editBlock, setEditBlock] = useState(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [cardEdit, setCardEdit] = useState(null); // { id } | { id: null } för nytt
+  const [fileInfo, setFileInfo] = useState(null);
 
-  useEffect(() => {
+  const reload = () => {
     studyAPI.getPlan().then(setData).catch((err) => setError(err.message));
-  }, []);
+    studyAPI.getFileVersion().then(setFileInfo).catch(() => {});
+  };
+  useEffect(() => {
+    reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (tab === 'about' && doc === null) {
@@ -175,7 +244,14 @@ function StudyPlan() {
       <div className="session-head">
         <span className="study-eyebrow">Version {data.version} · pass {progress.week} av {progress.totalWeeks}</span>
         <h1 className="study-title">Planen</h1>
+        {tab === 'plan' && (
+          <button type="button" className={`btn ${editing ? 'btn-primary' : 'btn-secondary'} plan-edit-toggle`} onClick={() => setEditing((v) => !v)} aria-pressed={editing}>
+            <Pencil size={14} /> {editing ? 'Klar' : 'Redigera'}
+          </button>
+        )}
       </div>
+
+      <FileUpdateBanner info={fileInfo} onAdopted={reload} />
 
       <div className="segmented study-tabs" role="tablist">
         {TABS.map((t) => (
@@ -198,6 +274,7 @@ function StudyPlan() {
                 defaultOpen={progress.block?.id === b.id}
                 cards={(b.playCards || []).map((id) => cardsById[id]).filter(Boolean)}
                 checked={gateChecks[b.id] || []}
+                onEdit={editing ? () => setEditBlock(b.id) : undefined}
               />
             ))}
           </ol>
@@ -205,7 +282,11 @@ function StudyPlan() {
           <section className="study-section">
             <div className="study-section-head">
               <h2 className="study-h2">Passmallen</h2>
-              <span className="study-muted">{minutesLabel(template.totalMinutes)}</span>
+              {editing ? (
+                <button type="button" className="link-btn" onClick={() => setTemplateOpen(true)}>Redigera</button>
+              ) : (
+                <span className="study-muted">{minutesLabel(template.totalMinutes)}</span>
+              )}
             </div>
             <ol className="segment-list">
               {template.segments.map((s) => (
@@ -224,6 +305,28 @@ function StudyPlan() {
             {template.whenShort && <p className="study-muted"><strong>Om tiden är knapp:</strong> {template.whenShort}</p>}
           </section>
 
+          <section className="study-section">
+            <div className="study-section-head">
+              <h2 className="study-h2">Leken · {plan.challengeCards.length} kort</h2>
+              {editing && (
+                <button type="button" className="link-btn" onClick={() => setCardEdit({ id: null })}>
+                  <Plus size={13} /> Nytt kort
+                </button>
+              )}
+            </div>
+            <ul className="deck-list">
+              {plan.challengeCards.map((c) => (
+                <li key={c.id}>
+                  <button type="button" className="deck-item" onClick={() => editing && setCardEdit({ id: c.id })} disabled={!editing}>
+                    <span className="deck-name">{c.name}</span>
+                    <span className="deck-how">{c.how}</span>
+                    {editing && <Pencil size={14} className="deck-edit" aria-hidden="true" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+
           {plan.rules?.length > 0 && (
             <section className="study-section">
               <h2 className="study-h2">Regler</h2>
@@ -238,6 +341,11 @@ function StudyPlan() {
       {tab === 'about' && (doc === null ? <PageSkeleton rows={6} title={false} /> : <Markdown source={doc} skipTitle />)}
 
       {tab === 'firing' && <FiringTab plan={plan} />}
+      {tab === 'versions' && <VersionsTab onRestored={reload} />}
+
+      <BlockEditor open={!!editBlock} onOpenChange={(o) => !o && setEditBlock(null)} plan={plan} blockId={editBlock} onSaved={reload} />
+      <TemplateEditor open={templateOpen} onOpenChange={setTemplateOpen} plan={plan} onSaved={reload} />
+      <CardEditor open={!!cardEdit} onOpenChange={(o) => !o && setCardEdit(null)} plan={plan} cardId={cardEdit?.id || null} onSaved={reload} />
     </div>
   );
 }

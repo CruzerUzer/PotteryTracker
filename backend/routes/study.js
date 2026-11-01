@@ -21,6 +21,7 @@ import {
   guessStageMap,
   pickRandom,
   reviewDueBlock,
+  fileUpdateInfo,
   STAGE_IDS,
   SESSION_ACTIONS,
   ACTION_TO_STAGE,
@@ -394,6 +395,14 @@ router.get('/today', handle('hämta dagens pass', async (req, res) => {
     activeSession: formatSession(active, plan),
     lastSession: last ? { ...formatSession(last, plan), log: (await logFor(db, req.userId, last.id)) || null } : null,
     reviewDue: await reviewDue(db, req.userId, plan, completed),
+    fileUpdate: (() => {
+      try {
+        const info = fileUpdateInfo(planRow);
+        return info.newer ? info : null;
+      } catch {
+        return null;
+      }
+    })(),
     shelf: await shelf(db, req.userId, stageMap),
     gate: block
       ? { blockId: block.id, items: block.gate || [], checked: checks[block.id] || [] }

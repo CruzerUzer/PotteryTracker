@@ -23,6 +23,7 @@ import exportRouter from './routes/export.js';
 import versionRouter from './routes/version.js';
 import studyRouter from './routes/study.js';
 import studyLogRouter from './routes/studyLog.js';
+import studyPlanEditRouter from './routes/studyPlanEdit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -175,6 +176,7 @@ app.use('/api/images', imagesRouter); // Handles /api/images/:id/file and /api/i
 app.use('/api/export', exportRouter);
 app.use('/api/study', studyRouter);
 app.use('/api/study', studyLogRouter);
+app.use('/api/study', studyPlanEditRouter);
 
 // Health check
 app.get('/health', (req, res) => {

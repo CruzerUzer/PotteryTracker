@@ -22,6 +22,7 @@ import imagesRouter from './routes/images.js';
 import exportRouter from './routes/export.js';
 import versionRouter from './routes/version.js';
 import studyRouter from './routes/study.js';
+import studyLogRouter from './routes/studyLog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -173,6 +174,7 @@ app.use('/api/pieces', pieceImagesRouter); // Handles /api/pieces/:id/images rou
 app.use('/api/images', imagesRouter); // Handles /api/images/:id/file and /api/images/:id DELETE
 app.use('/api/export', exportRouter);
 app.use('/api/study', studyRouter);
+app.use('/api/study', studyLogRouter);
 
 // Health check
 app.get('/health', (req, res) => {

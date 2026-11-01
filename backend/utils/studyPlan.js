@@ -247,3 +247,51 @@ export function pickRandom(list, random = Math.random) {
   if (!list.length) return null;
   return list[Math.floor(random() * list.length)];
 }
+
+/**
+ * Blockutvärdering: det senast avklarade blocket som saknar utvärdering.
+ * Ett block är avklarat när antalet genomförda pass når blockets sista vecka.
+ * @param {string[]} reviewedBlockIds
+ */
+export function reviewDueBlock(plan, completed, reviewedBlockIds = []) {
+  const done = sortedBlocks(plan).filter((b) => b.weekTo <= completed);
+  const last = done[done.length - 1];
+  if (!last || reviewedBlockIds.includes(last.id)) return null;
+  return last;
+}
+
+export function slugify(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[åä]/g, 'a')
+    .replace(/ö/g, 'o')
+    .replace(/é/g, 'e')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'kort';
+}
+
+/**
+ * Lägger till ett utmaningskort i leken och i ett blocks lek.
+ * Returnerar { plan, card } – planen kopieras, originalet ändras inte.
+ */
+export function addCardToPlan(plan, { name, how, trains }, blockId) {
+  const next = JSON.parse(JSON.stringify(plan));
+  const ids = new Set(next.challengeCards.map((c) => c.id));
+  const base = slugify(name);
+  let id = base;
+  for (let i = 2; ids.has(id); i++) id = `${base}-${i}`;
+  const card = { id, name: name.trim(), how: how.trim() };
+  if (trains && trains.trim()) card.trains = trains.trim();
+  next.challengeCards.push(card);
+  const block = next.phases.find((b) => b.id === blockId);
+  if (block) block.playCards = [...(block.playCards || []), id];
+  return { plan: next, card };
+}
+
+/** Nästa block i ordningen efter blockId (eller null). */
+export function nextBlock(plan, blockId) {
+  const blocks = sortedBlocks(plan);
+  const i = blocks.findIndex((b) => b.id === blockId);
+  return i >= 0 && i + 1 < blocks.length ? blocks[i + 1] : null;
+}

@@ -7,6 +7,8 @@ import { getDb } from '../utils/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireStudy } from '../middleware/study.js';
 import logger from '../utils/logger.js';
+import { existsSync, unlinkSync } from 'fs';
+import { getImagePath, getThumbnailPath } from '../utils/paths.js';
 import {
   loadPlanFile,
   loadPlanDocument,
@@ -18,6 +20,7 @@ import {
   sanitizeSegments,
   guessStageMap,
   pickRandom,
+  reviewDueBlock,
   STAGE_IDS,
   SESSION_ACTIONS,
   ACTION_TO_STAGE,
@@ -103,11 +106,11 @@ export async function getStageMap(db, userId) {
   return map;
 }
 
-function cardById(plan, id) {
+export function cardById(plan, id) {
   return (plan.challengeCards || []).find((c) => c.id === id) || null;
 }
 
-function formatSession(row, plan) {
+export function formatSession(row, plan) {
   if (!row) return null;
   const block = row.plan_block_id ? findBlock(plan, row.plan_block_id) : null;
   return {
@@ -133,8 +136,33 @@ function formatSession(row, plan) {
   };
 }
 
-async function getSessionRow(db, userId, id) {
+export async function getSessionRow(db, userId, id) {
   return db.get('SELECT * FROM study_sessions WHERE id = ? AND user_id = ?', [id, userId]);
+}
+
+async function logFor(db, userId, sessionId) {
+  return db.get(
+    `SELECT l.*, m.name AS clay_name FROM study_log_entries l
+     LEFT JOIN materials m ON m.id = l.clay_material_id AND m.user_id = l.user_id
+     WHERE l.session_id = ? AND l.user_id = ?`,
+    [sessionId, userId]
+  );
+}
+
+async function imagesFor(db, userId, sessionId) {
+  return db.all(
+    `SELECT i.id, i.piece_id, i.piece_image_id, i.created_at, p.name AS piece_name
+     FROM study_session_images i
+     LEFT JOIN ceramic_pieces p ON p.id = i.piece_id AND p.user_id = i.user_id
+     WHERE i.session_id = ? AND i.user_id = ? ORDER BY i.created_at, i.id`,
+    [sessionId, userId]
+  );
+}
+
+async function reviewDue(db, userId, plan, completed) {
+  const rows = await db.all('SELECT plan_block_id FROM study_block_reviews WHERE user_id = ?', [userId]);
+  const block = reviewDueBlock(plan, completed, rows.map((r) => r.plan_block_id));
+  return block ? { blockId: block.id, name: block.name, order: block.order } : null;
 }
 
 const PIECE_COLUMNS = `
@@ -192,16 +220,24 @@ async function sessionDetail(db, userId, row, plan) {
      ORDER BY date DESC, ended_at DESC LIMIT 1`,
     [userId, row.id, row.date, row.date, row.id]
   );
+  const [log, images, previousLog] = await Promise.all([
+    logFor(db, userId, row.id),
+    imagesFor(db, userId, row.id),
+    previous ? logFor(db, userId, previous.id) : null,
+  ]);
   return {
     ...formatSession(row, plan),
+    log: log || null,
+    images,
     pieces: pieces.map((p) => ({
       ...p,
       action_label: ACTION_LABELS[p.action],
       suggestion: suggestionFor(p.action, p, stageMap, phasesById),
     })),
     series,
-    previous: previous ? formatSession(previous, plan) : null,
+    previous: previous ? { ...formatSession(previous, plan), log: previousLog || null } : null,
     wheel_booking: plan.sessionTemplate?.wheelBooking || null,
+    logbook_fields: plan.logbook?.perSession || [],
   };
 }
 
@@ -248,7 +284,7 @@ async function gateChecks(db, userId) {
   return out;
 }
 
-const handle = (label, fn) => async (req, res) => {
+export const handle = (label, fn) => async (req, res) => {
   try {
     await fn(req, res);
   } catch (error) {
@@ -256,6 +292,16 @@ const handle = (label, fn) => async (req, res) => {
     res.status(500).json({ error: `Kunde inte ${label}` });
   }
 };
+
+function removeStudyFiles(filename) {
+  for (const p of [getImagePath(filename), getThumbnailPath(filename.replace(/\.[^/.]+$/, '.jpg'))]) {
+    try {
+      if (existsSync(p)) unlinkSync(p);
+    } catch (e) {
+      logger.warn('Could not remove study image file', { error: e.message });
+    }
+  }
+}
 
 // ─── Plan ───────────────────────────────────────────────────────────
 
@@ -346,7 +392,8 @@ router.get('/today', handle('hämta dagens pass', async (req, res) => {
     plan: { id: planRow.id, version: planRow.version, title: planRow.title },
     progress,
     activeSession: formatSession(active, plan),
-    lastSession: formatSession(last, plan),
+    lastSession: last ? { ...formatSession(last, plan), log: (await logFor(db, req.userId, last.id)) || null } : null,
+    reviewDue: await reviewDue(db, req.userId, plan, completed),
     shelf: await shelf(db, req.userId, stageMap),
     gate: block
       ? { blockId: block.id, items: block.gate || [], checked: checks[block.id] || [] }
@@ -527,6 +574,10 @@ router.delete('/sessions/:id', handle('ta bort passet', async (req, res) => {
   const row = await getSessionRow(db, req.userId, req.params.id);
   if (!row) return res.status(404).json({ error: 'Passet hittades inte' });
   await db.run('DELETE FROM study_session_pieces WHERE session_id = ?', [row.id]);
+  await db.run('DELETE FROM study_log_entries WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
+  const imgs = await db.all('SELECT filename FROM study_session_images WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
+  await db.run('DELETE FROM study_session_images WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
+  for (const img of imgs || []) removeStudyFiles(img.filename);
   await db.run('UPDATE study_series SET session_id = NULL WHERE session_id = ? AND user_id = ?', [row.id, req.userId]);
   await db.run('DELETE FROM study_sessions WHERE id = ? AND user_id = ?', [row.id, req.userId]);
   logger.info('Study session deleted', { userId: req.userId, sessionId: row.id });

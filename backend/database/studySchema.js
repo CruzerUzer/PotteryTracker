@@ -98,6 +98,66 @@ CREATE TABLE IF NOT EXISTS study_series (
     FOREIGN KEY (session_id) REFERENCES study_sessions(id) ON DELETE SET NULL
 );
 
+-- Modul 3: loggbok, foton, blockutvärdering, mått
+CREATE TABLE IF NOT EXISTS study_log_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id INTEGER NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
+    goal_and_measure TEXT,
+    observation TEXT,
+    change TEXT,
+    clay_material_id INTEGER,
+    weight_grams INTEGER,
+    series_number TEXT,
+    into_damp_box TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (session_id) REFERENCES study_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS study_session_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    piece_id INTEGER,
+    piece_image_id INTEGER,
+    filename TEXT NOT NULL,
+    original_filename TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (session_id) REFERENCES study_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS study_block_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    plan_id INTEGER,
+    plan_block_id TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    answers_json TEXT NOT NULL,
+    next_goals TEXT,
+    new_card_id TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS study_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    plan_block_id TEXT,
+    metric_id TEXT NOT NULL,
+    value REAL NOT NULL,
+    measured_at TEXT NOT NULL,
+    session_id INTEGER,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_study_log_entries_user ON study_log_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_session_images_session ON study_session_images(session_id);
+CREATE INDEX IF NOT EXISTS idx_study_block_reviews_user ON study_block_reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_metrics_user ON study_metrics(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_plans_user ON study_plans(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_plan_revisions_plan ON study_plan_revisions(plan_id);
 CREATE INDEX IF NOT EXISTS idx_study_plan_revisions_user ON study_plan_revisions(user_id);

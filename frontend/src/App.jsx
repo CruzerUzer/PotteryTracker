@@ -25,6 +25,8 @@ const StatsDashboard = lazy(() => import('./components/StatsDashboard'));
 const StudyToday = lazy(() => import('./components/study/StudyToday'));
 const StudySession = lazy(() => import('./components/study/StudySession'));
 const StudyPlan = lazy(() => import('./components/study/StudyPlan'));
+const StudyLog = lazy(() => import('./components/study/StudyLog'));
+const BlockReview = lazy(() => import('./components/study/BlockReview'));
 import { ToastProvider } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/confirm-dialog';
 import { useScrollMemory } from './hooks/useScrollMemory';
@@ -186,6 +188,8 @@ function AppContent() {
               <Route path="/studie" element={<StudyRoute><StudyToday /></StudyRoute>} />
               <Route path="/studie/plan" element={<StudyRoute><StudyPlan /></StudyRoute>} />
               <Route path="/studie/pass/:id" element={<StudyRoute><StudySession /></StudyRoute>} />
+              <Route path="/studie/logg" element={<StudyRoute><StudyLog /></StudyRoute>} />
+              <Route path="/studie/utvardering/:blockId" element={<StudyRoute><BlockReview /></StudyRoute>} />
               <Route
                 path="/admin"
                 element={

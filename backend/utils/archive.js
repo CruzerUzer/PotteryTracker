@@ -143,6 +143,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       pieceImages.forEach(img => {
         imageFiles.add(img.filename);
       });
+      (studyData.study_session_images || []).forEach((img) => imageFiles.add(img.filename));
 
       // Add images
       for (const filename of imageFiles) {
@@ -386,6 +387,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     pieceImages.forEach(img => {
       imageFilesToImport.add(img.filename);
     });
+    (studyData.study_session_images || []).forEach((img) => imageFilesToImport.add(img.filename));
     
     for (const file of directory.files) {
       if (file.path.startsWith('images/') && !file.path.endsWith('/')) {

@@ -29,11 +29,26 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
+import { copyFileSync, existsSync } from 'fs';
 import { exportStudyData, importStudyData, deleteStudyData } from '../utils/studyTransfer.js';
 import { ensureStudySchema } from '../database/studySchema.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = process.env.DB_PATH || join(__dirname, '..', 'database', 'database.db');
+const uploadsDir = process.env.UPLOADS_DIR || join(__dirname, '..', 'uploads');
+
+/** Studiefoton kopieras till egna filer så att målet kan radera utan att röra källan. */
+function copyStudyFile(filename) {
+  const copy = `c${Date.now()}-${Math.round(Math.random() * 1e6)}-${filename}`;
+  const thumb = (f) => join(uploadsDir, 'thumbnails', f.replace(/\.[^/.]+$/, '.jpg'));
+  try {
+    if (existsSync(join(uploadsDir, filename))) copyFileSync(join(uploadsDir, filename), join(uploadsDir, copy));
+    if (existsSync(thumb(filename))) copyFileSync(thumb(filename), thumb(copy));
+    return copy;
+  } catch {
+    return filename;
+  }
+}
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith('--')));
@@ -207,6 +222,8 @@ async function main() {
       pieces: pieceMap,
       phases: phaseMap,
       materials: materialMap,
+      pieceImages: imageMap,
+      copyFile: copyStudyFile,
     });
 
     await db.exec('COMMIT');
@@ -218,7 +235,7 @@ async function main() {
     console.log(`  bilder: ${imageMap.size}${orphanImages ? ` (varav ${orphanImages} föräldralösa → första fasen)` : ''}`);
     console.log(`  default-bilder satta: ${defaultsFixed}`);
     console.log(`  material-kopplingar: ${links}`);
-    console.log(`  studie: ${study.plans} plan, ${study.sessions} pass, ${study.sessionPieces} alsterkopplingar, ${study.series} serier, ${study.gateChecks} grindkryss`);
+    console.log(`  studie: ${study.plans} plan, ${study.sessions} pass, ${study.sessionPieces} alsterkopplingar, ${study.series} serier, ${study.gateChecks} grindkryss, ${study.logEntries} loggrader, ${study.images} foton, ${study.reviews} utvärderingar, ${study.metrics} mått`);
   } catch (err) {
     await db.exec('ROLLBACK');
     throw err;

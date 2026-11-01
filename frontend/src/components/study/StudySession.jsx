@@ -10,6 +10,8 @@ import ChallengeCard from './ChallengeCard';
 import SeriesForm from './SeriesForm';
 import PiecePicker from './PiecePicker';
 import SessionPieces from './SessionPieces';
+import LogbookForm from './LogbookForm';
+import { Link } from 'react-router-dom';
 import SegmentTimer, { QuickActions } from './SegmentTimer';
 import { useStudyClock } from '../../hooks/useStudyClock';
 import { useWakeLock } from '../../hooks/useWakeLock';
@@ -102,6 +104,8 @@ function StudySession() {
   const [drawing, setDrawing] = useState(false);
   const [drawn, setDrawn] = useState(null);
   const goalSaved = useRef('');
+  const [editingLog, setEditingLog] = useState(false);
+  const [reviewDue, setReviewDue] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -120,6 +124,12 @@ function StudySession() {
   }, [load]);
 
   const running = session?.status === 'running';
+  const ended = session?.status === 'ended';
+
+  useEffect(() => {
+    if (!ended) return;
+    studyAPI.getReviews().then((r) => setReviewDue(r.due)).catch(() => {});
+  }, [ended]);
   const clock = useStudyClock(running ? session : null, { active: running });
   useWakeLock(running);
 
@@ -295,11 +305,47 @@ function StudySession() {
   const card = drawn || session.challenge_card;
   const blockOrder = session.block_order ?? 0;
   const editableSegments = status === 'prepared';
-  const previousQuote = session.previous?.goal ? (
+  const prev = session.previous;
+  const prevChange = prev?.log?.change;
+  const previousQuote = prev && (prevChange || prev.goal) ? (
     <section className="study-quote">
       <Quote size={18} className="study-quote-mark" aria-hidden="true" />
-      <span className="study-quote-label">Förra gången · {formatDay(session.previous.date)}</span>
-      <p className="study-quote-text">{session.previous.goal}</p>
+      <span className="study-quote-label">
+        {prevChange ? 'Förra gången bestämde du' : 'Förra gången'} · {formatDay(prev.date)}
+      </span>
+      <p className="study-quote-text">{prevChange || prev.goal}</p>
+      {prev.log?.observation && <p className="study-quote-sub">Observation: {prev.log.observation}</p>}
+    </section>
+  ) : null;
+  const log = session.log;
+  const logSummary = log ? (
+    <section className="study-card log-summary">
+      <div className="study-section-head">
+        <h2 className="study-h2">Loggboken</h2>
+        <button type="button" className="link-btn" onClick={() => setEditingLog(true)}>Redigera</button>
+      </div>
+      {(session.logbook_fields || []).map((f) => {
+        const key = { goalAndMeasure: 'goal_and_measure', observation: 'observation', change: 'change' }[f.id];
+        return log[key] ? (
+          <div key={f.id} className="log-summary-line">
+            <span className="study-label">{f.label}</span>
+            <p>{log[key]}</p>
+          </div>
+        ) : null;
+      })}
+      <p className="log-summary-meta">
+        {[log.clay_name, log.weight_grams && `${log.weight_grams} g`, log.series_number && `Märk: ${log.series_number}`, log.into_damp_box && `Fuktlåda: ${log.into_damp_box}`]
+          .filter(Boolean).join(' · ')}
+      </p>
+      {session.images?.length > 0 && (
+        <div className="logbook-photos logbook-photos--view">
+          {session.images.map((img) => (
+            <a key={img.id} href={studyAPI.sessionImageUrl(img.id)} target="_blank" rel="noreferrer" className="logbook-photo">
+              <img src={studyAPI.sessionImageUrl(img.id, true)} alt={img.piece_name || 'Foto från passet'} />
+            </a>
+          ))}
+        </div>
+      )}
     </section>
   ) : null;
 
@@ -351,7 +397,19 @@ function StudySession() {
           onEnableNotify={enableNotify}
         >
           {clock?.current?.id === 'in' && previousQuote}
-          {!clock?.over && (
+          {(clock?.over || clock?.current?.id === 'out') && (
+            <div className="quick">
+              <h3 className="quick-title">Loggboken</h3>
+              <LogbookForm
+                session={session}
+                onChange={setSession}
+                submitLabel="Spara och avsluta passet"
+                onSubmitExtra={end}
+                onSaved={() => {}}
+              />
+            </div>
+          )}
+          {!clock?.over && clock?.current?.id !== 'out' && (
             <QuickActions
               segmentId={clock?.current?.id}
               shelf={shelf}
@@ -366,6 +424,30 @@ function StudySession() {
       )}
 
       {status === 'prepared' && previousQuote}
+
+      {ended && reviewDue && (
+        <Link to={`/studie/utvardering/${reviewDue.blockId}`} className="review-due">
+          <span className="study-eyebrow">{shortBlockName(reviewDue.name)} avklarat</span>
+          <span className="review-due-title">Dags för blockutvärderingen</span>
+          <span className="study-muted">Fem frågor, foton från blocket och nästa blocks delmål.</span>
+        </Link>
+      )}
+
+      {ended && (!log || editingLog) && (
+        <section className="study-section">
+          <h2 className="study-h2">Loggboken</h2>
+          <LogbookForm
+            session={session}
+            onChange={setSession}
+            onSaved={async () => {
+              setEditingLog(false);
+              setSession(await studyAPI.getSession(id));
+              toast.success('Loggboken är sparad');
+            }}
+          />
+        </section>
+      )}
+      {ended && log && !editingLog && logSummary}
 
       <section className="study-section">
         <label className="field">
@@ -387,7 +469,7 @@ function StudySession() {
         )}
       </section>
 
-      {!backdated && !running && (
+      {!backdated && !running && !ended && (
         <section className="study-section">
           <div className="study-section-head">
             <h2 className="study-h2">Dagens segment</h2>

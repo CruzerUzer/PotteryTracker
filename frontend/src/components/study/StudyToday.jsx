@@ -152,7 +152,7 @@ function StudyToday() {
   }
   if (!data) return <PageSkeleton rows={5} label="Hämtar dagens pass" />;
 
-  const { progress, activeSession, lastSession, shelf, gate, blockCards, betweenSessions } = data;
+  const { progress, activeSession, lastSession, shelf, gate, blockCards, betweenSessions, reviewDue } = data;
   const block = progress.block;
   const entry = progress.weekEntry;
   const theme = blockTheme(block?.name);
@@ -171,16 +171,30 @@ function StudyToday() {
             <Link to="/studie/plan" className="study-hero-link">
               Planen <ArrowRight size={13} />
             </Link>
+            <Link to="/studie/logg" className="study-hero-link">
+              Loggboken <ArrowRight size={13} />
+            </Link>
           </p>
         </div>
         <ProgressRing value={progress.doneInBlock} max={progress.blockLength} label={`${progress.doneInBlock} av ${progress.blockLength} pass i blocket`} />
       </div>
 
+      {reviewDue && (
+        <Link to={`/studie/utvardering/${reviewDue.blockId}`} className="review-due" style={blockStyle(reviewDue.order)}>
+          <span className="study-eyebrow">{shortBlockName(reviewDue.name)} avklarat</span>
+          <span className="review-due-title">Dags för blockutvärderingen</span>
+          <span className="study-muted">Se tillbaka på blocket och sätt nästa blocks delmål.</span>
+        </Link>
+      )}
+
       {lastSession && (
         <section className="study-quote">
           <Quote size={18} className="study-quote-mark" aria-hidden="true" />
-          <span className="study-quote-label">Förra gången · {formatDay(lastSession.date)}</span>
-          <p className="study-quote-text">{lastSession.goal || 'Inget delmål skrevs.'}</p>
+          <span className="study-quote-label">
+            {lastSession.log?.change ? 'Förra gången bestämde du' : 'Förra gången'} · {formatDay(lastSession.date)}
+          </span>
+          <p className="study-quote-text">{lastSession.log?.change || lastSession.goal || 'Inget skrevs i loggboken.'}</p>
+          {lastSession.log?.observation && <p className="study-quote-sub">Observation: {lastSession.log.observation}</p>}
           <Link to={`/studie/pass/${lastSession.id}`} className="study-quote-link">{sessionTitle(lastSession)}</Link>
         </section>
       )}

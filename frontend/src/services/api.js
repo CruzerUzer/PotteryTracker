@@ -359,6 +359,35 @@ export const studyAPI = {
   getPieceSessions: (pieceId) => apiCall(`/study/pieces/${pieceId}/sessions`),
   checkGate: (blockId, index) => apiCall(`/study/gates/${blockId}/${index}`, { method: 'POST' }),
   uncheckGate: (blockId, index) => apiCall(`/study/gates/${blockId}/${index}`, { method: 'DELETE' }),
+  getLog: (id) => apiCall(`/study/sessions/${id}/log`),
+  saveLog: (id, data) => apiCall(`/study/sessions/${id}/log`, { method: 'PUT', body: json(data) }),
+  uploadSessionImage: async (id, file, pieceId) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (pieceId) formData.append('piece_id', String(pieceId));
+    const response = await fetch(`${API_BASE}/study/sessions/${id}/images`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) {
+      if (response.status === 413) throw new Error('Bilden är för stor (max 10 MB).');
+      const error = await response.json().catch(() => ({ error: 'Uppladdningen misslyckades' }));
+      throw new Error(error.error || 'Uppladdningen misslyckades');
+    }
+    return response.json();
+  },
+  deleteSessionImage: (imageId) => apiCall(`/study/session-images/${imageId}`, { method: 'DELETE' }),
+  sessionImageUrl: (imageId, thumbnail = false) =>
+    `${API_BASE}/study/session-images/${imageId}/file${thumbnail ? '?thumbnail=true' : ''}`,
+  listLog: (block) => apiCall(`/study/log${block ? `?block=${encodeURIComponent(block)}` : ''}`),
+  getReviews: () => apiCall('/study/reviews'),
+  getReviewContext: (blockId) => apiCall(`/study/reviews/${blockId}/context`),
+  createReview: (data) => apiCall('/study/reviews', { method: 'POST', body: json(data) }),
+  getMetrics: () => apiCall('/study/metrics'),
+  createMetric: (data) => apiCall('/study/metrics', { method: 'POST', body: json(data) }),
+  deleteMetric: (id) => apiCall(`/study/metrics/${id}`, { method: 'DELETE' }),
+  exportUrl: (format) => `${API_BASE}/study/export?format=${format}`,
   drawCard: (block, exclude) => {
     const params = new URLSearchParams();
     if (block) params.set('block', block);

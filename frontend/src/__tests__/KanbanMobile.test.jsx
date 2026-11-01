@@ -85,14 +85,18 @@ describe('KanbanView på mobil', () => {
     expect(screen.getByRole('tab', { name: /På tork/, hidden: true })).toHaveTextContent('2');
   });
 
-  it('filtrerar på plats via filterarket', async () => {
+  it('filtrerar på flera platser via filterarket', async () => {
     const user = userEvent.setup();
     render(<MemoryRouter><KanbanView /></MemoryRouter>);
     await user.click(await screen.findByRole('button', { name: /^Filter/ }));
     const dialog = await screen.findByRole('dialog');
-    await user.click(within(dialog).getByRole('radio', { name: 'Atelje' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Atelje' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Ingen plats' }));
     await waitFor(() =>
-      expect(piecesAPI.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ location_id: '1', phase_id: null }))
+      expect(piecesAPI.getAll).toHaveBeenLastCalledWith(
+        expect.objectContaining({ location_id: '1,no-location', phase_id: null })
+      )
     );
+    expect(within(dialog).getByRole('button', { name: 'Atelje' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

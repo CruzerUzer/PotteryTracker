@@ -77,7 +77,7 @@ describe('Pieces API', () => {
         .expect(200);
 
       expect(mockDb.all).toHaveBeenCalledWith(
-        expect.stringContaining('AND p.current_phase_id = ?'),
+        expect.stringContaining('AND (p.current_phase_id IN (?))'),
         expect.arrayContaining([1, '5'])
       );
     });
@@ -90,7 +90,7 @@ describe('Pieces API', () => {
         .expect(200);
 
       expect(mockDb.all).toHaveBeenCalledWith(
-        expect.stringContaining('AND p.current_location_id = ?'),
+        expect.stringContaining('AND (p.current_location_id IN (?))'),
         expect.arrayContaining([1, '3'])
       );
     });
@@ -103,8 +103,34 @@ describe('Pieces API', () => {
         .expect(200);
 
       expect(mockDb.all).toHaveBeenCalledWith(
-        expect.stringContaining('AND p.current_location_id IS NULL'),
+        expect.stringContaining('AND (p.current_location_id IS NULL)'),
         expect.any(Array)
+      );
+    });
+
+    it('should accept several phases including no-phase', async () => {
+      mockDb.all.mockResolvedValue([]);
+
+      await request(app)
+        .get('/api/pieces?phase_id=2,5,no-phase')
+        .expect(200);
+
+      expect(mockDb.all).toHaveBeenCalledWith(
+        expect.stringContaining('AND (p.current_phase_id IN (?, ?) OR p.current_phase_id IS NULL)'),
+        expect.arrayContaining([1, '2', '5'])
+      );
+    });
+
+    it('should accept several materials', async () => {
+      mockDb.all.mockResolvedValue([]);
+
+      await request(app)
+        .get('/api/pieces?material_id=4,7')
+        .expect(200);
+
+      expect(mockDb.all).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE material_id IN (?, ?)'),
+        expect.arrayContaining([1, '4', '7'])
       );
     });
 

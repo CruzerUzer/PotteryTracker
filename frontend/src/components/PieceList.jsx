@@ -9,7 +9,7 @@ import MoveSheet from './kanban/MoveSheet';
 import EmptyState from './EmptyState';
 import { usePieceMover } from '../hooks/usePieceMover';
 import { usePieceFilters } from '../hooks/usePieceFilters';
-import { FilterButton, ActiveFilterChips, PieceFilterSheet, sheetFilterCount } from './PieceFilters';
+import { FilterButton, ActiveFilterChips, PieceFilterSheet, MultiChips, sheetFilterCount } from './PieceFilters';
 
 const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
 
@@ -18,7 +18,7 @@ function PieceList() {
   const [phases, setPhases] = useState([]);
   const [locations, setLocations] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const { filters, set, clearAll, searchInput, setSearchInput, apiParams, anyFilter } =
+  const { filters, set, toggle, clearAll, searchInput, setSearchInput, apiParams, anyFilter } =
     usePieceFilters('list-filters');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,33 +70,21 @@ function PieceList() {
   const filterCount = sheetFilterCount(filters);
   const phaseIndex = (id) => phases.findIndex((p) => p.id === id);
   const movingPiece = pieces.find((p) => p.id === moveId) || null;
-  const hasChipFilters = !!(filters.location || filters.material || filters.dateFrom || filters.dateTo);
+  const hasChipFilters =
+    filters.location.length > 0 || filters.material.length > 0 || !!(filters.dateFrom || filters.dateTo);
 
-  const phaseChips = [
-    { value: '', label: 'Alla' },
-    ...phases.map((p, i) => ({ value: String(p.id), label: p.name, color: phaseColor(i) })),
-    { value: 'no-phase', label: 'Utan fas' },
-  ];
-
-  const renderPhaseChips = (className = '') => (
-    <div className={`chip-row ${className}`} role="radiogroup" aria-label="Fas">
-      {phaseChips.map((c) => {
-        const active = filters.phase === c.value;
-        return (
-          <button
-            key={c.value || 'all'}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            className={`chip${active ? ' chip--active' : ''}`}
-            onClick={() => set('phase', c.value)}
-          >
-            {c.color && <span className="chip-dot" style={{ background: c.color.accent }} aria-hidden="true" />}
-            {c.label}
-          </button>
-        );
-      })}
-    </div>
+  const renderPhaseChips = () => (
+    <MultiChips
+      label="Fas"
+      nowrap
+      values={filters.phase}
+      onToggle={(v) => toggle('phase', v)}
+      onClear={() => set('phase', [])}
+      options={[
+        ...phases.map((p, i) => ({ value: String(p.id), label: p.name, dot: phaseColor(i).accent })),
+        { value: 'no-phase', label: 'Utan fas', muted: true },
+      ]}
+    />
   );
 
   if (loading) {
@@ -152,11 +140,11 @@ function PieceList() {
           <FilterButton count={filterCount} onClick={() => setFilterOpen(true)} />
         </div>
         <div className="chip-scroller">
-          {renderPhaseChips('chip-row--nowrap')}
+          {renderPhaseChips()}
           {hasChipFilters && (
             <div className="chip-row chip-row--nowrap">
               <span className="chip-divider" aria-hidden="true" />
-              <ActiveFilterChips filters={filters} set={set} locations={locations} materials={materials} />
+              <ActiveFilterChips filters={filters} set={set} toggle={toggle} locations={locations} materials={materials} />
             </div>
           )}
         </div>
@@ -204,6 +192,7 @@ function PieceList() {
         onOpenChange={setFilterOpen}
         filters={filters}
         set={set}
+        toggle={toggle}
         clearAll={clearAll}
         anyFilter={anyFilter}
         resultCount={pieces.length}

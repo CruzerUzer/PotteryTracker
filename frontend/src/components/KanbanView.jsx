@@ -31,7 +31,7 @@ function KanbanView() {
   const [materials, setMaterials] = useState([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { filters, set, clearAll, searchInput, setSearchInput, apiParams, anyFilter } =
+  const { filters, set, toggle, clearAll, searchInput, setSearchInput, apiParams, anyFilter } =
     usePieceFilters('kanban-filters');
   const requestId = useRef(0);
   const [loadedKey, setLoadedKey] = useState(null); // filtret som visade pjäser hör till
@@ -167,6 +167,7 @@ function KanbanView() {
             <ActiveFilterChips
               filters={filters}
               set={set}
+              toggle={toggle}
               locations={locations}
               materials={materials}
               includeSearch
@@ -239,6 +240,7 @@ function KanbanView() {
         onOpenChange={setFilterOpen}
         filters={filters}
         set={set}
+        toggle={toggle}
         clearAll={clearAll}
         anyFilter={anyFilter}
         resultCount={pieces.length}

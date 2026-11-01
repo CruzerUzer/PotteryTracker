@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Check } from 'lucide-react';
 import { Sheet, SheetContent } from './ui/sheet';
 import { MATERIAL_TYPE_LABELS } from './MaterialPicker';
 import { phaseColor } from './kanban/phaseColors';
@@ -23,20 +23,28 @@ export function FilterButton({ count, onClick }) {
   );
 }
 
-/** Borttagbara chips för aktiva filter (plats, material, datum och ev. sökning). */
-export function ActiveFilterChips({ filters, set, locations, materials, includeSearch = false, onClearSearch }) {
-  const location =
-    filters.location === 'no-location'
-      ? { name: 'Ingen plats' }
-      : locations.find((l) => String(l.id) === String(filters.location));
-  const material = materials.find((m) => String(m.id) === String(filters.material));
+/** Borttagbara chips för aktiva filter (ett per valt värde, plus datum och ev. sökning). */
+export function ActiveFilterChips({
+  filters,
+  set,
+  toggle,
+  locations,
+  materials,
+  phases,
+  includeSearch = false,
+  onClearSearch,
+}) {
+  const locName = (id) => (id === 'no-location' ? 'Ingen plats' : locations.find((l) => String(l.id) === id)?.name);
+  const matName = (id) => materials.find((m) => String(m.id) === id)?.name;
+  const phaseName = (id) => (id === 'no-phase' ? 'Utan fas' : phases?.find((p) => String(p.id) === id)?.name);
   const chips = [
     includeSearch && filters.search && { key: 'search', label: `”${filters.search}”`, clear: onClearSearch },
-    location && { key: 'location', label: location.name, clear: () => set('location', '') },
-    material && { key: 'material', label: material.name, clear: () => set('material', '') },
+    ...(phases ? filters.phase.map((id) => ({ key: `p${id}`, label: phaseName(id), clear: () => toggle('phase', id) })) : []),
+    ...filters.location.map((id) => ({ key: `l${id}`, label: locName(id), clear: () => toggle('location', id) })),
+    ...filters.material.map((id) => ({ key: `m${id}`, label: matName(id), clear: () => toggle('material', id) })),
     filters.dateFrom && { key: 'dateFrom', label: `Från ${formatDate(filters.dateFrom)}`, clear: () => set('dateFrom', '') },
     filters.dateTo && { key: 'dateTo', label: `Till ${formatDate(filters.dateTo)}`, clear: () => set('dateTo', '') },
-  ].filter(Boolean);
+  ].filter((c) => c && c.label);
   if (!chips.length) return null;
   return chips.map((c) => (
     <button key={c.key} type="button" className="chip chip--active" onClick={c.clear} aria-label={`Ta bort filter ${c.label}`}>
@@ -46,33 +54,43 @@ export function ActiveFilterChips({ filters, set, locations, materials, includeS
   ));
 }
 
-/** Antal filter som ställs in i arket (det som inte syns i verktygsraden). */
+/** Antal valda filtervärden som ställs in i arket. */
 export function sheetFilterCount(filters, { includeSearch = false, includePhase = false } = {}) {
-  return [
-    includePhase && filters.phase,
-    includeSearch && filters.search,
-    filters.location,
-    filters.material,
-    filters.dateFrom,
-    filters.dateTo,
-  ].filter(Boolean).length;
+  return (
+    (includePhase ? filters.phase.length : 0) +
+    filters.location.length +
+    filters.material.length +
+    [includeSearch && filters.search, filters.dateFrom, filters.dateTo].filter(Boolean).length
+  );
 }
 
-function RadioChips({ label, options, value, onChange }) {
+/** Flervalschips: "Alla" rensar kategorin, övriga slås av och på. */
+export function MultiChips({ label, options, values, onToggle, onClear, nowrap = false }) {
   return (
-    <div className="chip-row" role="radiogroup" aria-label={label}>
+    <div className={`chip-row${nowrap ? ' chip-row--nowrap' : ''}`} role="group" aria-label={label}>
+      <button
+        type="button"
+        className={`chip${values.length === 0 ? ' chip--active' : ''}`}
+        aria-pressed={values.length === 0}
+        onClick={onClear}
+      >
+        Alla
+      </button>
       {options.map((o) => {
-        const active = String(value) === String(o.value);
+        const on = values.includes(String(o.value));
         return (
           <button
-            key={o.value || 'all'}
+            key={o.value}
             type="button"
-            role="radio"
-            aria-checked={active}
-            className={`chip${active ? ' chip--active' : ''}${o.muted ? ' chip--muted' : ''}`}
-            onClick={() => onChange(o.value)}
+            aria-pressed={on}
+            className={`chip${on ? ' chip--active' : ''}${o.muted && !on ? ' chip--muted' : ''}`}
+            onClick={() => onToggle(String(o.value))}
           >
-            {o.dot && <span className="chip-dot" style={{ background: o.dot }} aria-hidden="true" />}
+            {on ? (
+              <Check size={13} aria-hidden="true" />
+            ) : (
+              o.dot && <span className="chip-dot" style={{ background: o.dot }} aria-hidden="true" />
+            )}
             {o.label}
             {o.note && <span className="chip-note">{o.note}</span>}
           </button>
@@ -91,6 +109,7 @@ export function PieceFilterSheet({
   onOpenChange,
   filters,
   set,
+  toggle,
   clearAll,
   anyFilter,
   resultCount,
@@ -140,13 +159,13 @@ export function PieceFilterSheet({
         {phases && (
           <section className="move-section">
             <h3 className="move-section-title">Fas</h3>
-            <RadioChips
+            <MultiChips
               label="Fas"
-              value={filters.phase}
-              onChange={(v) => set('phase', v)}
+              values={filters.phase}
+              onToggle={(v) => toggle('phase', v)}
+              onClear={() => set('phase', [])}
               options={[
-                { value: '', label: 'Alla' },
-                ...phases.map((p, i) => ({ value: String(p.id), label: p.name, dot: phaseColor(i).accent })),
+              ...phases.map((p, i) => ({ value: String(p.id), label: p.name, dot: phaseColor(i).accent })),
                 { value: 'no-phase', label: 'Utan fas', muted: true },
               ]}
             />
@@ -155,12 +174,12 @@ export function PieceFilterSheet({
 
         <section className="move-section">
           <h3 className="move-section-title">Plats</h3>
-          <RadioChips
-            label="Plats"
-            value={filters.location}
-            onChange={(v) => set('location', v)}
-            options={[
-              { value: '', label: 'Alla' },
+          <MultiChips
+              label="Plats"
+              values={filters.location}
+              onToggle={(v) => toggle('location', v)}
+              onClear={() => set('location', [])}
+              options={[
               ...locations.map((l) => ({ value: String(l.id), label: l.name })),
               { value: 'no-location', label: 'Ingen plats', muted: true },
             ]}
@@ -181,12 +200,12 @@ export function PieceFilterSheet({
               />
             </label>
           )}
-          <RadioChips
-            label="Material"
-            value={filters.material}
-            onChange={(v) => set('material', v)}
-            options={[
-              { value: '', label: 'Alla' },
+          <MultiChips
+              label="Material"
+              values={filters.material}
+              onToggle={(v) => toggle('material', v)}
+              onClear={() => set('material', [])}
+              options={[
               ...filteredMaterials.map((m) => ({
                 value: String(m.id),
                 label: m.name,

@@ -3,6 +3,7 @@ import sqlite3 from 'sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import logger from './logger.js';
+import { ensureStudySchema } from '../database/studySchema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,6 +26,12 @@ async function runMigrations(db) {
     logger.info('Running migration: Adding default_image_id column to ceramic_pieces');
     await db.run('ALTER TABLE ceramic_pieces ADD COLUMN default_image_id INTEGER REFERENCES piece_images(id) ON DELETE SET NULL');
     logger.info('Migration complete: default_image_id column added');
+  }
+
+  // Studie-modulen: users.study_enabled + studietabeller (idempotent)
+  const { addedColumn } = await ensureStudySchema(db);
+  if (addedColumn) {
+    logger.info('Migration complete: users.study_enabled column added');
   }
 }
 

@@ -30,6 +30,7 @@ router.get('/users', async (req, res) => {
         u.id,
         u.username,
         u.is_admin,
+        u.study_enabled,
         u.last_login,
         u.created_at,
         COUNT(DISTINCT p.id) as pieces_count,
@@ -54,7 +55,7 @@ router.get('/users/:id', async (req, res) => {
     const { id } = req.params;
     const db = await getDb();
     
-    const user = await db.get('SELECT id, username, is_admin, last_login, created_at FROM users WHERE id = ?', [id]);
+    const user = await db.get('SELECT id, username, is_admin, study_enabled, last_login, created_at FROM users WHERE id = ?', [id]);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -196,6 +197,29 @@ router.post('/users/:id/toggle-admin', async (req, res) => {
   } catch (error) {
     logger.error('Error toggling admin status', { error: error.message, userId: req.params.id });
     res.status(500).json({ error: 'Failed to toggle admin status' });
+  }
+});
+
+// POST /api/admin/users/:id/toggle-study - Slå på/av Studie för användaren
+router.post('/users/:id/toggle-study', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = await getDb();
+
+    const user = await db.get('SELECT id, username, study_enabled FROM users WHERE id = ?', [id]);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const enabled = user.study_enabled === 1 ? 0 : 1;
+    await db.run('UPDATE users SET study_enabled = ? WHERE id = ?', [enabled, id]);
+
+    logger.info('Study flag toggled', { userId: id, username: user.username, study_enabled: enabled });
+
+    res.json({ id: Number(id), study_enabled: enabled });
+  } catch (error) {
+    logger.error('Error toggling study flag', { error: error.message, userId: req.params.id });
+    res.status(500).json({ error: 'Kunde inte ändra Studie för användaren' });
   }
 });
 

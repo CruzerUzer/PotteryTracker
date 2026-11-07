@@ -300,6 +300,7 @@ export const adminAPI = {
     return response.json();
   },
   toggleAdmin: (userId) => apiCall(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
+  toggleStudy: (userId) => apiCall(`/admin/users/${userId}/toggle-study`, { method: 'POST' }),
   getArchives: () => apiCall('/admin/archives'),
   downloadArchive: (archiveId) => {
     return fetch(`${API_BASE}/admin/archives/${archiveId}/download`, {
@@ -334,6 +335,113 @@ export const adminAPI = {
     method: 'POST',
     body: JSON.stringify({ enabled, message }),
   }),
+};
+
+// Studie API (bara för användare med study_enabled)
+const json = (data) => JSON.stringify(data);
+export const studyAPI = {
+  getToday: () => apiCall('/study/today'),
+  getPlan: () => apiCall('/study/plan'),
+  getPlanDocument: () => apiCall('/study/plan/document'),
+  getRevisions: () => apiCall('/study/plan/revisions'),
+  getRevision: (revId) => apiCall(`/study/plan/revisions/${revId}`),
+  restoreRevision: (revId) => apiCall(`/study/plan/revisions/${revId}/restore`, { method: 'POST' }),
+  getFileVersion: () => apiCall('/study/plan/file-version'),
+  adoptFile: () => apiCall('/study/plan/adopt-file', { method: 'POST' }),
+  /** Sparar planen. Vid valideringsfel bär felet listan i err.errors. */
+  savePlan: async (plan, summary) => {
+    const response = await fetch(`${API_BASE}/study/plan`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: json({ plan, summary }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(body.error || 'Kunde inte spara planen');
+      err.errors = body.errors || [];
+      throw err;
+    }
+    return body;
+  },
+  getStageMap: () => apiCall('/study/stage-map'),
+  updateStageMap: (map) => apiCall('/study/stage-map', { method: 'PUT', body: json(map) }),
+  listSessions: () => apiCall('/study/sessions'),
+  getSession: (id) => apiCall(`/study/sessions/${id}`),
+  createSession: (data = {}) => apiCall('/study/sessions', { method: 'POST', body: json(data) }),
+  updateSession: (id, data) => apiCall(`/study/sessions/${id}`, { method: 'PATCH', body: json(data) }),
+  startSession: (id, data = {}) => apiCall(`/study/sessions/${id}/start`, { method: 'POST', body: json(data) }),
+  endSession: (id) => apiCall(`/study/sessions/${id}/end`, { method: 'POST' }),
+  deleteSession: (id) => apiCall(`/study/sessions/${id}`, { method: 'DELETE' }),
+  linkPiece: (id, pieceId, action) =>
+    apiCall(`/study/sessions/${id}/pieces`, { method: 'POST', body: json({ piece_id: pieceId, action }) }),
+  createSeries: (id, series) => apiCall(`/study/sessions/${id}/pieces`, { method: 'POST', body: json({ series }) }),
+  unlinkPiece: (id, sessionPieceId) => apiCall(`/study/sessions/${id}/pieces/${sessionPieceId}`, { method: 'DELETE' }),
+  getPieceSessions: (pieceId) => apiCall(`/study/pieces/${pieceId}/sessions`),
+  listNotes: () => apiCall('/study/notes'),
+  createNote: (data) => apiCall('/study/notes', { method: 'POST', body: json(data) }),
+  updateNote: (id, data) => apiCall(`/study/notes/${id}`, { method: 'PUT', body: json(data) }),
+  deleteNote: (id) => apiCall(`/study/notes/${id}`, { method: 'DELETE' }),
+  checkGate: (blockId, index) => apiCall(`/study/gates/${blockId}/${index}`, { method: 'POST' }),
+  uncheckGate: (blockId, index) => apiCall(`/study/gates/${blockId}/${index}`, { method: 'DELETE' }),
+  getLog: (id) => apiCall(`/study/sessions/${id}/log`),
+  saveLog: (id, data) => apiCall(`/study/sessions/${id}/log`, { method: 'PUT', body: json(data) }),
+  uploadSessionImage: async (id, file, pieceId) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (pieceId) formData.append('piece_id', String(pieceId));
+    const response = await fetch(`${API_BASE}/study/sessions/${id}/images`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) {
+      if (response.status === 413) throw new Error('Bilden är för stor (max 10 MB).');
+      const error = await response.json().catch(() => ({ error: 'Uppladdningen misslyckades' }));
+      throw new Error(error.error || 'Uppladdningen misslyckades');
+    }
+    return response.json();
+  },
+  deleteSessionImage: (imageId) => apiCall(`/study/session-images/${imageId}`, { method: 'DELETE' }),
+  sessionImageUrl: (imageId, thumbnail = false) =>
+    `${API_BASE}/study/session-images/${imageId}/file${thumbnail ? '?thumbnail=true' : ''}`,
+  listLog: (block) => apiCall(`/study/log${block ? `?block=${encodeURIComponent(block)}` : ''}`),
+  getReviews: () => apiCall('/study/reviews'),
+  getReviewContext: (blockId) => apiCall(`/study/reviews/${blockId}/context`),
+  createReview: (data) => apiCall('/study/reviews', { method: 'POST', body: json(data) }),
+  getMetrics: () => apiCall('/study/metrics'),
+  createMetric: (data) => apiCall('/study/metrics', { method: 'POST', body: json(data) }),
+  deleteMetric: (id) => apiCall(`/study/metrics/${id}`, { method: 'DELETE' }),
+  exportUrl: (format) => `${API_BASE}/study/export?format=${format}`,
+  listGlazeTests: (sessionId) => apiCall(`/study/glaze/tests${sessionId ? `?session_id=${sessionId}` : ''}`),
+  getGlazeTest: (id) => apiCall(`/study/glaze/tests/${id}`),
+  nextTileCode: () => apiCall('/study/glaze/tests/next-code'),
+  createGlazeTest: (data) => apiCall('/study/glaze/tests', { method: 'POST', body: json(data) }),
+  updateGlazeTest: (id, data) => apiCall(`/study/glaze/tests/${id}`, { method: 'PUT', body: json(data) }),
+  deleteGlazeTest: (id) => apiCall(`/study/glaze/tests/${id}`, { method: 'DELETE' }),
+  uploadGlazeImage: async (id, file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await fetch(`${API_BASE}/study/glaze/tests/${id}/images`, { method: 'POST', credentials: 'include', body: formData });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Uppladdningen misslyckades' }));
+      throw new Error(error.error || 'Uppladdningen misslyckades');
+    }
+    return response.json();
+  },
+  deleteGlazeImage: (imageId) => apiCall(`/study/glaze-images/${imageId}`, { method: 'DELETE' }),
+  glazeImageUrl: (imageId, thumbnail = false) => `${API_BASE}/study/glaze-images/${imageId}/file${thumbnail ? '?thumbnail=true' : ''}`,
+  listRecipes: () => apiCall('/study/glaze/recipes'),
+  createRecipe: (data) => apiCall('/study/glaze/recipes', { method: 'POST', body: json(data) }),
+  updateRecipe: (id, data) => apiCall(`/study/glaze/recipes/${id}`, { method: 'PUT', body: json(data) }),
+  deleteRecipe: (id) => apiCall(`/study/glaze/recipes/${id}`, { method: 'DELETE' }),
+  drawCard: (block, exclude) => {
+    const params = new URLSearchParams();
+    if (block) params.set('block', block);
+    if (exclude) params.set('exclude', exclude);
+    const q = params.toString();
+    return apiCall(`/study/cards/draw${q ? `?${q}` : ''}`);
+  },
 };
 
 // Version API

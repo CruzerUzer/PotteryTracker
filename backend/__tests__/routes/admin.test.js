@@ -190,6 +190,39 @@ describe('Admin API', () => {
     });
   });
 
+  describe('POST /api/admin/users/:id/toggle-study', () => {
+    it('slår på Studie för en användare som har det av', async () => {
+      mockDb.get.mockResolvedValue({ id: 2, username: 'testuser', study_enabled: 0 });
+      mockDb.run.mockResolvedValue({ changes: 1 });
+
+      const response = await request(app)
+        .post('/api/admin/users/2/toggle-study')
+        .expect(200);
+
+      expect(response.body).toEqual({ id: 2, study_enabled: 1 });
+      expect(mockDb.run).toHaveBeenCalledWith('UPDATE users SET study_enabled = ? WHERE id = ?', [1, '2']);
+    });
+
+    it('slår av Studie för en användare som har det på', async () => {
+      mockDb.get.mockResolvedValue({ id: 2, username: 'testuser', study_enabled: 1 });
+      mockDb.run.mockResolvedValue({ changes: 1 });
+
+      const response = await request(app)
+        .post('/api/admin/users/2/toggle-study')
+        .expect(200);
+
+      expect(response.body).toEqual({ id: 2, study_enabled: 0 });
+    });
+
+    it('ger 404 för okänd användare', async () => {
+      mockDb.get.mockResolvedValue(null);
+
+      await request(app)
+        .post('/api/admin/users/999/toggle-study')
+        .expect(404);
+    });
+  });
+
   describe('GET /api/admin/registration-status', () => {
     it('should return registration status', async () => {
       mockDb.get

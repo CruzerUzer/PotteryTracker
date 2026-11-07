@@ -78,6 +78,10 @@ Filer: `App.jsx`, `BottomNav.jsx`, `Sidebar.jsx`, `Footer.jsx`, `App.css`,
 
 - Kompakt header som krymper vid scroll (logo + ordmärke, tema och konto).
 - Bottennav: **Kanban, Lista, [+ Ny pjäs som central knapp], Färdiga, Mer.**
+  *Ändrat 2026-11-07:* Mer-knappen sitter i headern bredvid tema och konto
+  (`MoreMenu.jsx`), så att + alltid är i mitten även med Studie-fliken.
+  Bottennaven: Kanban, Lista, +, Studie, Färdiga; utan Studie tar Statistik
+  femte platsen.
   "Mer" öppnar en **bottom sheet** med Statistik, Arbetsflöde, Material,
   Säkerhetskopia, Inställningar, Admin (om admin), temaväxling och Logga ut.
 - Sidövergångar (kort fade/slide, respektera `prefers-reduced-motion`),

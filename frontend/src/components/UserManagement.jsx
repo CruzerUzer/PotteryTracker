@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PageSkeleton from './PageSkeleton';
 import { adminAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -18,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RefreshCw, Key, Trash2, Shield, ShieldOff, Search, Download } from 'lucide-react';
 
 function UserManagement() {
+  const { user: currentUser, checkAuth } = useAuth();
+  const [studyBusy, setStudyBusy] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,6 +60,20 @@ function UserManagement() {
       await loadUsers();
     } catch (err) {
       setError(err.message || 'Kunde inte ändra adminstatus');
+    }
+  };
+
+  const handleToggleStudy = async (userId) => {
+    try {
+      setStudyBusy(userId);
+      const result = await adminAPI.toggleStudy(userId);
+      setUsers((list) => list.map((u) => (u.id === userId ? { ...u, study_enabled: result.study_enabled } : u)));
+      // Eget konto: läs om användaren så att Studie-fliken syns/försvinner direkt
+      if (currentUser?.id === userId) await checkAuth();
+    } catch (err) {
+      setError(err.message || 'Kunde inte ändra Studie');
+    } finally {
+      setStudyBusy(null);
     }
   };
 
@@ -155,6 +172,7 @@ function UserManagement() {
                 <tr className="border-b border-[var(--color-border)]">
                   <th className="text-left p-2">Användarnamn</th>
                   <th className="text-left p-2">Admin</th>
+                  <th className="text-left p-2">Studie</th>
                   <th className="text-left p-2">Senast inloggad</th>
                   <th className="text-left p-2">Pjäser</th>
                   <th className="text-left p-2">Material</th>
@@ -172,6 +190,20 @@ function UserManagement() {
                       ) : (
                         <span className="text-[var(--color-text-secondary)]">Nej</span>
                       )}
+                    </td>
+                    <td className="p-2">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={user.study_enabled === 1}
+                        aria-label={`Studie för ${user.username}`}
+                        className={`switch${user.study_enabled === 1 ? ' switch--on' : ''}`}
+                        onClick={() => handleToggleStudy(user.id)}
+                        disabled={studyBusy === user.id}
+                        title={user.study_enabled === 1 ? 'Stäng av Studie' : 'Slå på Studie'}
+                      >
+                        <span className="switch-thumb" />
+                      </button>
                     </td>
                     <td className="p-2 text-sm text-[var(--color-text-secondary)]">{formatDate(user.last_login)}</td>
                     <td className="p-2">{user.pieces_count || 0}</td>

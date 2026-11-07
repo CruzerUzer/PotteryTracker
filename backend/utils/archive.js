@@ -6,6 +6,7 @@ import unzipper from 'unzipper';
 import { encryptData, decryptData } from './encryption.js';
 import { generatePdfReport } from './pdfGenerator.js';
 import logger from './logger.js';
+import { exportStudyData, importStudyData, STUDY_EXPORT_FILES } from './studyTransfer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -59,6 +60,7 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       WHERE p.user_id = ?
       ORDER BY pi.piece_id, pi.created_at
     `, [userId]);
+    const studyData = await exportStudyData(db, userId);
 
     // Generate PDF report - TEMPORARILY DISABLED to prevent crashes
     // TODO: Fix PDF generation to prevent server crashes
@@ -122,6 +124,9 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       archive.append(JSON.stringify(locations, null, 2), { name: 'data/locations.json' });
       archive.append(JSON.stringify(pieceMaterials, null, 2), { name: 'data/piece_materials.json' });
       archive.append(JSON.stringify(pieceImages, null, 2), { name: 'data/piece_images.json' });
+      for (const table of STUDY_EXPORT_FILES) {
+        archive.append(JSON.stringify(studyData[table], null, 2), { name: `data/${table}.json` });
+      }
 
       // Add PDF report if generated
       if (pdfBuffer) {
@@ -138,6 +143,8 @@ export async function createUserArchive(userId, password, db, uploadsDir) {
       pieceImages.forEach(img => {
         imageFiles.add(img.filename);
       });
+      (studyData.study_session_images || []).forEach((img) => imageFiles.add(img.filename));
+      (studyData.glaze_test_images || []).forEach((img) => imageFiles.add(img.filename));
 
       // Add images
       for (const filename of imageFiles) {
@@ -259,6 +266,7 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     let locations = []; // Initialize as empty array for backward compatibility
     let pieceMaterials = [];
     let pieceImages = []; // Initialize as empty array for backward compatibility
+    const studyData = {}; // Studie-tabeller (saknas i äldre arkiv)
 
     for (const file of directory.files) {
       const content = await file.buffer();
@@ -275,6 +283,11 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
         pieceMaterials = JSON.parse(content.toString());
       } else if (file.path === 'data/piece_images.json') {
         pieceImages = JSON.parse(content.toString());
+      } else {
+        const m = file.path.match(/^data\/((?:study|glaze)_[a-z_]+)\.json$/);
+        if (m && STUDY_EXPORT_FILES.includes(m[1])) {
+          studyData[m[1]] = JSON.parse(content.toString());
+        }
       }
     }
 
@@ -375,6 +388,8 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
     pieceImages.forEach(img => {
       imageFilesToImport.add(img.filename);
     });
+    (studyData.study_session_images || []).forEach((img) => imageFilesToImport.add(img.filename));
+    (studyData.glaze_test_images || []).forEach((img) => imageFilesToImport.add(img.filename));
     
     for (const file of directory.files) {
       if (file.path.startsWith('images/') && !file.path.endsWith('/')) {
@@ -419,10 +434,18 @@ export async function importUserArchive(archivePath, password, targetUserId, db,
       }
     }
 
+    // Studie: plan, pass, kopplingar till alster, milstolpar, serier
+    const studyCounts = await importStudyData(db, studyData, targetUserId, {
+      pieces: pieceIdMap,
+      phases: phaseIdMap,
+      materials: materialIdMap,
+    });
+
     // Cleanup temp file
     unlinkSync(tempZipPath);
 
     return {
+      study: studyCounts,
       phases: phases.length,
       locations: locations.length,
       materials: materials.length,

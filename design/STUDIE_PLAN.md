@@ -7,24 +7,25 @@ och ägarens svar. Uppdatera statustabellen när en modul blir klar.
 
 | Modul | Branch | Status |
 |-------|--------|--------|
-| 1. Plan och pass | `feature/studie-1-plan` | Klar 2026-11-01, väntar på ägarens test |
-| 2. Timer | `feature/studie-2-timer` | Klar 2026-11-01, väntar på ägarens test |
-| 3. Loggbok, blockutvärdering, mått | `feature/studie-3-loggbok` | Klar 2026-11-01, väntar på ägarens test |
-| 5. Versionerad plan och manuell redigering | `feature/studie-5-plan-redigering` | Klar 2026-11-01, väntar på ägarens test (utan AI) |
-| 4. Glasyrtester, minsta version | `feature/studie-4-glasyr` | Klar 2026-11-01, väntar på ägarens test |
+| 1. Plan och pass | `feature/studie-1-plan` | Klar 2026-11-01, mergad till main 2026-11-07 (v1.5.0) |
+| 2. Timer | `feature/studie-2-timer` | Klar 2026-11-01, mergad till main 2026-11-07 |
+| 3. Loggbok, blockutvärdering, mått | `feature/studie-3-loggbok` | Klar 2026-11-01, mergad till main 2026-11-07 |
+| 5. Versionerad plan och manuell redigering | `feature/studie-5-plan-redigering` | Klar 2026-11-01, mergad till main 2026-11-07 (utan AI) |
+| 4. Glasyrtester, minsta version | `feature/studie-4-glasyr` | Klar 2026-11-01, mergad till main 2026-11-07 |
+| Egna anteckningar inför passet | `feature/studie-4-glasyr` | Klar 2026-11-07, mergad samma dag |
 | AI-redigering (del av modul 5) | – | Skjuten på framtiden, se nedan |
 
 En commit per modul. Backendtester och frontendbygge körs före och efter.
 Ägaren testar på testservern (:8453) innan merge. Inget till produktion utan
 uttryckligt OK (CLAUDE.md).
 
-### Branchar och test (2026-11-01)
+### Branchar och test (2026-11-01, mergat 2026-11-07)
 
-Branscharna är staplade i byggordning: `studie-1-plan` → `studie-2-timer` →
+Branscharna var staplade i byggordning: `studie-1-plan` → `studie-2-timer` →
 `studie-3-loggbok` → `studie-5-plan-redigering` → `studie-4-glasyr`. Varje
-branch innehåller modulerna före. Testservern (:8453) kör arbetskatalogen,
-alltså den senaste branchen med alla moduler. Merge till main i samma
-ordning (eller bara den sista, som innehåller allt).
+branch innehöll modulerna före. Den sista (med allt, planfil v4 och egna
+anteckningar) mergades till main 2026-11-07 som version 1.5.0 på ägarens
+begäran. Testservern (:8453) kör arbetskatalogen.
 
 Migrationen `database/migrate_study.js` skapar alla studietabeller och är
 idempotent; servern kör den också vid start. Studie slås på per användare

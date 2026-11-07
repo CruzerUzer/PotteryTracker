@@ -128,6 +128,13 @@ Startsidan. Innehåll uppifrån och ned:
 3. **Veckans drejning** och **Beskickning och yta**, planens texter för aktuell vecka,
    samt **Inspiration**: veckans video, läsning, bok eller besök ur planfilen
    (`weeks[].inspiration`, även på passets sida i förberedelsen).
+   Under den **Dina anteckningar**: egna anteckningar och länkar inför passet
+   (`study_notes`, knutna till veckonumret så att de överlever planuppdateringar).
+   "Lägg till en egen anteckning eller länk" öppnar ett ark med text, länk
+   (https:// fylls i om det saknas), typ (anteckning, video, läsning, bok, besök;
+   gissas från länken), pass (aktuellt eller senare) och notering. Pennan på
+   raden ändrar eller tar bort. Samma lista finns på passets sida och under
+   varje vecka i Planen.
    Delmålet (redigerbart) föreslås av drejningens text.
 4. **Gods på hyllan.** Två rader: "Att beskicka: 6 cylindrar (drejade
    24 okt)" och "Att glasera: 4 bägare (skröjbrända)". Hämtas från
@@ -230,6 +237,8 @@ study_session_images    id, session_id, user_id, piece_id (valfri), filename,
 study_block_reviews     id, user_id, plan_id, plan_block_id, created_at, answers_json,
                         next_goals, new_card_id
 study_metrics           id, user_id, plan_block_id, metric_id, value, measured_at, session_id
+study_notes             id, user_id, week_number, type ('note'|'video'|'read'|'book'|'visit'),
+                        title, url, note, created_at, updated_at   (egna anteckningar inför ett pass)
 
 glaze_recipes           id, user_id, name, cone, ingredients_json, notes, created_at
 glaze_tests             id, user_id, session_id, tile_code, clay_material_id, glaze_material_id,
@@ -285,7 +294,10 @@ DELETE /sessions/:id/pieces/:spId
 GET    /pieces/:pieceId/sessions    för alstrets detaljsida
 POST   /gates/:blockId/:index  DELETE …   milstolpekryss
 GET    /cards/draw?block=…          slumpa kort
+GET    /notes                       egna anteckningar + planens pass (för passväljaren) + aktuellt pass
+POST   /notes  PUT /notes/:id  DELETE /notes/:id
 ```
+`/today` och `/sessions/:id` bär även `notes` för den aktuella veckan.
 
 Modul 3 lägger till `/sessions/:id/log`, `/sessions/:id/images`,
 `/reviews`, `/metrics`, `/export?format=md|csv`. Modul 5: `/plan/revisions`,
@@ -308,12 +320,17 @@ frontend/src/components/study/
   LogbookForm.jsx         (modul 3)
   BlockReview.jsx         (modul 3)
   MetricTrend.jsx         (modul 3)
+  Inspiration.jsx         planens inspiration + egna anteckningar (med penna och lägg-till)
+  NoteSheet.jsx           ark för en egen anteckning eller länk
 frontend/src/hooks/useStudyClock.js   (modul 2) räknar läge från klockan
 frontend/src/services/api.js          + study-anrop
 ```
 
-Fliken "Studie" (ikon `GraduationCap` eller `BookOpen`) läggs till i
-`BottomNav.jsx` och `Sidebar.jsx`, bara när `user.study_enabled`.
+Fliken "Studie" (ikon `GraduationCap`) läggs till i `BottomNav.jsx` och
+`Sidebar.jsx`, bara när `user.study_enabled`. Bottennaven har alltid fem
+platser med + i mitten: Kanban, Lista, +, Studie, Färdiga (utan Studie:
+Kanban, Lista, +, Färdiga, Statistik). Mer-menyn ligger sedan 2026-11-07 i
+headern bredvid tema och konto (`MoreMenu.jsx`), bara på mobil och surfplatta.
 `AuthContext` får fältet från `/api/auth/me`. Admin → Användare får en
 växel "Studie".
 

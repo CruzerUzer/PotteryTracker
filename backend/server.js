@@ -25,6 +25,7 @@ import studyRouter from './routes/study.js';
 import studyLogRouter from './routes/studyLog.js';
 import studyPlanEditRouter from './routes/studyPlanEdit.js';
 import studyGlazeRouter from './routes/studyGlaze.js';
+import studyNotesRouter from './routes/studyNotes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -179,6 +180,7 @@ app.use('/api/study', studyRouter);
 app.use('/api/study', studyLogRouter);
 app.use('/api/study', studyPlanEditRouter);
 app.use('/api/study', studyGlazeRouter);
+app.use('/api/study', studyNotesRouter);
 
 // Health check
 app.get('/health', (req, res) => {

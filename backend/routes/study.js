@@ -142,6 +142,30 @@ export async function getSessionRow(db, userId, id) {
   return db.get('SELECT * FROM study_sessions WHERE id = ? AND user_id = ?', [id, userId]);
 }
 
+/** Egen anteckning (study_notes) som klienten ser den. */
+export function formatNote(row) {
+  return {
+    id: row.id,
+    week_number: row.week_number,
+    type: row.type || 'note',
+    title: row.title,
+    url: row.url || null,
+    note: row.note || null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+/** Användarens egna anteckningar inför ett visst pass (vecka). */
+export async function notesForWeek(db, userId, week) {
+  if (!week) return [];
+  const rows = await db.all(
+    'SELECT * FROM study_notes WHERE user_id = ? AND week_number = ? ORDER BY created_at, id',
+    [userId, week]
+  );
+  return rows.map(formatNote);
+}
+
 async function logFor(db, userId, sessionId) {
   return db.get(
     `SELECT l.*, m.name AS clay_name FROM study_log_entries l
@@ -241,6 +265,7 @@ async function sessionDetail(db, userId, row, plan) {
     wheel_booking: plan.sessionTemplate?.wheelBooking || null,
     logbook_fields: plan.logbook?.perSession || [],
     inspiration: (row.plan_block_id && row.week_number ? weekEntry(findBlock(plan, row.plan_block_id), row.week_number)?.inspiration : null) || [],
+    notes: await notesForWeek(db, userId, row.week_number),
   };
 }
 
@@ -411,6 +436,7 @@ router.get('/today', handle('hämta dagens pass', async (req, res) => {
       : null,
     blockCards: (block?.playCards || []).map((id) => cardById(plan, id)).filter(Boolean),
     betweenSessions: plan.sessionTemplate?.betweenSessions || null,
+    notes: await notesForWeek(db, req.userId, progress.week),
     stageMap,
   });
 }));

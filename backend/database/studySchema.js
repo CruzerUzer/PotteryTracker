@@ -198,6 +198,22 @@ CREATE TABLE IF NOT EXISTS glaze_test_images (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Egna anteckningar och länkar inför ett pass (knutna till veckan, inte planen,
+-- så att de överlever när planen uppdateras)
+CREATE TABLE IF NOT EXISTS study_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    week_number INTEGER NOT NULL,
+    type TEXT NOT NULL DEFAULT 'note' CHECK(type IN ('note', 'video', 'read', 'book', 'visit')),
+    title TEXT NOT NULL,
+    url TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_study_notes_user ON study_notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_glaze_recipes_user ON glaze_recipes(user_id);
 CREATE INDEX IF NOT EXISTS idx_glaze_tests_user ON glaze_tests(user_id);
 CREATE INDEX IF NOT EXISTS idx_glaze_tests_session ON glaze_tests(session_id);

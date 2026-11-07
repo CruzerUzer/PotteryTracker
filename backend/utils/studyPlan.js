@@ -140,6 +140,17 @@ export function weekEntry(block, week) {
   return block.weeks.find((w) => week >= w.weekFrom && week <= w.weekTo) || null;
 }
 
+/** Alla pass i planen, ett per vecka, i ordning: { week, blockId, blockName, blockOrder, main }. */
+export function planWeeks(plan) {
+  const out = [];
+  for (const b of sortedBlocks(plan)) {
+    for (let w = b.weekFrom; w <= b.weekTo; w++) {
+      out.push({ week: w, blockId: b.id, blockName: b.name, blockOrder: b.order, main: weekEntry(b, w)?.main || '' });
+    }
+  }
+  return out;
+}
+
 /**
  * Var användaren står: veckan räknas i genomförda pass som inte är fria.
  * @param {object} plan  planens JSON

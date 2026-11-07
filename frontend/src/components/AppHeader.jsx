@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { LogOut, MoreHorizontal, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
+import MoreSheet, { useMoreActive } from './MoreMenu';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,15 @@ import {
 function AppHeader() {
   const { user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreActive = useMoreActive();
+  const location = useLocation();
   const ref = useRef(null);
+
+  // Stäng Mer-arket när användaren navigerar (t.ex. bakåt)
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
 
   // Exponera headerns höjd som CSS-variabel så att fasta element kan lägga sig under den
   useEffect(() => {
@@ -70,8 +79,19 @@ function AppHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <button
+            type="button"
+            className={`header-more${moreActive || moreOpen ? ' active' : ''}`}
+            onClick={() => setMoreOpen(true)}
+            aria-label="Mer"
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+          >
+            <MoreHorizontal size={18} />
+          </button>
         </div>
       </div>
+      <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
     </header>
   );
 }

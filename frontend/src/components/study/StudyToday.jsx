@@ -19,6 +19,7 @@ import PageSkeleton from '../PageSkeleton';
 import ProgressRing from './ProgressRing';
 import ChallengeCard from './ChallengeCard';
 import Inspiration from './Inspiration';
+import NoteSheet from './NoteSheet';
 import {
   blockStyle,
   shortBlockName,
@@ -78,6 +79,7 @@ function StudyToday() {
   const [lateOpen, setLateOpen] = useState(false);
   const [lateDate, setLateDate] = useState(todayIso());
   const [lateFree, setLateFree] = useState(false);
+  const [noteSheet, setNoteSheet] = useState(null); // { note } för ändring, { week } för ny
 
   const activeRunning = data?.activeSession?.status === 'running' ? data.activeSession : null;
   const liveClock = useStudyClock(activeRunning, { active: !!activeRunning });
@@ -217,11 +219,14 @@ function StudyToday() {
             <p>{entry.finish}</p>
           </div>
         )}
-        {entry?.inspiration?.length > 0 && (
-          <div className="study-week-item">
-            <Inspiration items={entry.inspiration} />
-          </div>
-        )}
+        <div className="study-week-item">
+          <Inspiration
+            items={entry?.inspiration}
+            notes={data.notes}
+            onAdd={() => setNoteSheet({ week: progress.week })}
+            onEditNote={(note) => setNoteSheet({ note })}
+          />
+        </div>
       </section>
 
       {(shelf.toTrim.length > 0 || shelf.toGlaze.length > 0) && (
@@ -320,6 +325,15 @@ function StudyToday() {
           )}
         </section>
       )}
+
+      <NoteSheet
+        open={!!noteSheet}
+        onOpenChange={(o) => !o && setNoteSheet(null)}
+        note={noteSheet?.note || null}
+        week={noteSheet?.week || progress.week}
+        onSaved={load}
+        onDeleted={load}
+      />
 
       <Sheet open={lateOpen} onOpenChange={setLateOpen}>
         <SheetContent

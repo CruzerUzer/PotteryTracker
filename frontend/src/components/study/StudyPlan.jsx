@@ -5,6 +5,7 @@ import { useConfirm } from '../ui/confirm-dialog';
 import { BlockEditor, TemplateEditor, CardEditor } from './PlanEditors';
 import FileUpdateBanner from './FileUpdateBanner';
 import Inspiration from './Inspiration';
+import NoteSheet from './NoteSheet';
 import { phasesAPI, studyAPI } from '../../services/api';
 import { useToast } from '../ui/toast';
 import PageSkeleton from '../PageSkeleton';
@@ -74,7 +75,7 @@ function weekLabel(w) {
   return w.weekFrom === w.weekTo ? `v. ${w.weekFrom}` : `v. ${w.weekFrom}–${w.weekTo}`;
 }
 
-function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdit }) {
+function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdit, notes, onAddNote, onEditNote }) {
   const [open, setOpen] = useState(defaultOpen);
   const theme = blockTheme(block.name);
   const isPast = week > block.weekTo;
@@ -102,7 +103,13 @@ function BlockChapter({ block, current, week, cards, checked, defaultOpen, onEdi
                   <div className="week-text">
                     <p>{w.main}</p>
                     {w.finish && <p className="week-finish"><span>Beskickning och yta:</span> {w.finish}</p>}
-                    <Inspiration items={w.inspiration} className="week-insp" />
+                    <Inspiration
+                      items={w.inspiration}
+                      notes={notes.filter((n) => n.week_number >= w.weekFrom && n.week_number <= w.weekTo)}
+                      onAdd={w.weekTo >= week ? () => onAddNote(Math.min(w.weekTo, Math.max(w.weekFrom, week))) : undefined}
+                      onEditNote={onEditNote}
+                      className="week-insp"
+                    />
                   </div>
                 </li>
               );
@@ -213,10 +220,14 @@ function StudyPlan() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [cardEdit, setCardEdit] = useState(null); // { id } | { id: null } för nytt
   const [fileInfo, setFileInfo] = useState(null);
+  const [notes, setNotes] = useState([]);
+  const [noteSheet, setNoteSheet] = useState(null); // { note } för ändring, { week } för ny
 
+  const loadNotes = () => studyAPI.listNotes().then((r) => setNotes(r.notes)).catch(() => {});
   const reload = () => {
     studyAPI.getPlan().then(setData).catch((err) => setError(err.message));
     studyAPI.getFileVersion().then(setFileInfo).catch(() => {});
+    loadNotes();
   };
   useEffect(() => {
     reload();
@@ -277,6 +288,9 @@ function StudyPlan() {
                 cards={(b.playCards || []).map((id) => cardsById[id]).filter(Boolean)}
                 checked={gateChecks[b.id] || []}
                 onEdit={editing ? () => setEditBlock(b.id) : undefined}
+                notes={notes}
+                onAddNote={(wk) => setNoteSheet({ week: wk })}
+                onEditNote={(note) => setNoteSheet({ note })}
               />
             ))}
           </ol>
@@ -348,6 +362,14 @@ function StudyPlan() {
       <BlockEditor open={!!editBlock} onOpenChange={(o) => !o && setEditBlock(null)} plan={plan} blockId={editBlock} onSaved={reload} />
       <TemplateEditor open={templateOpen} onOpenChange={setTemplateOpen} plan={plan} onSaved={reload} />
       <CardEditor open={!!cardEdit} onOpenChange={(o) => !o && setCardEdit(null)} plan={plan} cardId={cardEdit?.id || null} onSaved={reload} />
+      <NoteSheet
+        open={!!noteSheet}
+        onOpenChange={(o) => !o && setNoteSheet(null)}
+        note={noteSheet?.note || null}
+        week={noteSheet?.week || progress.week}
+        onSaved={loadNotes}
+        onDeleted={loadNotes}
+      />
     </div>
   );
 }

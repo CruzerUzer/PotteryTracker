@@ -147,6 +147,9 @@ describe('Study API', () => {
       expect(res.body.progress.block.id).toBe('block-1');
       expect(res.body.gate.items).toHaveLength(2);
       expect(res.body.blockCards.map((c) => c.id)).toEqual(['tarningen', 'fem-fotter', 'blind']);
+      expect(res.body.notes).toEqual([]);
+      const notesSql = mockDb.all.mock.calls.find(([sql]) => sql.includes('FROM study_notes'));
+      expect(notesSql[1]).toEqual([1, 5]);
     });
 
     it('räknar bara avslutade pass som inte är fria', async () => {

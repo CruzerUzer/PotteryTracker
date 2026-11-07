@@ -1189,10 +1189,21 @@
 .inspiration-link:hover { text-decoration-color: currentColor; }
 .inspiration-title { font-weight: 500; }
 .inspiration-note { font-size: 0.85rem; color: var(--color-text-tertiary); }
+.inspiration-item .inspiration-edit { margin-left: auto; width: 30px; height: 30px; min-width: 30px; flex-shrink: 0; align-self: center; }
+.inspiration-own.has-plan { margin-top: 12px; }
+.inspiration-add { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 0.85rem; text-decoration: none; min-height: 32px; }
+.inspiration-add:hover { text-decoration: underline; }
+.inspiration-own:not(:has(.inspiration-list)) .inspiration-add { margin-top: 0; }
+.note-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; }
+.note-row select.field-input { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.note-textarea { min-height: 72px; }
+.sheet-footer .note-delete { flex: 0 0 auto; margin-right: auto; color: var(--color-error); padding-inline: 14px; }
 .week-insp { margin-top: 6px; }
 .week-insp .study-label { font-size: 0.7rem; }
 .week-insp .inspiration-list { gap: 4px; }
 .week-insp .inspiration-item { font-size: 0.86rem; }
+.week-insp .inspiration-add { font-size: 0.8rem; margin-top: 4px; min-height: 28px; }
+.week-insp .inspiration-own.has-plan { margin-top: 8px; }
 .edit-insp { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); }
 .edit-insp-item { display: flex; flex-direction: column; gap: 6px; }
 .edit-insp-row { display: flex; gap: 6px; align-items: center; }

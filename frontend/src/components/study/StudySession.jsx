@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import PageSkeleton from '../PageSkeleton';
 import ChallengeCard from './ChallengeCard';
 import Inspiration from './Inspiration';
+import NoteSheet from './NoteSheet';
 import SeriesForm from './SeriesForm';
 import PiecePicker from './PiecePicker';
 import SessionPieces from './SessionPieces';
@@ -111,6 +112,7 @@ function StudySession() {
   const [glazeTests, setGlazeTests] = useState([]);
   const [glazeForm, setGlazeForm] = useState(null);
   const [reviewDue, setReviewDue] = useState(null);
+  const [noteSheet, setNoteSheet] = useState(null); // { note } för ändring, {} för ny
 
   const load = useCallback(async () => {
     try {
@@ -327,9 +329,17 @@ function StudySession() {
       {prev.log?.observation && <p className="study-quote-sub">Observation: {prev.log.observation}</p>}
     </section>
   ) : null;
-  const inspirationBlock = session.inspiration?.length ? (
+  // Planens inspiration och egna anteckningar inför passet; fria pass har ingen vecka att knyta dem till
+  const canNote = !!session.week_number;
+  const hasInspiration = session.inspiration?.length > 0 || session.notes?.length > 0;
+  const inspirationBlock = hasInspiration || (canNote && status === 'prepared') ? (
     <section className="study-card">
-      <Inspiration items={session.inspiration} />
+      <Inspiration
+        items={session.inspiration}
+        notes={session.notes}
+        onAdd={canNote ? () => setNoteSheet({}) : undefined}
+        onEditNote={canNote ? (note) => setNoteSheet({ note }) : undefined}
+      />
     </section>
   ) : null;
   const log = session.log;
@@ -664,6 +674,14 @@ function StudySession() {
             });
           }
         }}
+      />
+      <NoteSheet
+        open={!!noteSheet}
+        onOpenChange={(o) => !o && setNoteSheet(null)}
+        note={noteSheet?.note || null}
+        week={session.week_number}
+        onSaved={load}
+        onDeleted={load}
       />
     </div>
   );

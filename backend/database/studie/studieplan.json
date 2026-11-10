@@ -1,12 +1,13 @@
 {
   "$schema": "./studieplan.schema.json",
   "id": "studieplan-2026",
-  "version": 4,
+  "version": 5,
   "title": "Studieplan i keramik – från drejning till färdigt alster",
   "language": "sv",
   "createdAt": "2026-11-01",
   "source": "https://claude.ai/artifact/PTWnLk4KpnTx63pbuKvzCw",
   "changes": [
+    { "version": 5, "date": "2026-11-10", "summary": "Första passet: tydligare centreringsövning. Sex olika klumpar, var och en skärs loss och centreras en gång till." },
     { "version": 4, "date": "2026-11-01", "summary": "Inspiration per vecka: video, läsning, bok eller besök, på Idag och i passets förberedelse. Verktyget heter sken, inte ribb." },
     { "version": 3, "date": "2026-11-01", "summary": "Mindre per pass (serier om sex, färre tunga föremål), två glasyrpass i block 3, hänklar dras i beskickningen. Svensk terminologi: drejskiva, beskicka, milstolpe, pass och moment." },
     { "version": 2, "date": "2026-11-01", "summary": "Huvudpasset 65 minuter, Lämna skivan 15 minuter." }
@@ -71,7 +72,7 @@
       "themeTechnical": "Få tillbaka händerna, få rutinen att sitta, få igång flödet med provplattor och fuktlåda.",
       "themeCreative": null,
       "weeks": [
-        { "weekFrom": 1, "weekTo": 1, "main": "Centrera 6 klumpar à 1 kg, skär av, centrera om. Sedan 4 cylindrar à 500 g; skär itu alla.", "finish": "Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda.",
+        { "weekFrom": 1, "weekTo": 1, "main": "Centrera 6 olika klumpar à 1 kg. Skär loss varje klump, sätt ner den igen och centrera en gång till. Gå därefter över till nästa klump. Sedan 4 cylindrar à 500 g; skär itu alla.", "finish": "Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda.",
           "inspiration": [
             {"type": "read", "title": "Hamish Jackson: cylindern i åtta steg", "url": "https://www.hamishjacksonpottery.com/blog/2019/4/4/pottery-108-how-to-throw-a-cylinder-in-8-steps", "note": "Checklista för återstarten."},
             {"type": "book", "title": "Stuart Carey, Dreja: från lera till keramik", "note": "Slå upp centrering och cylindern innan passet."}

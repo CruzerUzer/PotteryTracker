@@ -8,6 +8,11 @@ describe('seriesSuggestion', () => {
       .toEqual({ count: 5, name: 'Cylinder', weight: 500 });
   });
 
+  it('tar cylindrarna i första passet, inte de olika klumparna', () => {
+    expect(seriesSuggestion('Centrera 6 olika klumpar à 1 kg. Skär loss varje klump, sätt ner den igen och centrera en gång till. Gå därefter över till nästa klump. Sedan 4 cylindrar à 500 g; skär itu alla.'))
+      .toEqual({ count: 4, name: 'Cylinder', weight: 500 });
+  });
+
   it('läser kilo och intervall', () => {
     expect(seriesSuggestion('Tallrikar: 6 à 1–1,3 kg')).toBeNull();
     expect(seriesSuggestion('Tekannor: 3 kroppar à 1,2–1,4 kg, 8 pipar')).toEqual({ count: 3, name: 'Tekanna', weight: 1200 });

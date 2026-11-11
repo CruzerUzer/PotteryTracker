@@ -23,6 +23,7 @@ import {
   blockStyle,
   formatDay,
   formatTime,
+  logDraftKey,
   minutesLabel,
   sessionTitle,
   shortBlockName,
@@ -108,7 +109,8 @@ function StudySession() {
   const [drawing, setDrawing] = useState(false);
   const [drawn, setDrawn] = useState(null);
   const goalSaved = useRef('');
-  const [editingLog, setEditingLog] = useState(false);
+  // Ett osparat utkast öppnar loggboken direkt, så att texten syns
+  const [editingLog, setEditingLog] = useState(() => !!readLocal(logDraftKey(id)));
   const [glazeTests, setGlazeTests] = useState([]);
   const [glazeForm, setGlazeForm] = useState(null);
   const [reviewDue, setReviewDue] = useState(null);
@@ -275,6 +277,7 @@ function StudySession() {
     if (!ok) return;
     try {
       await studyAPI.deleteSession(id);
+      writeLocal(logDraftKey(id), null);
       toast.success('Passet är borttaget');
       navigate('/studie', { replace: true });
     } catch (err) {
@@ -627,8 +630,9 @@ function StudySession() {
         </div>
       )}
 
+      {/* Inte flytande: på Klart-sidan skulle den ligga över loggbokens textfält */}
       {status === 'ended' && (
-        <div className="session-footer">
+        <div className="session-footer session-footer--static">
           <button type="button" className="btn btn-secondary study-start-btn" onClick={() => navigate('/studie')}>
             Till Idag
           </button>

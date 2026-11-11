@@ -414,6 +414,7 @@
 @media (min-width: 1024px) {
   .session-footer { bottom: 0; }
 }
+.session-footer.session-footer--static { position: static; background: none; }
 
 /* ── Alster i passet ── */
 .sp-group { margin-bottom: 14px; }
@@ -854,6 +855,19 @@
   background: var(--block-accent, var(--color-primary));
 }
 .logbook-prompt { font-size: 0.8rem; color: var(--color-text-tertiary); }
+.logbook-draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--color-surface-hover);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.logbook-draft .link-btn { flex-shrink: 0; }
 .logbook-photos { display: flex; flex-wrap: wrap; gap: 8px; }
 .logbook-photo {
   position: relative;

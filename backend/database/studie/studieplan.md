@@ -122,7 +122,7 @@ Ingenting ska bli bra. Syftet är att få tillbaka händerna, få rutinen att si
 
 | Vecka | Drejning | Beskickning, dekor och glasyr |
 | --- | --- | --- |
-| 1 | Centrera 6 olika klumpar à 1 kg. Skär loss varje klump, sätt ner den igen och centrera en gång till. Gå därefter över till nästa klump. Sedan 4 cylindrar à 500 g; skär itu alla. | Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda. |
+| 1 | Centrera 6 olika klumpar à 1 kg. Skär loss varje klump när den är centrerad och ta nästa. Sedan 4 cylindrar à 500 g; skär itu alla. | Inget att beskicka än, så 6 + 4 fyller hela tiden på drejskivan. Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda. |
 | 2 | 6 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste. | Gör 6 provplattor av spillet. |
 | 3 | 6 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4. | Beskicka vecka 2:s cylindrar till bägare. |
 | 4 | 6 skålar à 500 g: öppna cylindern till skål med sken. Behåll 4. | Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp. |

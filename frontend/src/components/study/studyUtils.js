@@ -78,6 +78,9 @@ export function readLocal(key, fallback = null) {
   }
 }
 
+/** Nyckeln för loggbokens osparade utkast, per pass. */
+export const logDraftKey = (sessionId) => `study.logDraft.${sessionId}`;
+
 export function writeLocal(key, value) {
   try {
     if (value === null || value === undefined) window.localStorage.removeItem(key);

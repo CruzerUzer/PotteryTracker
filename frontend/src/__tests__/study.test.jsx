@@ -9,7 +9,7 @@ describe('seriesSuggestion', () => {
   });
 
   it('tar cylindrarna i första passet, inte de olika klumparna', () => {
-    expect(seriesSuggestion('Centrera 6 olika klumpar à 1 kg. Skär loss varje klump, sätt ner den igen och centrera en gång till. Gå därefter över till nästa klump. Sedan 4 cylindrar à 500 g; skär itu alla.'))
+    expect(seriesSuggestion('Centrera 6 olika klumpar à 1 kg. Skär loss varje klump när den är centrerad och ta nästa. Sedan 4 cylindrar à 500 g; skär itu alla.'))
       .toEqual({ count: 4, name: 'Cylinder', weight: 500 });
   });
 

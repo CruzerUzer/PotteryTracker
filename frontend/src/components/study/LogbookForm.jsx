@@ -3,6 +3,7 @@ import { Camera, ChevronDown, Loader2, Save, X } from 'lucide-react';
 import { materialsAPI, studyAPI } from '../../services/api';
 import { useToast } from '../ui/toast';
 import { useConfirm } from '../ui/confirm-dialog';
+import { logDraftKey, readLocal, writeLocal } from './studyUtils';
 
 const DEFAULT_FIELDS = [
   { id: 'goalAndMeasure', label: 'Delmål och mått', prompt: 'Vad du skulle göra och vad det blev, i siffror.' },
@@ -10,10 +11,13 @@ const DEFAULT_FIELDS = [
   { id: 'change', label: 'En förändring', prompt: 'Det enda du gör annorlunda nästa gång.' },
 ];
 const FIELD_KEY = { goalAndMeasure: 'goal_and_measure', observation: 'observation', change: 'change' };
+const differs = (a, b) => Object.keys(a).some((k) => String(a[k] ?? '') !== String(b[k] ?? ''));
 
 /**
  * Loggboken: tre fasta rader, foto och några förifyllda extrafält.
  * Byggd för att gå på under en minut med en tumme.
+ * Osparad text ligger kvar som utkast i webbläsaren tills den sparas,
+ * så att den inte försvinner om man råkar lämna sidan.
  */
 function LogbookForm({ session, onSaved, onChange, submitLabel = 'Spara loggboken', onSubmitExtra }) {
   const toast = useToast();
@@ -32,13 +36,19 @@ function LogbookForm({ session, onSaved, onChange, submitLabel = 'Spara loggboke
       into_damp_box: l.into_damp_box || '',
     };
   }, [session.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [values, setValues] = useState(initial);
+  const [draft] = useState(() => readLocal(logDraftKey(session.id)));
+  const [values, setValues] = useState(() => (draft?.values ? { ...initial, ...draft.values } : initial));
+  const [restored, setRestored] = useState(() => !!draft?.values && differs({ ...initial, ...draft.values }, initial));
   const [clays, setClays] = useState([]);
   const [moreOpen, setMoreOpen] = useState(false);
   const [photoPiece, setPhotoPiece] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    writeLocal(logDraftKey(session.id), differs(values, initial) ? { values, at: Date.now() } : null);
+  }, [values, initial, session.id]);
 
   useEffect(() => {
     materialsAPI.getAll().then((m) => setClays(m.filter((x) => x.type === 'clay'))).catch(() => {});
@@ -88,6 +98,7 @@ function LogbookForm({ session, onSaved, onChange, submitLabel = 'Spara loggboke
         clay_material_id: values.clay_material_id ? Number(values.clay_material_id) : null,
         weight_grams: values.weight_grams ? Number(values.weight_grams) : null,
       });
+      writeLocal(logDraftKey(session.id), null);
       if (onSubmitExtra) await onSubmitExtra();
       onSaved?.(res.log);
     } catch (err) {
@@ -99,6 +110,14 @@ function LogbookForm({ session, onSaved, onChange, submitLabel = 'Spara loggboke
 
   return (
     <form className="logbook" onSubmit={save}>
+      {restored && (
+        <p className="logbook-draft" role="status">
+          <span>Din osparade text är återställd.</span>
+          <button type="button" className="link-btn" onClick={() => { setValues(initial); setRestored(false); }}>
+            Släng den
+          </button>
+        </p>
+      )}
       {fields.map((f, i) => {
         const key = FIELD_KEY[f.id] || f.id;
         return (

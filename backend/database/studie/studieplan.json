@@ -1,12 +1,13 @@
 {
   "$schema": "./studieplan.schema.json",
   "id": "studieplan-2026",
-  "version": 6,
+  "version": 7,
   "title": "Studieplan i keramik – från drejning till färdigt alster",
   "language": "sv",
   "createdAt": "2026-11-01",
   "source": "https://claude.ai/artifact/PTWnLk4KpnTx63pbuKvzCw",
   "changes": [
+    { "version": 7, "date": "2026-11-12", "summary": "Direktlänkar till Hsin-Chuen Lins videor om centrering, cylindern, öppningen, halsen och stora former. District Clay Centers videolista finns kvar som tips." },
     { "version": 6, "date": "2026-11-11", "summary": "Första passet utan omcentrering: sex klumpar centreras och skärs loss, sedan fyra cylindrar. Det fyller tiden på drejskivan." },
     { "version": 5, "date": "2026-11-10", "summary": "Första passet: tydligare centreringsövning. Sex olika klumpar, var och en skärs loss och centreras en gång till." },
     { "version": 4, "date": "2026-11-01", "summary": "Inspiration per vecka: video, läsning, bok eller besök, på Idag och i passets förberedelse. Verktyget heter sken, inte ribb." },
@@ -76,17 +77,19 @@
         { "weekFrom": 1, "weekTo": 1, "main": "Centrera 6 olika klumpar à 1 kg. Skär loss varje klump när den är centrerad och ta nästa. Sedan 4 cylindrar à 500 g; skär itu alla.", "finish": "Inget att beskicka än, så 6 + 4 fyller hela tiden på drejskivan. Starta loggboken. Märk din hylla. Fråga om bränningsschema och fuktlåda.",
           "inspiration": [
             {"type": "read", "title": "Hamish Jackson: cylindern i åtta steg", "url": "https://www.hamishjacksonpottery.com/blog/2019/4/4/pottery-108-how-to-throw-a-cylinder-in-8-steps", "note": "Checklista för återstarten."},
-            {"type": "book", "title": "Stuart Carey, Dreja: från lera till keramik", "note": "Slå upp centrering och cylindern innan passet."}
+            {"type": "book", "title": "Stuart Carey, Dreja: från lera till keramik", "note": "Slå upp centrering och cylindern innan passet."},
+            {"type": "video", "title": "Hsin-Chuen Lin: centrera 2, 5 och 10 lb", "url": "https://www.youtube.com/watch?v=JDN2-O2K7H4", "note": "2 lb är ungefär 900 g, nära dina klumpar på 1 kg."}
           ] },
         { "weekFrom": 2, "weekTo": 2, "main": "6 cylindrar à 500 g, mål 12 cm hög och 8 cm bred. Behåll de 4 jämnaste.", "finish": "Gör 6 provplattor av spillet.",
           "inspiration": [
-            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Välj videon om cylindrar, titta med avsikt."},
-            {"type": "read", "title": "Pitelka: drejning i tvärsnitt", "url": "https://ceramicartsnetwork.org/daily/article/Wheel-Throwing-in-Cross-Section", "note": "Jämför ditt snitt med bilderna."}
+            {"type": "video", "title": "Hsin-Chuen Lin: cylinderns vägg i snitt", "url": "https://www.youtube.com/watch?v=Z9tw9v88PZM", "note": "Han skär itu cylindern. Titta med avsikt på väggen."},
+            {"type": "read", "title": "Pitelka: drejning i tvärsnitt", "url": "https://ceramicartsnetwork.org/daily/article/Wheel-Throwing-in-Cross-Section", "note": "Jämför ditt snitt med bilderna."},
+            {"type": "video", "title": "District Clay Center: rekommenderade drejvideor", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Fler videor att välja bland, bland annat hela Hsin-Chuen Lins spellista."}
           ] },
         { "weekFrom": 3, "weekTo": 3, "main": "6 cylindrar à 700 g, mål 15 cm, max tre drag. Behåll 4.", "finish": "Beskicka vecka 2:s cylindrar till bägare.",
           "inspiration": [
             {"type": "read", "title": "CAN: mallar och mått för serier", "url": "https://ceramicartsnetwork.org/daily/article/Making-Multiples-Using-Templates-to-Throw-Uniform-Shapes-on-the-Pottery-Wheel", "note": "Hur man drejar lika."},
-            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Tre drag: se hur handen flyttar mellan dragen."}
+            {"type": "video", "title": "Hsin-Chuen Lin: cylindern steg för steg", "url": "https://www.youtube.com/watch?v=w-3mBUtplR4", "note": "Den äldre cylindervideon. Tre drag: se hur handen flyttar mellan dragen."}
           ] },
         { "weekFrom": 4, "weekTo": 4, "main": "6 skålar à 500 g: öppna cylindern till skål med sken. Behåll 4.", "finish": "Beskicka. Glasera provplattorna, en glasyr per platta, skriv upp.",
           "inspiration": [
@@ -112,7 +115,8 @@
         { "weekFrom": 5, "weekTo": 6, "main": "Cylindrar: 6 à 600 g, mål 15 × 8 cm. Mät alla, skriv spridningen. Vecka 6: blicken på kanten, inte händerna.", "finish": "Beskicka. Provplattor.",
           "inspiration": [
             {"type": "book", "title": "Clary Illian, A Potter's Workbook", "note": "Övningarna om cylindern och mynningen."},
-            {"type": "read", "title": "CAN: mallar och mått för serier", "url": "https://ceramicartsnetwork.org/daily/article/Making-Multiples-Using-Templates-to-Throw-Uniform-Shapes-on-the-Pottery-Wheel", "note": "Mät och jämför i serien."}
+            {"type": "read", "title": "CAN: mallar och mått för serier", "url": "https://ceramicartsnetwork.org/daily/article/Making-Multiples-Using-Templates-to-Throw-Uniform-Shapes-on-the-Pottery-Wheel", "note": "Mät och jämför i serien."},
+            {"type": "video", "title": "Hsin-Chuen Lin: en bra öppning", "url": "https://www.youtube.com/watch?v=4IRJfcyryLg", "note": "Jämn botten ger en jämnare serie. Se hur han öppnar."}
           ] },
         { "weekFrom": 7, "weekTo": 8, "main": "Bägare: 6 à 400 g, samma form. Två får en medvetet annan mynning (rak, utåt, inåt).", "finish": "Beskicka fotringar: foten en tredjedel till hälften av mynningen. Dra 10 hänklar och kasta alla.",
           "inspiration": [
@@ -132,7 +136,7 @@
         { "weekFrom": 13, "weekTo": 14, "main": "Blandat pass: 2 cylindrar, 2 skålar, 2 bägare i samma pass. Jämför med serierna.", "finish": "Glasera blockets första serier.",
           "inspiration": [
             {"type": "read", "title": "Florian Gadsby i Ceramics Monthly", "url": "https://ceramicartsnetwork.org/ceramics-monthly/ceramics-monthly-article/working-artist-florian-gadsby", "note": "Serietänk och arbetsrytm."},
-            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Välj formen du är sämst på av de tre."}
+            {"type": "video", "title": "District Clay Center: rekommenderade drejvideor", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Välj formen du är sämst på av de tre och leta upp en video om den, till exempel i Hsin-Chuen Lins spellista."}
           ] },
         { "weekFrom": 15, "weekTo": 16, "main": "Slutserien: 6 muggar à 450 g, samma form och hänkel.", "finish": "Beskicka, hänkla, glasera. Blockutvärdering.",
           "inspiration": [
@@ -167,7 +171,7 @@
           ] },
         { "weekFrom": 22, "weekTo": 23, "main": "Flaskor och vaser: 4 à 800 g. Dra upp cylinder, snörp halsen i tre steg.", "finish": "Beskicka. Sgraffito på två.",
           "inspiration": [
-            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Videon om att snörpa in halsen."},
+            {"type": "video", "title": "Hsin-Chuen Lin: smala halsar och slutna former", "url": "https://www.youtube.com/watch?v=f--haixGUIU", "note": "Olika sätt att snörpa in halsen."},
             {"type": "book", "title": "Robin Hopper, Functional Pottery", "note": "Form och proportion i flaskan."}
           ] },
         { "weekFrom": 24, "weekTo": 26, "main": "Kannor: 3 à 900 g plus 6 pipar. Pip på mjukt läderhårt gods, spetsen ovanför mynningen, en aning motsols.", "finish": "Hänklar. Glasera flaskor och burkar.",
@@ -258,7 +262,7 @@
         { "weekFrom": 45, "weekTo": 46, "main": "Större gods: 2 kg till en cylinder. Dreja i delar: två delar som sätts ihop läderhårt.", "finish": "Glasera tekannorna. Hälltest.",
           "inspiration": [
             {"type": "book", "title": "Ben Carter, Mastering the Potter's Wheel", "note": "Större gods och att dreja i delar."},
-            {"type": "video", "title": "Hsin-Chuen Lin, Learning to Throw", "url": "https://www.districtclaycenter.com/dcc-recommended-videos.html", "note": "Videon om stora former."}
+            {"type": "video", "title": "Hsin-Chuen Lin: en stor form på 12 lb", "url": "https://www.youtube.com/watch?v=fXwZcJPs_NE", "note": "En stor form i ett stycke, filmad från tre håll. Jämför med att dreja i delar."}
           ] },
         { "weekFrom": 47, "weekTo": 50, "main": "Egen serie: 5–8 föremål efter dina skisser och dina tre ord.", "finish": "Beskickning och yta i samma takt.",
           "inspiration": [

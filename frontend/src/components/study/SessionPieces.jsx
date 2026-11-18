@@ -4,6 +4,7 @@ import { ArrowRight, Layers, Link2, Plus, X } from 'lucide-react';
 import { imagesAPI, piecesAPI, studyAPI } from '../../services/api';
 import { useToast } from '../ui/toast';
 import { ACTIONS } from './studyUtils';
+import SeriesSheet from './SeriesSheet';
 
 /**
  * Alstren i passet, grupperade per åtgärd. Fasförslag visas som knapp;
@@ -12,6 +13,8 @@ import { ACTIONS } from './studyUtils';
 function SessionPieces({ session, onChange, onAddSeries, onLinkExisting }) {
   const toast = useToast();
   const [busy, setBusy] = useState(null);
+  const [openSeriesId, setOpenSeriesId] = useState(null);
+  const openSeries = session.series.find((s) => s.id === openSeriesId) || null;
   const groups = ACTIONS.map((a) => ({ ...a, pieces: session.pieces.filter((p) => p.action === a.id) })).filter((g) => g.pieces.length);
 
   const move = async (piece) => {
@@ -59,7 +62,15 @@ function SessionPieces({ session, onChange, onAddSeries, onLinkExisting }) {
         {session.series.length > 0 && (
           <span className="series-marks">
             {session.series.map((s) => (
-              <span key={s.id} className="series-mark" title={`${s.name}, ${s.count} st`}>Märk: S{s.number}</span>
+              <button
+                key={s.id}
+                type="button"
+                className="series-mark"
+                onClick={() => setOpenSeriesId(s.id)}
+                aria-label={`Serie S${s.number}, ${s.name}, ${s.piece_count ?? s.count} alster`}
+              >
+                Märk: S{s.number}
+              </button>
             ))}
           </span>
         )}
@@ -113,6 +124,13 @@ function SessionPieces({ session, onChange, onAddSeries, onLinkExisting }) {
           <Link2 size={18} /> Koppla alster
         </button>
       </div>
+
+      <SeriesSheet
+        series={openSeries}
+        sessionId={session.id}
+        onOpenChange={(o) => !o && setOpenSeriesId(null)}
+        onChange={onChange}
+      />
     </section>
   );
 }

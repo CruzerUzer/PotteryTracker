@@ -73,6 +73,8 @@ function setupDb(state = {}) {
     if (sql.includes('FROM study_sessions')) return null; // aktivt/förra pass
     if (sql.includes('FROM ceramic_pieces WHERE id = ? AND user_id')) return s.piece;
     if (sql.includes('MAX(number)')) return { n: s.maxSeries ?? 0 };
+    if (sql.includes('FROM study_series WHERE id = ?')) return s.series ?? null;
+    if (sql.includes('FROM study_series_pieces sp')) return s.firstPiece ?? null;
     if (sql.includes('FROM materials')) return { id: 5 };
     if (sql.includes('FROM locations')) return { id: 7 };
     if (sql.includes('FROM phases WHERE id = ? AND user_id')) return { id: 12 };
@@ -80,6 +82,8 @@ function setupDb(state = {}) {
   });
   mockDb.all.mockImplementation(async (sql) => {
     if (sql.includes('FROM study_stage_phase_map')) return STAGE_ROWS;
+    if (sql.includes('SELECT sp.piece_id FROM study_series_pieces')) return (s.seriesPieces || []).map((id) => ({ piece_id: id }));
+    if (sql.includes('FROM piece_images')) return s.pieceImages || [];
     if (sql.includes('FROM phases')) return PHASES;
     return [];
   });
@@ -272,6 +276,13 @@ describe('Study API', () => {
       expect(runCalls('INSERT OR IGNORE INTO piece_materials')).toHaveLength(6);
     });
 
+    it('kopplar varje nytt alster till serien', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      await request(app).post('/api/study/sessions/3/pieces').send({ series: { count: 3, name: 'Skål' } }).expect(201);
+      expect(runCalls('INSERT OR IGNORE INTO study_series_pieces')).toHaveLength(3);
+    });
+
     it('avvisar en serie utan namn', async () => {
       const s = setupDb();
       s.session = sessionRow();
@@ -381,6 +392,65 @@ describe('Study API', () => {
         return null;
       });
       await request(app).put('/api/study/stage-map').send({ glazed: 999 }).expect(400);
+    });
+  });
+  describe('serier i passet', () => {
+    const series = { id: 4, user_id: 1, number: 1, session_id: 3, name: 'Cylinder', weight_grams: 500, clay_material_id: 5, count: 4 };
+
+    it('lägger till alster i serien och fortsätter numreringen', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      s.series = { ...series };
+      s.firstPiece = { current_phase_id: 11, current_location_id: 7 };
+      const res = await request(app).post('/api/study/sessions/3/series/4/pieces').send({ count: 2 }).expect(201);
+
+      expect(res.body.piece_ids).toHaveLength(2);
+      const pieces = runCalls('INSERT INTO ceramic_pieces');
+      expect(pieces.map(([, p]) => p[1])).toEqual(['Cylinder 500 g · S1-5', 'Cylinder 500 g · S1-6']);
+      expect(pieces[0][1][3]).toBe(11); // samma fas som seriens första alster
+      expect(pieces[0][1][4]).toBe(7); // och samma plats
+      expect(runCalls('INSERT OR IGNORE INTO study_series_pieces')).toHaveLength(2);
+      expect(runCalls("INSERT OR IGNORE INTO study_session_pieces")).toHaveLength(2);
+      expect(runCalls('INSERT OR IGNORE INTO piece_materials')).toHaveLength(2);
+      const update = runCalls('UPDATE study_series SET count = count + ?');
+      expect(update).toHaveLength(1);
+      expect(update[0][1]).toEqual([2, 4, 1]);
+    });
+
+    it('lägger nya alster i fasen för drejat när serien saknar alster', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      s.series = { ...series };
+      await request(app).post('/api/study/sessions/3/series/4/pieces').send({ count: 1 }).expect(201);
+      expect(runCalls('INSERT INTO ceramic_pieces')[0][1][3]).toBe(10);
+    });
+
+    it('avvisar fel antal och okänd serie', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      s.series = { ...series };
+      await request(app).post('/api/study/sessions/3/series/4/pieces').send({ count: 0 }).expect(400);
+      s.series = null;
+      await request(app).post('/api/study/sessions/3/series/9/pieces').send({ count: 2 }).expect(404);
+      await request(app).delete('/api/study/sessions/3/series/9').expect(404);
+      expect(runCalls('INSERT INTO ceramic_pieces')).toHaveLength(0);
+      expect(runCalls('DELETE FROM')).toHaveLength(0);
+    });
+
+    it('tar bort serien med dess alster och kopplingar', async () => {
+      const s = setupDb();
+      s.session = sessionRow();
+      s.series = { ...series };
+      s.seriesPieces = [181, 182, 183, 184];
+      await request(app).delete('/api/study/sessions/3/series/4').expect(200);
+
+      const del = runCalls('DELETE FROM ceramic_pieces');
+      expect(del).toHaveLength(1);
+      expect(del[0][1]).toEqual([1, 181, 182, 183, 184]);
+      for (const table of ['piece_images', 'piece_materials', 'study_session_pieces']) {
+        expect(runCalls(`DELETE FROM ${table} WHERE piece_id IN`)[0][1]).toEqual([181, 182, 183, 184]);
+      }
+      expect(runCalls('DELETE FROM study_series WHERE id = ?')[0][1]).toEqual([4, 1]);
     });
   });
 });

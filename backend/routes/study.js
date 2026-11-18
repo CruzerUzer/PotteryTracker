@@ -237,7 +237,13 @@ async function sessionDetail(db, userId, row, plan) {
     sessionPieces(db, userId, row.id),
     getStageMap(db, userId),
     phasesMap(db, userId),
-    db.all('SELECT * FROM study_series WHERE user_id = ? AND session_id = ? ORDER BY number', [userId, row.id]),
+    db.all(
+      `SELECT s.*, (SELECT COUNT(*) FROM study_series_pieces sp
+                     JOIN ceramic_pieces p ON p.id = sp.piece_id
+                     WHERE sp.series_id = s.id) AS piece_count
+       FROM study_series s WHERE s.user_id = ? AND s.session_id = ? ORDER BY s.number`,
+      [userId, row.id]
+    ),
   ]);
   const previous = await db.get(
     `SELECT * FROM study_sessions
@@ -645,11 +651,7 @@ async function createSeries(db, userId, session, input, stageMap) {
     const loc = await db.get('SELECT id FROM locations WHERE id = ? AND user_id = ?', [locationId, userId]);
     if (!loc) return { error: 'Platsen finns inte' };
   }
-  let phaseId = stageMap.thrown;
-  if (!phaseId) {
-    const first = await db.get('SELECT id FROM phases WHERE user_id = ? ORDER BY display_order, id LIMIT 1', [userId]);
-    phaseId = first?.id || null;
-  }
+  const phaseId = await thrownPhaseId(db, userId, stageMap);
 
   const maxRow = await db.get('SELECT MAX(number) AS n FROM study_series WHERE user_id = ?', [userId]);
   const number = (maxRow?.n || 0) + 1;
@@ -658,25 +660,57 @@ async function createSeries(db, userId, session, input, stageMap) {
     [userId, number, session.id, name, weight, clayId, count]
   );
 
-  const label = weight ? `${name} ${weight} g` : name;
-  const description = `Serie S${number}, drejad ${session.date}${session.week_number ? ` (pass ${session.week_number})` : ''}.`;
+  const series = { id: seriesResult.lastID, number, name, weight_grams: weight, clay_material_id: clayId };
+  const pieceIds = await addSeriesPieces(db, userId, series, session, { from: 1, count, phaseId, locationId });
+  logger.info('Study series created', { userId, sessionId: session.id, number, count });
+  return { series: { id: series.id, number, name, weight_grams: weight, count }, pieceIds };
+}
+
+async function thrownPhaseId(db, userId, stageMap) {
+  if (stageMap.thrown) return stageMap.thrown;
+  const first = await db.get('SELECT id FROM phases WHERE user_id = ? ORDER BY display_order, id LIMIT 1', [userId]);
+  return first?.id || null;
+}
+
+/** Skapar alster nummer from … from+count-1 i serien och kopplar dem till serien och passet. */
+async function addSeriesPieces(db, userId, series, session, { from, count, phaseId, locationId }) {
+  const label = series.weight_grams ? `${series.name} ${series.weight_grams} g` : series.name;
+  const description = `Serie S${series.number}, drejad ${session.date}${session.week_number ? ` (pass ${session.week_number})` : ''}.`;
   const pieceIds = [];
-  for (let i = 1; i <= count; i++) {
+  for (let i = from; i < from + count; i++) {
     const r = await db.run(
       'INSERT INTO ceramic_pieces (user_id, name, description, current_phase_id, current_location_id, done) VALUES (?, ?, ?, ?, ?, 0)',
-      [userId, `${label} · S${number}-${i}`, description, phaseId, locationId]
+      [userId, `${label} · S${series.number}-${i}`, description, phaseId, locationId]
     );
     pieceIds.push(r.lastID);
-    if (clayId) {
-      await db.run('INSERT OR IGNORE INTO piece_materials (piece_id, material_id) VALUES (?, ?)', [r.lastID, clayId]);
+    if (series.clay_material_id) {
+      await db.run('INSERT OR IGNORE INTO piece_materials (piece_id, material_id) VALUES (?, ?)', [r.lastID, series.clay_material_id]);
     }
+    await db.run('INSERT OR IGNORE INTO study_series_pieces (series_id, piece_id) VALUES (?, ?)', [series.id, r.lastID]);
     await db.run(
       "INSERT OR IGNORE INTO study_session_pieces (session_id, piece_id, action) VALUES (?, ?, 'thrown')",
       [session.id, r.lastID]
     );
   }
-  logger.info('Study series created', { userId, sessionId: session.id, number, count });
-  return { series: { id: seriesResult.lastID, number, name, weight_grams: weight, count }, pieceIds };
+  return pieceIds;
+}
+
+/** Tar bort alster med bilder och kopplingar. Databasen kör utan kaskader, så allt raderas uttryckligen. */
+async function deletePieces(db, userId, pieceIds) {
+  if (!pieceIds.length) return 0;
+  const marks = pieceIds.map(() => '?').join(', ');
+  const images = await db.all(`SELECT filename FROM piece_images WHERE piece_id IN (${marks})`, pieceIds);
+  await db.run(`DELETE FROM piece_images WHERE piece_id IN (${marks})`, pieceIds);
+  await db.run(`DELETE FROM piece_materials WHERE piece_id IN (${marks})`, pieceIds);
+  await db.run(`DELETE FROM study_session_pieces WHERE piece_id IN (${marks})`, pieceIds);
+  await db.run(`DELETE FROM study_series_pieces WHERE piece_id IN (${marks})`, pieceIds);
+  await db.run(
+    `UPDATE study_session_images SET piece_id = NULL, piece_image_id = NULL WHERE user_id = ? AND piece_id IN (${marks})`,
+    [userId, ...pieceIds]
+  );
+  const result = await db.run(`DELETE FROM ceramic_pieces WHERE user_id = ? AND id IN (${marks})`, [userId, ...pieceIds]);
+  for (const img of images) removeStudyFiles(img.filename);
+  return result.changes;
 }
 
 router.post('/sessions/:id/pieces', handle('koppla alster', async (req, res) => {
@@ -719,6 +753,61 @@ router.delete('/sessions/:id/pieces/:spId', handle('ta bort kopplingen', async (
     [req.params.spId, session.id]
   );
   if (!result.changes) return res.status(404).json({ error: 'Kopplingen hittades inte' });
+  const planRow = await getOrSeedPlan(db, req.userId);
+  res.json(await sessionDetail(db, req.userId, session, planRow.plan));
+}));
+
+// ─── Serier ─────────────────────────────────────────────────────────
+
+const seriesInSession = (db, userId, session, seriesId) =>
+  db.get('SELECT * FROM study_series WHERE id = ? AND user_id = ? AND session_id = ?', [seriesId, userId, session.id]);
+
+router.post('/sessions/:id/series/:seriesId/pieces', handle('lägga till alster i serien', async (req, res) => {
+  const db = await getDb();
+  const session = await getSessionRow(db, req.userId, req.params.id);
+  if (!session) return res.status(404).json({ error: 'Passet hittades inte' });
+  const series = await seriesInSession(db, req.userId, session, req.params.seriesId);
+  if (!series) return res.status(404).json({ error: 'Serien hittades inte' });
+  const count = toInt(req.body?.count);
+  if (!count || count < 1 || count > 40) return res.status(400).json({ error: 'Antal ska vara 1–40' });
+
+  // De nya alstren hamnar i samma fas och på samma plats som seriens första alster
+  const first = await db.get(
+    `SELECT p.current_phase_id, p.current_location_id FROM study_series_pieces sp
+     JOIN ceramic_pieces p ON p.id = sp.piece_id AND p.user_id = ?
+     WHERE sp.series_id = ? ORDER BY p.id LIMIT 1`,
+    [req.userId, series.id]
+  );
+  const phaseId = first ? first.current_phase_id : await thrownPhaseId(db, req.userId, await getStageMap(db, req.userId));
+  const pieceIds = await addSeriesPieces(db, req.userId, series, session, {
+    from: series.count + 1,
+    count,
+    phaseId,
+    locationId: first?.current_location_id ?? null,
+  });
+  await db.run('UPDATE study_series SET count = count + ? WHERE id = ? AND user_id = ?', [count, series.id, req.userId]);
+  logger.info('Study series extended', { userId: req.userId, sessionId: session.id, number: series.number, added: count });
+  const planRow = await getOrSeedPlan(db, req.userId);
+  res.status(201).json({ piece_ids: pieceIds, session: await sessionDetail(db, req.userId, session, planRow.plan) });
+}));
+
+router.delete('/sessions/:id/series/:seriesId', handle('ta bort serien', async (req, res) => {
+  const db = await getDb();
+  const session = await getSessionRow(db, req.userId, req.params.id);
+  if (!session) return res.status(404).json({ error: 'Passet hittades inte' });
+  const series = await seriesInSession(db, req.userId, session, req.params.seriesId);
+  if (!series) return res.status(404).json({ error: 'Serien hittades inte' });
+
+  const rows = await db.all(
+    `SELECT sp.piece_id FROM study_series_pieces sp
+     JOIN ceramic_pieces p ON p.id = sp.piece_id AND p.user_id = ?
+     WHERE sp.series_id = ?`,
+    [req.userId, series.id]
+  );
+  const removed = await deletePieces(db, req.userId, rows.map((r) => r.piece_id));
+  await db.run('DELETE FROM study_series_pieces WHERE series_id = ?', [series.id]);
+  await db.run('DELETE FROM study_series WHERE id = ? AND user_id = ?', [series.id, req.userId]);
+  logger.info('Study series deleted', { userId: req.userId, sessionId: session.id, number: series.number, pieces: removed });
   const planRow = await getOrSeedPlan(db, req.userId);
   res.json(await sessionDetail(db, req.userId, session, planRow.plan));
 }));

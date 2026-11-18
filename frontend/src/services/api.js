@@ -376,6 +376,9 @@ export const studyAPI = {
   linkPiece: (id, pieceId, action) =>
     apiCall(`/study/sessions/${id}/pieces`, { method: 'POST', body: json({ piece_id: pieceId, action }) }),
   createSeries: (id, series) => apiCall(`/study/sessions/${id}/pieces`, { method: 'POST', body: json({ series }) }),
+  addSeriesPieces: (id, seriesId, count) =>
+    apiCall(`/study/sessions/${id}/series/${seriesId}/pieces`, { method: 'POST', body: json({ count }) }),
+  deleteSeries: (id, seriesId) => apiCall(`/study/sessions/${id}/series/${seriesId}`, { method: 'DELETE' }),
   unlinkPiece: (id, sessionPieceId) => apiCall(`/study/sessions/${id}/pieces/${sessionPieceId}`, { method: 'DELETE' }),
   getPieceSessions: (pieceId) => apiCall(`/study/pieces/${pieceId}/sessions`),
   listNotes: () => apiCall('/study/notes'),

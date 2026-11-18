@@ -3,6 +3,7 @@
  * Används av arkivet (utils/archive.js) och tools/copy-user.mjs, så att båda
  * mappar om id:n (alster, faser, material, pass) på samma sätt.
  */
+import { linkSeriesPiecesByName } from '../database/studySchema.js';
 
 /** Tabellerna som tas med, i den ordning de skrivs till arkivet. */
 export const STUDY_EXPORT_FILES = [
@@ -13,6 +14,7 @@ export const STUDY_EXPORT_FILES = [
   'study_session_pieces',
   'study_gate_checks',
   'study_series',
+  'study_series_pieces',
   'study_log_entries',
   'study_session_images',
   'study_block_reviews',
@@ -37,6 +39,12 @@ export async function exportStudyData(db, userId) {
     ),
     study_gate_checks: await db.all('SELECT * FROM study_gate_checks WHERE user_id = ? ORDER BY id', [userId]),
     study_series: await db.all('SELECT * FROM study_series WHERE user_id = ? ORDER BY id', [userId]),
+    study_series_pieces: await db.all(
+      `SELECT sp.* FROM study_series_pieces sp
+       JOIN study_series s ON s.id = sp.series_id
+       WHERE s.user_id = ? ORDER BY sp.series_id, sp.piece_id`,
+      [userId]
+    ),
     study_log_entries: await db.all('SELECT * FROM study_log_entries WHERE user_id = ? ORDER BY id', [userId]),
     study_session_images: await db.all('SELECT * FROM study_session_images WHERE user_id = ? ORDER BY id', [userId]),
     study_block_reviews: await db.all('SELECT * FROM study_block_reviews WHERE user_id = ? ORDER BY id', [userId]),
@@ -54,6 +62,10 @@ export async function exportStudyData(db, userId) {
 export async function deleteStudyData(db, userId) {
   await db.run(
     'DELETE FROM study_session_pieces WHERE session_id IN (SELECT id FROM study_sessions WHERE user_id = ?)',
+    [userId]
+  );
+  await db.run(
+    'DELETE FROM study_series_pieces WHERE series_id IN (SELECT id FROM study_series WHERE user_id = ?)',
     [userId]
   );
   for (const table of ['glaze_test_images', 'glaze_tests', 'glaze_recipes', 'study_metrics', 'study_block_reviews', 'study_session_images', 'study_log_entries', 'study_series', 'study_gate_checks', 'study_sessions', 'study_stage_phase_map', 'study_plan_revisions', 'study_plans']) {
@@ -79,7 +91,7 @@ export async function importStudyData(db, data, targetUserId, maps = {}) {
   const phase = lookup(maps.phases);
   const material = lookup(maps.materials);
   const pieceImage = lookup(maps.pieceImages);
-  const counts = { plans: 0, sessions: 0, sessionPieces: 0, series: 0, gateChecks: 0, logEntries: 0, images: 0, reviews: 0, metrics: 0, glazeRecipes: 0, glazeTests: 0, glazeImages: 0 };
+  const counts = { plans: 0, sessions: 0, sessionPieces: 0, series: 0, seriesPieces: 0, gateChecks: 0, logEntries: 0, images: 0, reviews: 0, metrics: 0, glazeRecipes: 0, glazeTests: 0, glazeImages: 0 };
 
   const plans = data.study_plans || [];
   const planMap = new Map();
@@ -149,17 +161,28 @@ export async function importStudyData(db, data, targetUserId, maps = {}) {
 
   // Serienumren är unika per användare. Krockar de förskjuts de importerade.
   const series = data.study_series || [];
+  const seriesMap = new Map();
   if (series.length) {
     const max = (await db.get('SELECT MAX(number) AS n FROM study_series WHERE user_id = ?', [targetUserId]))?.n || 0;
     const offset = max > 0 ? max : 0;
     for (const s of series) {
-      await db.run(
+      const r = await db.run(
         'INSERT INTO study_series (user_id, number, session_id, name, weight_grams, clay_material_id, count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [targetUserId, s.number + offset, sessionMap.get(s.session_id) ?? null, s.name, s.weight_grams,
           material(s.clay_material_id), s.count, s.created_at]
       );
+      seriesMap.set(s.id, r.lastID);
       counts.series++;
     }
+    // Äldre arkiv saknar kopplingen; då kopplas alstren efter sina namn
+    if (!data.study_series_pieces) await linkSeriesPiecesByName(db, targetUserId);
+  }
+  for (const sp of data.study_series_pieces || []) {
+    const seriesId = seriesMap.get(sp.series_id);
+    const pieceId = piece(sp.piece_id);
+    if (!seriesId || !pieceId) continue;
+    await db.run('INSERT OR IGNORE INTO study_series_pieces (series_id, piece_id) VALUES (?, ?)', [seriesId, pieceId]);
+    counts.seriesPieces++;
   }
 
   for (const l of data.study_log_entries || []) {

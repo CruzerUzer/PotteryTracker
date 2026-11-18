@@ -198,6 +198,15 @@ CREATE TABLE IF NOT EXISTS glaze_test_images (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Vilka alster som hör till en serie, så att serien kan fyllas på eller tas bort
+CREATE TABLE IF NOT EXISTS study_series_pieces (
+    series_id INTEGER NOT NULL,
+    piece_id INTEGER NOT NULL,
+    PRIMARY KEY (series_id, piece_id),
+    FOREIGN KEY (series_id) REFERENCES study_series(id) ON DELETE CASCADE,
+    FOREIGN KEY (piece_id) REFERENCES ceramic_pieces(id) ON DELETE CASCADE
+);
+
 -- Egna anteckningar och länkar inför ett pass (knutna till veckan, inte planen,
 -- så att de överlever när planen uppdateras)
 CREATE TABLE IF NOT EXISTS study_notes (
@@ -230,7 +239,25 @@ CREATE INDEX IF NOT EXISTS idx_study_session_pieces_session ON study_session_pie
 CREATE INDEX IF NOT EXISTS idx_study_session_pieces_piece ON study_session_pieces(piece_id);
 CREATE INDEX IF NOT EXISTS idx_study_gate_checks_user ON study_gate_checks(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_series_user ON study_series(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_series_pieces_piece ON study_series_pieces(piece_id);
 `;
+
+/**
+ * Kopplar alster till sina serier efter namnet ("… · S12-3") och beskrivningen
+ * ("Serie S12, …") som serien gav dem. För serier från före kopplingstabellen.
+ * @param {number|null} userId  bara den användarens serier, annars alla
+ */
+export async function linkSeriesPiecesByName(db, userId = null) {
+  await db.run(
+    `INSERT OR IGNORE INTO study_series_pieces (series_id, piece_id)
+     SELECT s.id, p.id FROM study_series s
+     JOIN ceramic_pieces p ON p.user_id = s.user_id
+       AND p.name LIKE '%· S' || s.number || '-%'
+       AND p.description LIKE 'Serie S' || s.number || ',%'
+     ${userId ? 'WHERE s.user_id = ?' : ''}`,
+    userId ? [userId] : []
+  );
+}
 
 /**
  * Lägger till users.study_enabled och skapar studietabellerna om de saknas.
@@ -244,7 +271,11 @@ export async function ensureStudySchema(db) {
     await db.run('ALTER TABLE users ADD COLUMN study_enabled INTEGER DEFAULT 0');
     addedColumn = true;
   }
+  const hadSeriesPieces = await db.get(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'study_series_pieces'"
+  );
   await db.exec(STUDY_TABLES_SQL);
+  if (!hadSeriesPieces) await linkSeriesPiecesByName(db);
 
   // Modul 2: hur timern startades ('now' | 'clock' | 'countdown')
   const sessionCols = await db.all('PRAGMA table_info(study_sessions)');
